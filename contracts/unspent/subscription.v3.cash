@@ -1,0 +1,119 @@
+// Unspent Phi
+//
+// Subscription v3 
+//
+// Subscription: Schedule regular token payments
+//
+// A contract for anyone-can-spend MEV-powered token payments, managed by NFT baton.
+// 
+// - Vestment of shares at regular intervals.
+// - Monthly or weekly "stable" coin denominated subscriptions.
+// - Revocable bitcoin annuities via wrapped bitcoin tokens.
+//
+// String & op_return serializations:
+//
+// S,3,<authCat>,<period>,<receiptLockingBytecode>,<installment>,<contractBytecode>
+// 
+// 6a 047574786f
+// 01 53
+// 01 03
+// ...
+
+contract Subscription(
+
+  // Category of the authenticating baton
+  // The auth baton is managed by the wallet of the user, 
+  // The contract is agnostic of the token paid to the receipt.
+  bytes32 authCat,
+
+  // payment interval (blocks)
+  int period,
+
+  // LockingBytecode of the beneficiary, the address receiving payments
+  bytes recipientLockingBytecode,
+
+  // Amount of tokens being vested each period 
+  int installment
+
+) {
+  // OP_4 OP_PICK OP_0 OP_NUMEQUAL OP_IF 
+  function execute() {
+
+    // Require version 2 for BIP68 support
+    // OP_TXVERSION OP_2 OP_NUMEQUALVERIFY 
+    require(tx.version == 2);
+
+    // Require a single utxo input
+    // OP_TXINPUTCOUNT OP_1 OP_NUMEQUALVERIFY 
+    require(tx.inputs.length == 1);
+
+    // Require a rolling timelock is satisfied
+    // OP_SWAP OP_CHECKSEQUENCEVERIFY OP_DROP 
+    require(tx.age >= period);
+
+    // Require payment in the same token
+    // OP_0 OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY 
+    require(tx.outputs[0].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);
+
+    // Require that each output sends to the intended recipient
+    // OP_0 OP_OUTPUTBYTECODE OP_ROT OP_EQUALVERIFY 
+    require(tx.outputs[0].lockingBytecode == recipientLockingBytecode);
+
+    // If not enough tokens remain to fulfill an installment,
+    // OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_2 OP_PICK OP_LESSTHANOREQUAL OP_IF 
+    if(tx.inputs[this.activeInputIndex].tokenAmount <= installment){
+
+        // require token liquidation
+        // OP_0 OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_NUMEQUALVERIFY 
+        require(tx.outputs[0].tokenAmount == tx.inputs[this.activeInputIndex].tokenAmount);
+
+        // utxo sats are unencumbered in the final installment
+
+    } 
+    // OP_ELSE 
+    else{
+        
+        // Require minimum token dust  
+        // OP_0 OP_OUTPUTVALUE 2003 OP_NUMEQUALVERIFY 
+        require(tx.outputs[0].value == 800);
+
+        // Require that installment paid
+        // OP_0 OP_OUTPUTTOKENAMOUNT OP_2 OP_PICK OP_NUMEQUALVERIFY 
+        require(tx.outputs[0].tokenAmount == installment);
+
+        // Require the executor fee is not excessive 
+        // OP_1 OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE f00a OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY 
+        require(tx.outputs[1].value >= tx.inputs[this.activeInputIndex].value - 5000);
+            
+        // Require that the token remainder after installment is returned
+        // OP_1 OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_3 OP_PICK OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY 
+        require(tx.outputs[1].tokenAmount >=  tx.inputs[this.activeInputIndex].tokenAmount - installment);
+
+        // Require the token category is identical
+        // OP_1 OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY 
+        require(tx.outputs[1].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);
+
+        // Require the second output match the active bytecode
+        // OP_1 OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY 
+        require(tx.outputs[1].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);
+
+    } // OP_ENDIF
+
+  } // OP_2DROP OP_DROP
+
+  // Withdraw or adjust balances.
+  // OP_1 OP_ELSE OP_4 OP_ROLL OP_1 OP_NUMEQUALVERIFY 
+  function administer() {
+
+      // Transactions beginning with a minting auth baton are unrestricted
+      //
+      //    "phi"  this.lockingBytecode
+      // 03 706869 23 aa20<32-byte hash>87
+      //
+      // OP_0 OP_UTXOTOKENCATEGORY OP_SWAP OP_2 OP_CAT OP_EQUAL
+      require(tx.inputs[0].tokenCategory == authCat + 0x02);
+
+  }  // OP_NIP OP_NIP OP_NIP 
+  
+
+} // OP_ENDIF

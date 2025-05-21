@@ -1,0 +1,43 @@
+{
+  "name": "@unspent/tau",
+  "version": "1.0.1",
+  "description": "unspent common lib",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./out/index.d.ts",
+      "import": "./out/index.js"
+    },
+    "./*.js": {
+      "types": "./out/*.d.ts",
+      "import": "./out/*.js"
+    },
+    "./*.json": "./out/*.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/2qx/unspent.git",
+    "directory": "packages/common"
+  },
+  "keywords": [
+    "BCH",
+    "defi"
+  ],
+  "author": "2qx",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/2qx/unspent/issues"
+  },
+  "homepage": "https://github.com/2qx/unspent#readme",
+  "scripts": {
+    "prepare": "pnpm run build",
+    "build": "tsc -p tsconfig.json",
+    "typedoc": "typedoc src/index.ts --out out/docs --options ../../config/typedoc.json"
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.10"
+  },
+  "dependencies": {
+    "@bitauth/libauth": "^3.0.0"
+  }
+}

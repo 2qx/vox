@@ -1,0 +1,74 @@
+
+// Unspent Phi v3
+//
+// Dutch Auction  
+//
+// Sell NFTs or fungible tokens. 
+//
+// Start from a (very) high price, allowing lower and lower bid each block.
+// The first bid above the threshold wins the lot.
+//
+// - Consignors may sell many lots at once.
+// - Each UTXO is one token lot.
+// - Lots CANNOT be pullled or passed, everything must sell.
+// - Lots can be batched in transactions 1:1 per input/output.
+// - Minimum price is open divided by 65.5k blocks (1 year). 
+//
+//   Transaction
+//          Inputs            -> Outputs
+//  ==============================================
+//  i    | Dutch   800 sats   -> Consigner xx,xxx sats
+//       |           1 NFT                      - 
+// [i+1] | Dutch   800 sats   -> Consigner xx,xxx sats
+//       |         100 FT                      - 
+// len-1 | Bidder xx,xxx sats -> Winner 800 sats
+//       |            -                  1 NFT
+// len   | Bidder xx,xxx sats -> Winner 800 sats
+//       |            -                100 FT
+// 
+// String & op_return serializations:
+//
+// N,3,<start>,<receiptLockingBytecode>,<contractLockingBytecode>
+// 
+// 6a 047574786f 01 4e 01 03 ... <contractLockingBytecode>
+//
+//
+// unlocking bytecode: 
+// c2529c69007ac0cc9603ffff005179a069007ab275c0cd517a87
+
+contract DutchAuction(
+
+  // Opening bid 
+  int open,
+
+  // LockingBytecode of the consigner, the address receiving payout
+  bytes recipientLockingBytecode
+
+) {
+
+  // 
+  function buy() {
+       
+    // Require version 2 for BIP68 support
+    // OP_TXVERSION OP_2 OP_NUMEQUALVERIFY 
+    require(tx.version == 2, "must use v2 transaction"); 
+
+    // The asking price is the opening bid divided by the utxo age in blocks.
+    // OP_INPUTINDEX OP_OUTPUTVALUE OP_DIV 
+    int requiredAge = open/tx.outputs[this.activeInputIndex].value;
+
+    // Require the active input nSequence number is provided in blocks.
+    // ffff00 OP_OVER OP_GREATERTHAN OP_VERIFY 
+    require(65535 > requiredAge, "open over value (required age) must be less than 65535");   
+
+    // Enforce the minium ask given the age of the input. 
+    // OP_CHECKSEQUENCEVERIFY OP_DROP 
+    require(tx.age >= requiredAge, "bid too low");
+
+    // Check that each output sends to the consignor
+    // OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUAL
+    require(tx.outputs[this.activeInputIndex].lockingBytecode == recipientLockingBytecode, "must payout consigner");
+    
+  } 
+
+}

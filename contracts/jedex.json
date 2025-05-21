@@ -1,0 +1,1025 @@
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "This template demonstrates a variety of contract techniques made possible by CashTokens to build a simple, decentralized exchange (DEX) on Bitcoin Cash.\n\nSee the repo for more information: github.com/bitjson/jedex\n",
+  "name": "JEDEX: Joint-Execution Decentralized Exchange",
+  "entities": {
+    "covenant": {
+      "description": "An entity that holds settings \"owned\" by the covenant.",
+      "name": "Covenant",
+      "variables": {
+        "order_fee_satoshis": {
+          "description": "A small, fixed order fee required for each order submitted to a Thread Covenant. The primary purpose of this fee is to encourage traders to consolidate orders, reduce on-chain noise, and make denial of service attacks costly. (An attacker must pay `thread_count * fixed_trading_fee_satoshis * chained_transactions_propagated_per_second` to tie up the DEX order submission.) ",
+          "name": "Order Fee Satoshis",
+          "type": "WalletData"
+        },
+        "internal_token_category_id": {
+          "description": "The token category ID used internally for authentication and message passing between covenants in this DEX. Note: this is not necessarily the same category ID as the fungible token traded on the DEX.",
+          "name": "Internal Token Category ID",
+          "type": "WalletData"
+        },
+        "traded_token_category_id": {
+          "description": "The token category ID of the fungible token traded on the DEX.",
+          "name": "Traded Token Category ID",
+          "type": "AddressData"
+        },
+        "thread_id": {
+          "description": "A single-byte ID for this thread. For maximum compression, each thread is assigned a bit – for this implementation, the following IDs should be used: '0b0001', '0b0010', '0b0100', '0b1000'.",
+          "name": "Thread ID",
+          "type": "AddressData"
+        },
+        "minimum_tick_interval_mtp_seconds": {
+          "description": "The minimum time difference between market ticks in seconds. The DEX uses Median Time Past (MTP) rather than block heights, so periods of rapid network hashrate change should have reduced impact on end user experience.\n\nFor best stability, this value should be at least '8400', the approximate time required for 10 blocks to be mined – this ensures that the previous tick is well confirmed before the next tick can be processed. For markets with lower liquidity, longer tick intervals can be selected to allow for a more \"public auction\" dynamic.\n\nNote: MTP is a distinct concept in the BCH protocol; like block heights, MTP only advances when a block is found. If this value is set too low, it is possible for a single block to move MTP by more than the minimum interval, allowing two distinct ticks to be processed instantly.",
+          "name": "Minimum Tick Interval MTP Seconds",
+          "type": "WalletData"
+        },
+        "min_mtp": {
+          "description": "The minimum Median Time Past (MTP) time – a unix epoch time in seconds – at which the current market tick may be processed. This time advances only when a block is mined, so it can be considered a slightly more accurate alternative to block height in when network hashrate is changing rapidly.",
+          "name": "Current Tick Minimum MTP",
+          "type": "AddressData"
+        },
+        "satoshis_per_token_bought": {
+          "description": "The price (per token) paid by to users who placed orders to buy tokens.",
+          "name": "Satoshis Per Token Bought",
+          "type": "AddressData"
+        },
+        "satoshis_per_token_sold": {
+          "description": "The price (per token) received by users who placed orders to sell tokens.",
+          "name": "Satoshis Per Token Sold",
+          "type": "AddressData"
+        },
+        "satoshis_per_token": {
+          "description": "The market price (without fees) per token as of the last tick. This is added to the threads to offset the single token that must be provided to threads to reserve their token pools for the traded token. ",
+          "name": "Satoshis Per Token",
+          "type": "AddressData"
+        }
+      }
+    }
+  },
+  "scenarios": {
+    "base": {
+      "data": {
+        "bytecode": {
+          "order_fee_satoshis": "10000",
+          "internal_token_category_id": "0xbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef",
+          "traded_token_category_id": "0xdeadbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefdead",
+          "thread_id": "0x01",
+          "min_mtp": "1657230420",
+          "satoshis_per_token": "5087",
+          "satoshis_per_token_bought": "5241",
+          "satoshis_per_token_sold": "4933",
+          "receipt_input_index": "1"
+        }
+      },
+      "description": "",
+      "name": "Unnamed Scenario",
+      "transaction": {
+        "locktime": 1657230420
+      }
+    },
+    "first_order": {
+      "description": "",
+      "extends": "base",
+      "name": "Place First Order (15,000 sat purchase)",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"]
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "thread_covenant"
+            },
+            "valueSatoshis": 35000
+          },
+          {
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {},
+            "valueSatoshis": 123456
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 10000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        }
+      ]
+    },
+    "second_order": {
+      "description": "",
+      "extends": "base",
+      "name": "Place Second Order (50 ft sell)",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"]
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "thread_covenant"
+            },
+            "valueSatoshis": 45000
+          },
+          {
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {},
+            "valueSatoshis": 123456
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 35000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        }
+      ]
+    },
+    "accept_order": {
+      "description": "",
+      "extends": "second_order",
+      "name": "Accept Second Order (50 ft sell)",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1,
+            "unlockingBytecode": ["slot"]
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": {
+            "script": "thread_covenant"
+          },
+          "valueSatoshis": 35000
+        },
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 1000
+        }
+      ]
+    },
+    "merge": {
+      "description": "",
+      "extends": "base",
+      "name": "Merge Thread (45,000 sats, 50 fts)",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead000000000000000000000000000000000000000000000000000000beef02",
+            "outpointIndex": 0,
+            "unlockingBytecode": {
+              "script": "merge_thread"
+            }
+          },
+          {
+            "outpointTransactionHash": "dead000000000000000000000000000000000000000000000000000000beef02",
+            "outpointIndex": 1
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"]
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "dex_covenant"
+            },
+            "valueSatoshis": 333222156000
+          },
+          {
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {},
+            "valueSatoshis": 123456
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": {
+            "script": "dex_covenant"
+          },
+          "valueSatoshis": 333222111000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        },
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 45000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        }
+      ]
+    },
+    "merge_tokens": {
+      "description": "",
+      "extends": "merge",
+      "name": "Merge Tokens",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead000000000000000000000000000000000000000000000000000000beef02",
+            "outpointIndex": 0,
+            "unlockingBytecode": {
+              "script": "merge_thread"
+            }
+          },
+          {
+            "outpointTransactionHash": "dead000000000000000000000000000000000000000000000000000000beef02",
+            "outpointIndex": 1
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1,
+            "unlockingBytecode": ["slot"]
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": {
+            "script": "dex_covenant"
+          },
+          "valueSatoshis": 333222111000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        },
+        {
+          "lockingBytecode": {
+            "script": "thread_covenant"
+          },
+          "valueSatoshis": 45000
+        },
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 1000
+        }
+      ]
+    },
+    "merge_dex": {
+      "description": "",
+      "extends": "merge",
+      "name": "Merge (DEX Covenant)",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead000000000000000000000000000000000000000000000000000000beef02",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"]
+          },
+          {
+            "outpointTransactionHash": "dead000000000000000000000000000000000000000000000000000000beef02",
+            "outpointIndex": 1
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 333222111000
+        },
+        {
+          "valueSatoshis": 1000
+        },
+        {
+          "lockingBytecode": {
+            "script": "thread_covenant"
+          },
+          "valueSatoshis": 45000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        }
+      ]
+    },
+    "process_tick": {
+      "description": "pool: 2,000,000ft/10,000,000,000sat; order: 5000ft/200,000,000sat; fees:123,456",
+      "extends": "base",
+      "name": "Process Tick",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"]
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          },
+          {},
+          {},
+          {},
+          {}
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "dex_covenant"
+            },
+            "valueSatoshis": 10086908806
+          },
+          {
+            "lockingBytecode": {
+              "script": "token_pool"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {
+              "script": "withdrawal_covenant"
+            },
+            "valueSatoshis": 1123456
+          },
+          {
+            "lockingBytecode": {
+              "script": "withdrawal_token_pool"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {
+              "script": "market_maker_covenant"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {
+              "script": "payout_covenant"
+            },
+            "valueSatoshis": 1000
+          },
+          {},
+          {
+            "lockingBytecode": {
+              "script": "thread_factory"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {
+              "script": "thread_factory"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {
+              "script": "thread_factory"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {
+              "script": "thread_factory"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "valueSatoshis": 45678
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 10000000000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        },
+        {
+          "lockingBytecode": {
+            "script": "withdrawal_covenant"
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "withdrawal_token_pool"
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "market_maker_covenant"
+          },
+          "valueSatoshis": 1000
+        },
+        {
+          "valueSatoshis": 44678
+        }
+      ]
+    },
+    "process_tick_amm": {
+      "description": "pool: 2,000,000ft/10,000,000,000sat; order: 5000ft/200,000,000sat; fees:123,456",
+      "extends": "process_tick",
+      "name": "Process Tick (Market Maker)",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          },
+          {},
+          {},
+          {
+            "unlockingBytecode": ["slot"]
+          },
+          {}
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": "dex_covenant",
+          "valueSatoshis": 10000000000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        },
+        {
+          "lockingBytecode": {
+            "script": "withdrawal_covenant"
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "withdrawal_token_pool"
+          }
+        },
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 1000
+        },
+        {
+          "valueSatoshis": 44678
+        }
+      ]
+    },
+    "withdraw_funds": {
+      "description": "",
+      "extends": "base",
+      "name": "Withdraw (50 Tokens, 20000 sat)",
+      "transaction": {
+        "inputs": [
+          {},
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 2,
+            "unlockingBytecode": ["slot"]
+          },
+          {}
+        ],
+        "outputs": [
+          {
+            "valueSatoshis": 123456
+          },
+          {
+            "valueSatoshis": 1000,
+            "lockingBytecode": {
+              "script": "withdrawal_token_pool"
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "withdrawal_covenant"
+            },
+            "valueSatoshis": 50000
+          },
+          {
+            "valueSatoshis": 123456
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "valueSatoshis": 123456
+        },
+        {
+          "lockingBytecode": {
+            "script": "withdrawal_token_pool"
+          },
+          "valueSatoshis": 1000
+        },
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 30000
+        },
+        {
+          "valueSatoshis": 143456
+        }
+      ]
+    },
+    "withdraw_tokens": {
+      "description": "",
+      "extends": "base",
+      "name": "Withdraw (50 Tokens, 20000 sat)",
+      "transaction": {
+        "inputs": [
+          {},
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 3,
+            "unlockingBytecode": ["slot"]
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 2
+          },
+          {}
+        ],
+        "outputs": [
+          {
+            "valueSatoshis": 123456
+          },
+          {
+            "valueSatoshis": 1000,
+            "lockingBytecode": {}
+          },
+          {
+            "lockingBytecode": {
+              "script": "withdrawal_covenant"
+            },
+            "valueSatoshis": 50000
+          },
+          {
+            "valueSatoshis": 123456
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "valueSatoshis": 123456
+        },
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 1000
+        },
+        {
+          "lockingBytecode": {
+            "script": "withdrawal_covenant"
+          },
+          "valueSatoshis": 30000
+        },
+        {
+          "valueSatoshis": 143456
+        }
+      ]
+    },
+    "lp_action_start_withdraw": {
+      "description": "",
+      "extends": "base",
+      "name": "LP Action: Start Withdraw (50 Tokens, 20000 sat)",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"]
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          },
+          {},
+          {}
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "dex_covenant"
+            },
+            "valueSatoshis": 50000
+          },
+          {
+            "lockingBytecode": {
+              "script": "token_pool"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "valueSatoshis": 120456
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 50000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        },
+        {
+          "valueSatoshis": 120000
+        },
+        {
+          "valueSatoshis": 3456
+        }
+      ]
+    },
+    "lp_action_update_configuration": {
+      "description": "",
+      "extends": "base",
+      "name": "LP Action: Update Configuration",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"]
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          },
+          {},
+          {}
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "dex_covenant"
+            },
+            "valueSatoshis": 50000
+          },
+          {
+            "lockingBytecode": {
+              "script": "token_pool"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "valueSatoshis": 120456
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 50000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        },
+        {
+          "valueSatoshis": 120000
+        },
+        {
+          "valueSatoshis": 3456
+        }
+      ]
+    },
+    "lp_deposit": {
+      "description": "",
+      "extends": "base",
+      "name": "LP Deposit",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"]
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          },
+          {},
+          {}
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "dex_covenant"
+            },
+            "valueSatoshis": 50000
+          },
+          {
+            "lockingBytecode": {
+              "script": "token_pool"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "valueSatoshis": 120456
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 50000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        },
+        {
+          "valueSatoshis": 120000
+        },
+        {
+          "valueSatoshis": 3456
+        }
+      ]
+    },
+    "redeem_satoshis": {
+      "description": "",
+      "extends": "base",
+      "name": "Redeem (Satoshis)",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"]
+          },
+          {}
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "payout_covenant"
+            },
+            "valueSatoshis": 95482
+          },
+          {
+            "valueSatoshis": 4000
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 100000
+        },
+        {}
+      ]
+    },
+    "create_thread": {
+      "description": "",
+      "extends": "base",
+      "name": "Create Thread",
+      "transaction": {
+        "locktime": 0,
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"]
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "thread_covenant"
+            },
+            "valueSatoshis": 5087
+          },
+          {
+            "lockingBytecode": {
+              "script": "token_pool"
+            },
+            "valueSatoshis": 1000
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 2500
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "place_order_buy_tokens": {
+      "passes": ["first_order"],
+      "name": "Place Order (Buy Tokens)",
+      "script": "/**\n * intentionally empty – transaction size is reduced by\n * reading directly from inputs/outputs.\n */",
+      "unlocks": "thread_covenant"
+    },
+    "merge_thread": {
+      "passes": ["merge_dex"],
+      "name": "Merge Thread",
+      "script": "/**\n * intentionally empty – transaction size is reduced by\n * reading directly from inputs/outputs.\n */",
+      "timeLockType": "timestamp",
+      "unlocks": "dex_covenant"
+    },
+    "redeem_order": {
+      "passes": ["redeem_satoshis"],
+      "name": "Redeem Order",
+      "script": "/**\n * intentionally empty – transaction size is reduced by\n * reading directly from inputs/outputs.\n */",
+      "unlocks": "payout_covenant"
+    },
+    "deposit": {
+      "passes": ["lp_deposit"],
+      "name": "Deposit",
+      "script": "/**\n * This codepath allows anyone to deposit to the DEX's\n * liquidity pool.\n * \n * In practice, typically only the Liquidity Provider (LP)\n * would want to make deposits (since the funds then belong\n * to the LP and can be withdrawn using the LP NFT).\n * \n * It's not this covenant's role to prevent random people from\n * contributing to the pool: higher-level covenants can require\n * users to make deposits for various reasons. For example, if\n * the LP token is managed by another covenant that has issued\n * its own \"LP shares\", new users could make contributions here\n * to \"buy in\" to the LP.\n */\n\n/**\n * intentionally empty – transaction size is reduced by\n * reading directly from inputs/outputs.\n */\n\n/* Temporary: */ <4> // IDE limitation: this is used to emulate token support",
+      "unlocks": "dex_covenant"
+    },
+    "start_withdrawal": {
+      "passes": ["lp_action_start_withdraw"],
+      "name": "Start Withdrawal",
+      "script": "/**\n * This codepath allows the LP to start a withdrawal from the \n * DEX's liquidity pool.\n * \n * To prevent LPs from maliciously pulling liquidity from the\n * pool after users have begun placing orders for a particular\n * market tick, withdrawals are paid after the next tick to the\n * Withdrawal Covenant and/or Withdrawal Depository Covenant. \n * \n * Note: to simplify this implementation only one LP action is\n * possible per tick (`Start Withdrawal`/`Update Configuration`).\n * Until the tick is processed, the pending LP action can be\n * overridden by another action. If present, actions are applied\n * during the next tick.\n */\n\n/**\n * intentionally empty – transaction size is reduced by\n * reading directly from inputs/outputs.\n */\n\n/* Temporary: */ <2> // IDE limitation: this is used to emulate token support",
+      "unlocks": "dex_covenant"
+    },
+    "withdraw_funds": {
+      "passes": ["withdraw_funds"],
+      "name": "Withdraw (Funds)",
+      "script": "/**\n * intentionally empty – transaction size is reduced by\n * reading directly from inputs/outputs.\n */",
+      "unlocks": "withdrawal_covenant"
+    },
+    "process_tick": {
+      "passes": ["process_tick"],
+      "name": "Process Tick",
+      "script": "/**\n * intentionally empty – transaction size is reduced by\n * reading directly from inputs/outputs.\n */\n\n/* Temporary: */ <1> // IDE limitation: this is used to emulate token support",
+      "unlocks": "dex_covenant"
+    },
+    "place_order_sell_tokens": {
+      "passes": ["second_order"],
+      "name": "Place Order (Sell Tokens)",
+      "script": "/**\n * intentionally empty – transaction size is reduced by\n * reading directly from inputs/outputs.\n */\n\n// Note, the IDE doesn't yet support tokens in scenarios, \n// so the sell token path must be tested manually below",
+      "unlocks": "thread_covenant"
+    },
+    "merge": {
+      "passes": ["merge"],
+      "name": "Merge",
+      "script": "/**\n * intentionally empty – transaction size is reduced by\n * reading directly from inputs/outputs.\n */\n",
+      "unlocks": "thread_covenant"
+    },
+    "parent_input_0": {
+      "passes": ["accept_order"],
+      "name": "Parent Input 0",
+      "script": "/**\n * For most transactions, token pool parent covenants must\n * be at input index 0.\n */\n<0>",
+      "unlocks": "token_pool"
+    },
+    "parent_input_2": {
+      "passes": ["merge_tokens"],
+      "name": "Parent Input 2",
+      "script": "/**\n * During Thread Covenant Merges, the thread covenant\n * is placed at input index 2 and this token pool is\n * placed at input index 3.\n */\n<2>",
+      "unlocks": "token_pool"
+    },
+    "update_configuration": {
+      "passes": ["lp_action_update_configuration"],
+      "name": "Update Configuration",
+      "script": "/**\n * This codepath allows the LP to update this DEX's configuration:\n * minimum_tick_interval_mtp_seconds and fee_divisor.\n * \n * To prevent LPs from maliciously increasing fees after users\n * have begun placing orders for a particular market tick,\n * configuration updates are only applied after the next tick.\n * \n * Note: to simplify this implementation only one LP action is\n * possible per tick (`Start Withdrawal`/`Update Configuration`).\n * Until the tick is processed, the pending LP action can be\n * overridden by another action. If present, actions are applied\n * during the next tick.\n */\n\n/**\n * intentionally empty – transaction size is reduced by\n * reading directly from inputs/outputs.\n */\n\n/* Temporary: */ <3> // IDE limitation: this is used to emulate token support",
+      "unlocks": "dex_covenant"
+    },
+    "create_thread": {
+      "passes": ["create_thread"],
+      "name": "Create Thread",
+      "script": "/**\n * intentionally empty – transaction size is reduced by\n * reading directly from inputs/outputs.\n */",
+      "unlocks": "thread_factory"
+    },
+    "withdraw_tokens": {
+      "passes": ["withdraw_tokens"],
+      "name": "Withdraw (Tokens)",
+      "script": "/**\n * intentionally empty – transaction size is reduced by\n * reading directly from inputs/outputs.\n */\n",
+      "unlocks": "withdrawal_token_pool"
+    },
+    "verify_tick": {
+      "passes": ["process_tick_amm"],
+      "name": "Verify Tick",
+      "script": "/**\n * intentionally empty – transaction size is reduced by\n * reading directly from inputs/outputs.\n */",
+      "unlocks": "market_maker_covenant"
+    },
+    "thread_covenant": {
+      "lockingType": "p2sh20",
+      "name": "Thread Covenant",
+      "script": "/**\n * The thread covenants accept orders from users, issuing each\n * user a non-fungible token (NFT) that attests to the order.\n * \n * Users submit either satoshis or fungible tokens (to the\n * threads depository covenant), plus order_fee_satoshis.\n * \n * Threads allow themselves to be \"checked-in\" to the primary\n * covenant at any time, but the primary covenant only allows\n * merges after minimum_tick_interval_mtp_seconds. After \n * merge, threads are paused (disallowing orders) until they\n * are restarted by the primary covenant (after the tick closes).\n * \n * Each thread controls a minting token, so all outputs must be\n * carefully controlled to prevent users from minting unexpected\n * NFTs.\n * \n * For markets where less than 50% of orders are likely to be\n * token sales (i.e. many small purchases, fewer large sales),\n * overall transaction bandwidth could be reduced by a further\n * optimization: the thread's depository covenant could be managed\n * by a small \"depository wrapper covenant\". The wrapper covenant\n * (and the depository covenant it controls) would only need to be\n * included in the transaction inputs for sell orders (for sellers\n * to deposit tokens for sale), and buy orders could skip\n * including both inputs.\n */\n\n/**\n * Save bytes by always expecting \"Place Order\" transactions to spend\n * this thread at input 0.\n */\nOP_INPUTINDEX <0> OP_EQUAL\nOP_IF\n/**\n * The most common code path: \"Place Order\"\n * \n * - Input/output 0 are this thread.\n *   - Thread output has the expected new balance\n *   - Thread has expected NFT commitment and retains category + minting capability\n * - Input/output 1 are this thread's depository covenant (verified\n *   by confirming it shares this thread's outpoint transaction hash)\n *   - Output 1 has same valueSatoshis as UTXO 1 (to keep the dust consistent)\n *   - Output 1 has expected new FT amount, retains category\n * - Other inputs are allowed (for payment/fees)\n * - Exactly one more output is required (output 2):\n *   - Must contain immutable NFT receipt, commitment is split for\n *     further validation\n *   - (May contain any contract and any valueSatoshis – validation\n *     is performed only on the balances of the thread and depository covenant)\n */\n\n// Require exactly 3 outputs\nOP_TXOUTPUTCOUNT <3> OP_EQUALVERIFY\n\n/**\n * This thread must continue at output 0 and retains its\n * category and minting capability.\n */\nOP_INPUTINDEX <0> OP_EQUALVERIFY\n<0> OP_UTXOBYTECODE <0> OP_OUTPUTBYTECODE OP_EQUALVERIFY\n<0> OP_UTXOTOKENCATEGORY <0> OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY /* \n<0> OP_UTXOTOKENCOMMITMENT // IDE limitation, emulated: */ < 0b0001 min_mtp 10000>\n/**\n * Thread commitment:\n * thread ID (1 byte), epoch min_mtp (4 bytes), collected_fees (variable, up to 8 bytes)\n */\n<1> OP_SPLIT <4> OP_SPLIT\nOP_OVER OP_TOALTSTACK // save min_mtp for later\n<order_fee_satoshis> OP_ADD // new collected_fees\nOP_CAT OP_CAT /*\n<0> OP_OUTPUTTOKENCOMMITMENT // IDE limitation, emulated: */ < 0b0001 min_mtp 20000>\nOP_EQUALVERIFY // This thread retains it's NFT commitment\n// Thread balance must be verified below\n\ntoken_pool_verify\n// Depository covenant token amount must be verified below\n\n/**\n * The final output should contain an \"order receipt\" NFT with\n * which the remaining validation will be performed.\n *//*\n<2> OP_UTXOTOKENCATEGORY // IDE limitation, emulated: */ <0> <32> OP_NUM2BIN\nOP_SIZE <32> OP_EQUALVERIFY OP_DROP // the produced token must be immutable (no capabilities)\n/**\n * Note: the category is not necessary to validate – we need only verify that the user\n * isn't stealing a minting or mutable token. Users can choose to burn their receipt\n * if they like (by creating a new NFT here of the wrong category); preventing this\n * is the job of the user's wallet, we don't waste bytes checking.\n */\n\n/**\n * NFT receipt: epoch min_mtp (4 bytes), buy_or_sell (1 byte), satoshis_or_ft_amount (variable bytes)\n *//*\n<2> OP_OUTPUTTOKENCOMMITMENT /* IDE limitation, emulated: */ \n< 0x01 1657230420 15_000 > // buy\n// < 0x02 1657230420 50 > // sell\n\n<1> OP_SPLIT // buy tokens (0x00) or sell tokens (0x01)\n<4> OP_SPLIT // min_mtp\n// remaining bytes are either a satoshi amount (purchases) or a token amount (sales)\n\n// Expected thread balance\n<0> OP_UTXOVALUE\n<order_fee_satoshis> OP_ADD // add fixed, per-order fee\nOP_SWAP\n\n<3> OP_PICK // buy or sell?\n<0x02> OP_EQUAL OP_IF\n/**\n * Selling tokens: claimed value must be contributed to token pool\n * TODO: set reasonable minimums (make configurable by LP)\n */\n<1> OP_UTXOTOKENAMOUNT \nOP_ADD /* IDE limitation, emulated:\n<1> OP_OUTPUTTOKENAMOUNT */ <50>\nOP_EQUALVERIFY // Tokens were deposited correctly\nOP_ROT OP_DROP // min_mtp, expected_thread_balance\nOP_ELSE\n/**\n * Buying tokens: claimed value must be contributed to thread balance\n * TODO: set reasonable minimums (make configurable by LP)\n */\nOP_ADD // Add to expected thread balance\nOP_ROT <0x01> OP_EQUALVERIFY // explicitly disallow other values\nOP_ENDIF\n<0> OP_OUTPUTVALUE\n/**\n * IDE limitation, emulated: sell is expected to fail here.\n */\nOP_EQUALVERIFY // New thread balance is correct\nOP_FROMALTSTACK\nOP_EQUAL // epoch min_mtp matches\nOP_ELSE\n/**\n * Merge happens only once, and it consumes the thread and depository covenant.\n * \n * - Input 0 is the primary covenant.\n * - (Validated by DEX Covenant: input 1 is the primary depository covenant.)\n * - Input 2 is this thread.\n * - Input 3 is this thread's depository covenant.\n * - Any other inputs/outputs are allowed by this covenant; all other\n *   merge validation is handled by the DEX Covenant.\n *//*\n<0> OP_UTXOTOKENCATEGORY // IDE limitation, emulated: */ <$(<0> <32> OP_NUM2BIN <0xee> OP_CAT)>\n<32> OP_SPLIT\n<0xee> OP_EQUALVERIFY // DEX covenant has the only mutable NFT\nOP_INPUTINDEX <2> OP_EQUALVERIFY /* // Confirmed: input 2 is this thread\n<2> OP_UTXOTOKENCATEGORY // IDE limitation, emulated: */ <$(<0> <32> OP_NUM2BIN <0xff> OP_CAT)>\n<32> OP_SPLIT OP_DROP OP_EQUALVERIFY // Confirmed: input 0 is DEX covenant\n<2> OP_OUTPOINTTXHASH \n<3> OP_OUTPOINTTXHASH\nOP_EQUALVERIFY\n<3> OP_OUTPOINTINDEX <1> OP_EQUAL // Confirmed: input 3 is this thread's token pool\nOP_ENDIF\n"
+    },
+    "dex_covenant": {
+      "lockingType": "p2sh20",
+      "name": "DEX Covenant",
+      "script": "/**\n * This is the primary covenant for the DEX – it creates threads,\n * aggregates and processes orders, makes payouts, and accepts LP\n * actions.\n * \n * Between ticks, this covenant maintains a mutable token with commitment:\n * [merged_threads (1 byte) collected_fees (7 bytes, padded)] [lp_action (1 byte) lp_action_details (variable bytes)]\n * \n * Until min_mtp, merged_threads will be empty. After min_mtp,\n * thread merging may begin, and merged_threads will be the `OP_OR`\n * of the threads already merged. Thread IDs are: 0b0001, 0b0010,\n * 0b0100, and 0b1000.\n * \n * To differentiate merged_threads from lp_action, actions use\n * higher bits:\n * - None:                 0b01_0000\n * - Start Withdrawal:     0b10_0000\n * - Update Configuration: 0b11_0000\n * \n * When threads are being merged, the token is temporarily upgraded\n * from mutable to minting (in preparation to create the new batch\n * of threads). deposits and LP actions are locked until the tick has \n * been processed and the token is downgraded to mutable.\n * \n * After the first thread merge and until the tick is processed, the\n * merged_threads and collected_fees values are aggregated in the first\n * 9 bytes of the commitment.\n * \n * Each LP action (Start Withdrawal, Update Configuration) may updated\n * the lp_action and lp_action_details before thread merging begins, and\n * the specified action will be performed after tick processing; for\n * efficiency, only one LP action is supported per tick.\n */\n\n/* Temporary: */ OP_DEPTH OP_NOTIF <0> OP_ENDIF OP_TOALTSTACK // IDE limitation: this is used to emulate token support\n\n/**\n * Verify that input/output 1 are the DEX token pool:\n */\ntoken_pool_verify // (token amount must still be verified below)\n\n/**\n * This covenant must always be input 0 and output 0 with\n * matching token category and either minting or mutable.\n */\nOP_INPUTINDEX <0> OP_EQUALVERIFY\n<0> OP_UTXOBYTECODE <0> OP_OUTPUTBYTECODE OP_EQUALVERIFY /*\n<0> OP_UTXOTOKENCATEGORY // IDE limitation, emulated: */ <$(<0> <32> OP_NUM2BIN <0xee> OP_CAT)> \n<32> OP_SPLIT OP_VERIFY // require either minting or mutable (fails on incorrect size) \n/* <0> OP_OUTPUTTOKENCATEGORY // IDE limitation, emulated: */ OP_FROMALTSTACK OP_DUP <0> OP_EQUAL OP_IF OP_DROP <$(<0> <32> OP_NUM2BIN <0xff> OP_CAT)> OP_ELSE OP_TOALTSTACK <$(<0> <32> OP_NUM2BIN <0xee> OP_CAT)> OP_ENDIF\n<32> OP_SPLIT\nOP_ROT OP_ROT OP_EQUALVERIFY // token categories match\n/**\n * If output 0 has a minting token, code path must be Merge Thread\n */\n<0xff> OP_EQUAL\nOP_IF\n  /**\n   * Merge Thread:\n   * - Require min_mtp locktime.\n   * - Verify that input 2 is a thread.\n   * - (Input 3 is verified by thread covenant.)\n   * - Update token commitment:\n   *   - If first byte exists and is less than 0b1111, there are already\n   *     merged_threads. Otherwise, this is the first thread merge of the tick.\n   *   - OP_OR the thread ID into merged_threads\n   *   - add the threads collected_fees to the total\n   *   - (preserve the LP action, if any)\n   * - Verify the thread's token and satoshi balances have been added to the DEX's balances.\n   * - (In this implementation, any number of additional inputs are allowed to pay for network fees.)\n   * - Allow only one change output, no tokens may be included.\n   */\n\n  /**\n   * Thread merging may only begin after the most recent min_mtp.\n   */\n  <min_mtp> OP_CHECKLOCKTIMEVERIFY OP_DROP\n\n  /**\n   * Verify that input 2 is a thread: we can simply verify that input has a\n   * minting token of the shared category, as only threads and this covenant\n   * (in this code path) use a minting token.\n   */\n  <0> OP_OUTPUTTOKENCATEGORY\n  <2> OP_UTXOTOKENCATEGORY\n  OP_EQUALVERIFY // Must be a thread of this covenant\n\n  /**\n   * Save the thread's ID.\n   *//*\n  <2> OP_UTXOTOKENCOMMITMENT // IDE limitation, emulated: */ < 0b0001 min_mtp 20_000 >\n  <1> OP_SPLIT\n  /**\n   * Trim min_mtp – only used by threads to issue receipts; only one set of threads\n   * exist at a time, so there's no need to validate here.\n   */\n  <4> OP_SPLIT OP_NIP\n  OP_DUP OP_ROT // tuck two copies of collected_fee, thread_id is top\n\n  /**\n   * Given: [collected_fee, thread_id], parse the covenants previous\n   * token commitment and return the expected next commitment.\n   *//*\n  <0> OP_UTXOTOKENCOMMITMENT // IDE limitation, emulated: */ \n  /* comment out to test below */ </* merged_threads */ 0b0010 $(/* collected_fees */ <30000> <7> OP_NUM2BIN) $(/* order_satoshis */ <900_000_000> <7> OP_NUM2BIN) $(/* order_tokens */ <123> <8> OP_NUM2BIN) /* action: Start Withdrawal */ 0x20 0x002d3101000000d5dd00>\n  // /* uncomment to test */ <0x20 0xabcdef1234567890> // emulate: no merged_threads, action: Start Withdrawal\n  // /* uncomment to test */ <0x10> // emulate: no merged_threads, action: none\n\n  <1> OP_SPLIT\n  OP_TOALTSTACK // might be remaining bytes of existing thread state (order_satoshis, order_tokens, merged_collected_fees, [action])\n  OP_DUP <0b1111> OP_LESSTHAN\n  OP_IF // merged_threads is set\n    OP_OR // OP_OR in the current thread ID\n    OP_SWAP\n    OP_FROMALTSTACK <7> OP_SPLIT OP_TOALTSTACK // collected_fees (padded)\n    OP_BIN2NUM OP_ADD // merged_collected_fees\n    OP_FROMALTSTACK\n    <7> OP_SPLIT // order_satoshis, padded\n    <8> OP_SPLIT // order_tokens, padded\n    OP_TOALTSTACK // lp action or <>\n  OP_ELSE // merged_threads is not set\n    // First merged thread (current thread ID is already on stack)\n    OP_FROMALTSTACK OP_CAT OP_TOALTSTACK // lp action or <>\n    OP_SWAP\n    <0> <0>\n  OP_ENDIF // merged: merged_threads, merged_collected_fees, previous_order_satoshis, previous_order_tokens\n  OP_TOALTSTACK // previous_order_tokens\n  OP_BIN2NUM // previous_order_satoshis\n  /**\n   * Verify that:\n   * - The thread's order_satoshis are correctly calculated.\n   * - The thread's satoshis have been transferred.\n   */\n  <2> OP_UTXOVALUE // thread satoshi balance\n  OP_DUP <0> OP_UTXOVALUE OP_ADD <0> OP_OUTPUTVALUE OP_EQUALVERIFY // The thread's satoshis have been transferred.\n  <4> OP_ROLL // thread collected_fees\n  OP_SUB // thread order_satoshis\n  OP_ADD // Expected new order_satoshis\n\n  /**\n   * Verify that the thread's token pool has been transferred and recorded.\n   */\n  <3> OP_UTXOTOKENAMOUNT // thread token balance\n  OP_DUP\n  <1> OP_UTXOTOKENAMOUNT OP_ADD <1> OP_OUTPUTTOKENAMOUNT OP_EQUALVERIFY // The thread's token pool has been transferred.\n  OP_FROMALTSTACK // previous_order_tokens\n  OP_BIN2NUM OP_ADD // Expected new order_tokens\n  OP_FROMALTSTACK // Carry over LP action (if any)\n  OP_CAT OP_CAT OP_CAT OP_CAT /*\n  <0> OP_OUTPUTTOKENCOMMITMENT // IDE limitation, emulated: */ OP_DUP\n  OP_EQUALVERIFY\n  \n  /**\n   * Allow only one final change output, ensure no NFTs have been minted:\n   */\n  <3> OP_TXOUTPUTCOUNT OP_EQUALVERIFY\n  <2> OP_OUTPUTTOKENCATEGORY OP_NOT\nOP_ELSE\n  /**\n   * Output 0 has only a mutable token – if UTXO 0 has a\n   * minting token, this must be a \"Process Tick\" transaction.\n   * *//*\n  <0> OP_UTXOTOKENCATEGORY // IDE limitation, emulated: */ OP_FROMALTSTACK OP_DUP <1> OP_EQUAL OP_IF OP_DROP <$(<0> <32> OP_NUM2BIN <0xff> OP_CAT)> OP_ELSE OP_TOALTSTACK <$(<0> <32> OP_NUM2BIN <0xee> OP_CAT)> OP_ENDIF\n  <32> OP_SPLIT <0xff> OP_EQUAL // Leave token category on the stack\n  OP_IF\n    /**\n     * Process Tick:\n     * - Input 4 must be Market Maker Covenant.\n     *   - Shares category+mutable, commitment first byte is 0x01\n     * - (All other validation is performed by Market Maker Covenant.)\n     */\n    <0xee> OP_CAT /*\n    <4> OP_UTXOTOKENCATEGORY // IDE limitation, emulated: */ <$(<0> <32> OP_NUM2BIN <0xee> OP_CAT)> \n    OP_EQUALVERIFY // Has mutable token of internal category.\n /* <4> OP_UTXOTOKENCOMMITMENT // IDE limitation, emulated: */ <0x01>\n    <0x01> OP_EQUAL\n  OP_ELSE\n    /**\n     * UTXO and Output 0 both have mutable tokens.\n     */\n    <0> OP_UTXOTOKENCOMMITMENT <0> OP_OUTPUTTOKENCOMMITMENT OP_EQUAL /* IDE limitation, emulated: */ OP_FROMALTSTACK <4> OP_EQUAL OP_NOTIF OP_DROP <1> OP_ELSE OP_TOALTSTACK <0> OP_ENDIF\n    OP_IF\n    /**\n     * DEX covenant commitment has changed, must be an LP action,\n     * either \"Start Withdrawal\" or \"Update Configuration\".\n     * \n     * LP admin token must be at input 2.\n     * \n     * TODO: a \"start shutdown\" code path – must be carefully designed \n     * to add no weight during operation, pay for itself with collected\n     * dust outputs, and pay the LP any excess (otherwise it can't logically\n     * be included in production. The logic likely needs to be offloaded to\n     * a covenant that can swap itself into this covenants place, then gc\n     * all other covenants. (For limit price UTXOs, pull out the dust and\n     * consume if empty, otherwise the last limit order holder to cancel\n     * consumes the stop.)\n     *//*\n    <2> OP_UTXOTOKENCATEGORY // IDE limitation, emulated: */ <$(<0> <32> OP_NUM2BIN)>\n    OP_EQUALVERIFY // Must be an immutable token of the internal category.\n /* <2> OP_UTXOTOKENCOMMITMENT // IDE limitation, emulated: */ <0x81>\n    <0x81> OP_EQUALVERIFY // Must be the Liquidity Provider Admin Token.\n    /**\n     * Ensure DEX can't be halted by improperly formed actions.\n     * No need to validate the exiting token commitment: the LP is trusted\n     * to override their own pending actions, and LP actions cannot be\n     * submitted during thread merging/tick processing.\n     */\n /* <0> OP_OUTPUTTOKENCOMMITMENT // IDE limitation, emulated: */ < $( /* Start Withdrawal: */ <0x20> /* max satoshis (7-bytes padded): */ <20_000_000> <7> OP_NUM2BIN /* max tokens (remaining bytes): */ <56_789> OP_CAT OP_CAT)>\n    <1> OP_SPLIT OP_SWAP\n    <0x20> OP_EQUAL\n    OP_IF\n      <7> OP_SPLIT // should be max token amount\n      OP_SWAP OP_BIN2NUM // should be max satoshi value\n      OP_SUB // Check that both are valid numbers (subtract to avoid exceeding max range)\n      OP_DROP <1>\n    OP_ELSE\n      // TODO: settle on \"Update Configuration\" lp_action_details (only withdraw is currently supported)\n      OP_RETURN\n    OP_ENDIF\n  OP_ELSE\n    /**\n     * Must be a deposit to the liquidty pool.\n     * - LP token and satoshi balances must not decrease\n     * - Any change outputs are allowed, as we've already confirmed that\n     *   1) this covenant's mutable token hasn't been stolen, and 2) this\n     *   covenant and the token pool are maintained. External covenants\n     *   may need additional inputs/outputs, e.g. to issue \"shares\"\n     *   in a decentralized LP.\n     */\n    OP_DROP // Don't need internal category again.\n    <0> OP_UTXOVALUE <0> OP_OUTPUTVALUE OP_LESSTHANOREQUAL // Satoshi balance has not decreased.\n    <1> OP_UTXOTOKENAMOUNT <1> OP_OUTPUTTOKENAMOUNT OP_LESSTHANOREQUAL // Token balance has not decreased.\n    OP_BOOLAND\n    OP_ENDIF\n  OP_ENDIF  // UTXO 0 token capability\nOP_ENDIF // Output 0 token capability\n"
+    },
+    "payout_covenant": {
+      "lockingType": "p2sh20",
+      "name": "Payout Covenant",
+      "script": "/**\n * This covenant holds both the BCH and fungible token\n * balance for all payouts in a tick. Users may withdraw\n * one-by-one from this covenant using the NFT receipt \n * they were issued when they placed their order.\n * \n * Users must withdraw exactly what they are owed (no \n * more, no less), and the transaction may include any\n * number of other inputs but only one output. When the\n * final user is withdrawing their funds/tokens, the\n * covenant may be destroyed.\n */\n\n/**\n * Data required when the payout covenant is initially\n * created; appended to the beginning of the contract\n * to make assembly easier (requiring fewer bytes in\n * the Market Maker Covenant).\n */\n<satoshis_per_token_bought> <satoshis_per_token_sold> <min_mtp> <internal_token_category_id>\n\n/**\n * Validate that the user has provided a valid Order\n * Receipt NFT in the specified index, then inspect\n * the contents.\n */\n<1> /*\nOP_UTXOTOKENCATEGORY // IDE limitation, emulated: */ OP_DROP <internal_token_category_id>\nOP_EQUALVERIFY // User provided immutable NFT\n<2> OP_TXOUTPUTCOUNT OP_EQUALVERIFY // User is burning the receipt.\n<1> /*\nOP_UTXOTOKENCOMMITMENT // IDE limitation, emulated: */ OP_DROP\n/* buy order (comment out to test sell) */ < 0x01 min_mtp 15_000 > // paid 15,000 satoshis\n// /* sell order (uncomment to test) */ < 0x02 min_mtp 5 > // sold 5 tokens\n\n<1> OP_SPLIT <4> OP_SPLIT // buy/sell, tick min_mtp, sats/amount\nOP_ROT\n<1> OP_EQUAL OP_IF\n/**\n * Buy Order\n */\n<4> OP_ROLL\nOP_2DUP\nOP_DIV // tokens bought\nOP_TOALTSTACK\nOP_MOD // excess satoshis paid\nOP_ELSE // must be 0x02 (admin token would have failed at OP_SPLITs, and no other immutable tokens can be issued for this token category)\n/**\n * Sell Order\n */\n<3> OP_ROLL\nOP_MUL // proceeds from token sale\n<0> OP_TOALTSTACK // user isn't owed any tokens\nOP_ENDIF // satoshi_owed, altstack: tokens_owed\n\n<0> OP_UTXOVALUE OP_SWAP OP_SUB // expected resulting satoshis\n<0> OP_UTXOTOKENAMOUNT /* // IDE limitation, emulated: */ OP_DROP <4>\nOP_FROMALTSTACK OP_SUB // expected remaining tokens\n\nOP_DUP <0> OP_EQUAL // expect 0 remaining tokens\nOP_ROT\nOP_DUP <546> OP_LESSTHAN // expect less than 546 satoshis remaining (dust)\nOP_ROT OP_BOOLAND\nOP_IF\n/**\n * Final payout: user should destroy the covenant, no output validation required.\n */\nOP_2DROP\nOP_ELSE\n/**\n * Other payouts remain, ensure user recreates covenant:\n */\n<0> OP_UTXOBYTECODE <0> OP_OUTPUTBYTECODE OP_EQUALVERIFY\n<0> OP_OUTPUTVALUE OP_EQUALVERIFY /*\n<0> OP_UTXOTOKENAMOUNT // IDE limitation, emulated: */ <2>\nOP_EQUALVERIFY\nOP_ENDIF\nOP_EQUAL // User's receipt is for this tick.\nOP_NIP\n"
+    },
+    "withdrawal_covenant": {
+      "lockingType": "p2sh20",
+      "name": "Withdrawal Covenant",
+      "script": "/**\n * The Withdrawal Covenant holds funds that can be withdrawn by\n * the LP at any time. After a tick is processed, all collected\n * fees and previously-begun withdrawals are deposited in this\n * contract (and any withdrawn tokens are deposited in the\n * Withdrawal Depository Covenant).\n */\nOP_INPUTINDEX <2> OP_EQUALVERIFY // Must be spent at input index 2.\n<2> OP_UTXOTOKENCATEGORY // This covenant maintains an immutable token of the internal category.\n<0> OP_UTXOTOKENCATEGORY \nOP_EQUALVERIFY // Input index 0 contains an immutable token of the same category.\n\n<0> OP_UTXOTOKENCOMMITMENT /* IDE limitation, emulated: */ OP_DROP <0x81>\n<0x81> // Liquidity Provider Admin Token has commitment 0x81\nOP_EQUALVERIFY // LP has authenticated.\n\n/**\n * To slightly reduce transaction sizes, this contract could\n * avoid imposing any further limitations on spending\n * transactions, allowing itself to simply be unlocked by any\n * transaction in which the LP token is spent.\n * \n * This implementation takes a slightly more conservative\n * approach: the following validation prevents the Withdrawal\n * Depository Covenant from being \"left behind\" (and being\n * rendered unspendable) – this offers:\n * 1) protection from software bugs in simple LP-management\n * wallets, and\n * 2) reduced complexity in LP-management covenants (allowing\n * them to forego this validation).\n * \n * TODO: add shutdown support to enable complete withdrawals\n */\n\n/**\n * Withdrawal Covenant continues at index 2, maintains token.\n */\n<2> OP_UTXOBYTECODE <2> OP_OUTPUTBYTECODE OP_EQUALVERIFY\n<2> OP_UTXOTOKENCATEGORY <2> OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY\n<0x81> <2> OP_OUTPUTTOKENCOMMITMENT /* OP_EQUALVERIFY // IDE limitation, emulated: */ OP_2DROP \n\n/**\n * Withdrawal Token Pool continues at index 1, maintains\n * token category (requiring at least 1 token).\n */\n<1> OP_UTXOBYTECODE <1> OP_OUTPUTBYTECODE OP_EQUALVERIFY\n<1> OP_UTXOTOKENCATEGORY <1> OP_OUTPUTTOKENCATEGORY OP_EQUAL"
+    },
+    "token_pool": {
+      "lockingType": "p2sh20",
+      "name": "Token Pool",
+      "script": "/**\n * This covenant holds a set of fungible tokens on behalf\n * of another covenant. Spending from this covenant always\n * requires the parent, but the parent covenant otherwise\n * enforces all other validation.\n * \n * For each code path, verify that provided input is the\n * parent covenant:\n * - The input's outpoint transaction hash matches this\n *   covenant's outpoint transaction hash, and\n * - the input spends the 0th output of that transaction.\n * \n * All other validation is enforced by the thread covenant.\n */\nOP_DUP\nOP_OUTPOINTTXHASH\nOP_INPUTINDEX\nOP_OUTPOINTTXHASH\nOP_EQUALVERIFY\n/**\n * This implementation authenticates parent covenants by\n * strictly controlling the 0th output of all transactions.\n * \n * Once a token pool is created, it must be included in every\n * transaction of the parent covenant, and the parent covenant\n * must always be replicated to output 0 until the transaction\n * in which the token pool is consumed (e.g. checked-in to a\n * higher-level token pool).\n */\nOP_OUTPOINTINDEX <0> OP_EQUAL"
+    },
+    "thread_factory": {
+      "lockingType": "p2sh20",
+      "name": "Thread Factory",
+      "script": "/**\n * This \"factory\" covenant produces a single thread and its\n * associated token pool. Because this factory always spawns\n * the thread covenant at output index 0 and its token pool\n * at output index 1, neither contract is required to include\n * logic for authenticating the other at an unusual output index.\n * \n * This tradeoff saves ~10 bytes per thread transaction,\n * significant reducing network fees over the life of the thread.\n */\n\n/**\n * Appended to the beginning of the contract to make assembly\n * easier (requiring fewer bytes in the Market Maker Covenant).\n */\n<satoshis_per_token>\n<traded_token_category_id>\n\n<1> OP_OUTPUTTOKENCATEGORY /* IDE limitation, emulated: */ OP_DROP OP_DUP\n OP_EQUALVERIFY // Token pool has expected category.\n<1> OP_OUTPUTBYTECODE <OP_HASH160 <$(<token_pool> OP_HASH160)> OP_EQUAL> // IDE limitation P2SH32 not yet supported\nOP_EQUALVERIFY // Token pool has expected contract.\n<1> OP_OUTPUTVALUE <1000> OP_EQUALVERIFY // Require exactly 1000 satoshis for token pool dust.\n\n<0> OP_UTXOTOKENCATEGORY <0> OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY // Thread covenant has minting token of internal category.\n<0> OP_OUTPUTBYTECODE <OP_HASH160 <$(<thread_covenant> OP_HASH160)> OP_EQUAL> // IDE limitation P2SH32 not yet supported\nOP_EQUALVERIFY // Thread covenant has expected contract.\n<0> OP_UTXOTOKENCOMMITMENT /* IDE limitation, emulated: */ OP_DROP < /* thread_id */ 0b0001 min_mtp /* previous satoshis_per_token was past dust limit, no starting fees needed */ 0 >\n<0> OP_OUTPUTTOKENCOMMITMENT /* IDE limitation, emulated: */ OP_DROP OP_DUP\nOP_EQUALVERIFY // Minting token was transferred without modification.\n\n<0> OP_OUTPUTVALUE\nOP_EQUALVERIFY // Expected dust is already included in commitment \n\n/**\n * Prevent any other tokens from being minted and force\n * remaining satoshis to be used for network fees.\n */\nOP_TXOUTPUTCOUNT <2> OP_EQUALVERIFY\n\n/**\n * Some final validation to make Thread Factory transactions\n * deterministic: even if multiple users attempt to generate\n * this transaction, the results will not conflict in other\n * users' mempools (providing a more consistent experience).\n */\nOP_TXVERSION <2> OP_EQUALVERIFY\nOP_TXINPUTCOUNT <1> OP_EQUALVERIFY\nOP_TXLOCKTIME <0> OP_EQUAL"
+    },
+    "withdrawal_token_pool": {
+      "lockingType": "p2sh20",
+      "name": "Withdrawal Token Pool",
+      "script": "/**\n * This token pool differs from the standard Token Pool in that\n * the Withdrawal Covenant is always at input/output index 2\n * in the parent transaction (rather than 0). (This is slightly\n * more byte-efficient than using a tracking token.)\n * \n * To authenticate the Withdrawal Covenant, this token pool\n * verifies that:\n * - This token pool is at input index 1.\n * - Input index 2 shares an outpoint TX hash with this covenant,\n *   and was at output 2 in their mutual parent transaction.\n * \n * All other validation is performed by the Withdrawal Covenant.\n */\n\nOP_INPUTINDEX <1> OP_EQUALVERIFY\n<2> OP_OUTPOINTTXHASH <1> OP_OUTPOINTTXHASH OP_EQUALVERIFY\n/**\n * Note that the withdrawal covenant is at outpoint index 2 (parent\n * transaction output 2) rather than outpoint index 0 (as with \n * other token pools).\n */\n<2> OP_OUTPOINTINDEX <2> OP_EQUAL\n"
+    },
+    "market_maker_covenant": {
+      "lockingType": "p2sh20",
+      "name": "Market Maker Covenant",
+      "script": "/**\n * This covenant implements a simple, Constant Product Market\n * Maker (CPMM) for DemoDEX – it must appear at input/output 4\n * in every \"Process Tick\" transaction, and it validates the\n * arithmetic for market settlement, payouts, and withdrawals.\n * (It also validates that the thread factories have been created.)\n * \n * By extracting this logic out of the DEX Covenant, the DEX\n * covenant is smaller when used for other types of transactions.\n * \n * Note, because this covenant moves once per market tick, it\n * can also be useful for wallets and block explorers to quickly\n * locate market ticks (e.g. to display charts).\n * \n * This covenant verifies that:\n * - This covenant is at input index 4 and moves to output index 4.\n *   - Maintains bytecode and mutable token from UTXO to output.\n * - Input 0 is the DEX covenant, and it's processing the tick.\n *   - Has expected UTXOBYTECODE.\n *   - Caries category+minting.\n *   - All threads are merged (0b1111).\n * - The market making algorithm is respected.\n * - All 4 Thread factories have been created with minting tokens,\n *   expected commitments, and expected output values.\n */\n\n/**\n * This covenant is at input and output index 4.\n * - Mutable tracking token moves without modifying commitment.\n */\nOP_INPUTINDEX <4> OP_EQUALVERIFY // included in index 4\n<4> OP_UTXOBYTECODE <4> OP_OUTPUTBYTECODE OP_EQUALVERIFY // covenant is reproduced at index 4\n/**\n * Mutable tracking token moves without modifying commitment.\n *//*\n<4> OP_UTXOTOKENCATEGORY // IDE limitation, emulated: */ <$(<0> <32> OP_NUM2BIN <0xee> OP_CAT)> /*\n<4> OP_OUTPUTTOKENCATEGORY // IDE limitation, emulated: */ <$(<0> <32> OP_NUM2BIN <0xee> OP_CAT)>\nOP_EQUALVERIFY /*\n<4> OP_OUTPUTTOKENCOMMITMENT // IDE limitation, emulated: */ <0x01>\n<0x01> // Market Maker Covenant tracking token has prefix: 0x01\nOP_EQUALVERIFY\n\n/**\n * Verify input index 0 is DEX Covenant: validates DEX Covenant and\n * DEX Token Pool with the exception of output satoshi/token balances.\n * \n * We can both authenticate DEX Covenant and confirm it's processing\n * the tick by looking for a minting token with merged_threads of 0b1111.\n *//*\n<0> OP_UTXOTOKENCATEGORY // IDE limitation, emulated: */ <$(<123456> <32> OP_NUM2BIN <0xff> OP_CAT)> /*\n<4> OP_UTXOTOKENCATEGORY // IDE limitation, emulated: */ <$(<123456> <32> OP_NUM2BIN <0xee> OP_CAT)> \nOP_XOR // Matching internal token category cancels out.\nOP_REVERSEBYTES OP_BIN2NUM <0x11> // \"<0xee> <0xff> OP_XOR\" is 0x11\nOP_EQUALVERIFY // UTXO at index 0 has minting token of the internal token category.\n/*\n<0> OP_UTXOTOKENCOMMITMENT // IDE limitation, emulated: */ < /* merged_threads */ 0b1111 $(/* collected_fees */ <30000> <7> OP_NUM2BIN) $(/* order_satoshis */ <900_000_000> <7> OP_NUM2BIN) $(/* order_tokens */ <123> <8> OP_NUM2BIN) $( /* Withdraw: */ <0x20> /* max satoshis (7-bytes padded): */ <20_000_000> <7> OP_NUM2BIN /* max tokens (remaining bytes): */ <56_789> OP_CAT OP_CAT)> // emulate: merged_threads, collected_fees, action: withdraw\n<1> OP_SPLIT OP_SWAP <0b1111> OP_EQUALVERIFY // Input 0 is DEX covenant and all threads are merged.\n\n<7> OP_SPLIT OP_SWAP // tuck LP action (processed after tick)\nOP_BIN2NUM OP_TOALTSTACK // altstack: collected_fees\n\n/**\n * Settle trades.\n * \n * This demo uses a simple Constant Product Market Maker (CPMM): the market maker always\n * offers to buy at a price such that a constant remains unchanged:\n * constant_product = pool_satoshis * pool_tokens\n * \n * So the last price offered by the market maker was:\n * previous_satoshis_per_token = pool_satoshis / pool_tokens\n * \n * And for this tick, the price offered will be:\n * satoshis_per_token = (pool_satoshis + order_satoshis) / (pool_tokens + order_tokens)\n * \n * And the LP's ~0.29% fee is applied:\n * fee = satoshis_per_token * 12 / 4096\n * buy_price_per_token = satoshis_per_token + fee\n * sell_price_per_token = satoshis_per_token - fee\n * \n * Precise payouts for orders are handled by the payout covenant, so\n * this covenant is charged only with computing the tick's settlement price,\n * handing over all the tokens and satoshis that the payout covenant will need,\n * and ensuring the liquidity pool is given its expected new balances.\n * \n * Notably, it's possible for buyers to have \"bid\" a satoshi amount that is not\n * perfectly divisible into tokens. We offer a small refund of the remainder\n * (and even small refunds can often cover the payout transaction fee).\n * \n * So we need to compute:\n * payout_tokens = order_satoshis / buy_price_per_token\n * payout_satoshis_refunds = order_satoshis % buy_price_per_token\n * payout_satoshis_sales = order_tokens * sell_price_per_token\n * payout_satoshis = payout_satoshis_sales + payout_satoshis_refunds\n * \n * (Note that this algorithm preferences satoshis as money: if satoshis_per_token\n * should never be less than 1. For information on supporting less valuable tokens,\n * see \"Market Making Algorithm\" in the template description.)\n * \n * # Demo notes:\n * For this demo, only market orders are supported. Notably, this changes\n * the behavior of the market to encourage price ramping against naive traders:\n * the ramper copies the order of the trader, then reverses in the next tick.\n * Large ramping activities can be countered by placing a smaller decoy trade\n * in the opposite of the planned direction, waiting for ramping activity to build\n * liquidity in that direction, than placing a trade against the increased liquidity.\n * \n * In production, this \"market orders only\" demo would probably behave a little \n * like a poker table; working through strategies and counterstrategies is non-trivial.\n * However, rather than spending more time analyzing this example, it probably makes\n * more sense to focus on a more realistic production algorithm. See\n * \"Future Work: Limit Orders\" in the template description for a summary of the\n * how this market making algorithm will be adapted for production.\n * \n * TODO: fixed-precision implementation of below wasn't finished, just cutting until we add limit order support\n */\n\n/**\n * Validate outputs:\n * - Output 0 has the expected pool_satoshis\n * - Output 1 has the expected pool_tokens\n * - Output 2 has the Withdrawal Covenant, to which collected_fees and the processing withdrawal (if present) are added\n * - Output 3 has the Withdrawal Token Pool, to which token-denominated fees and the processing withdrawal (if present) are added\n * - (Output 4 was validated above.)\n * - Output index 5 is a Payout Covenant with the expected payout_satoshis and payout_tokens (if no payouts, use empty OP_RETURN output)\n * - Output indexes 6, 7, 8, and 9 are properly created Thread Factories (minting tokens, sufficient dust)\n *   - Each thread begins with 1 token (to reserve the token pool output for the traded category – this saves 32 bytes per transaction\n *     vs. including the traded token's category ID in the thread covenant) and satoshis_per_token satoshis (this offsets the extra\n *     token, which would otherwise look like a market sell). \n *   - Note: Thread Factories already have to hold a minting token for this category, so to complete this design, we'd likely want\n *     to merge all thread factories into a single output with a sibling token pool of N tokens. Up to N threads can be created, and\n *     each thread is assigned at least 1 token of the traded type. However, a better design would simply create a single,\n *     splittable thread from Process Tick. See \"Future Work: Thread Splitting\" in the template description.\n * - Output index 10 may be a change output with excess BCH (but no tokens)\n */\n"
+    },
+    "token_pool_verify": {
+      "name": "Token Pool Verify",
+      "script": "/**\n * Verify a token pool that must be at input 1 and output 1.\n * Since token pools must always move with their covenant, they\n * can be identified by checking that the outpoint transaction\n * hashes are the same (and the output index is correct).\n * \n * NOTE: This script does not verify the token amount.\n */\n<0> OP_OUTPOINTTXHASH\n<1> OP_OUTPOINTTXHASH OP_EQUALVERIFY\n<1> OP_OUTPOINTINDEX <1> OP_EQUALVERIFY\n// Token pool retains it's category\n<1> OP_UTXOTOKENCATEGORY <1> OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY\n// Prevent stray NFTs from being attached (to reduce unexpected behavior for wallets)\n<1> OP_OUTPUTTOKENCOMMITMENT <0> OP_EQUALVERIFY\n// Token pool must retain initial dust amount \n<1> OP_UTXOVALUE <1> OP_OUTPUTVALUE OP_EQUALVERIFY"
+    }
+  },
+  "supported": ["BCH_SPEC"],
+  "version": 0
+}

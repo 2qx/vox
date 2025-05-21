@@ -1,0 +1,44 @@
+                                                                         
+                                                                          
+OP_1 OP_CHECKSEQUENCEVERIFY OP_DROP                                       
+OP_TXINPUTCOUNT OP_1 OP_NUMEQUALVERIFY                                     
+OP_TXOUTPUTCOUNT OP_1 OP_NUMEQUALVERIFY                                    
+<0x4002> <0xa400>                                                                   
+OP_INPUTINDEX OP_UTXOVALUE OP_ROT OP_2 OP_PICK OP_ADD OP_GREATERTHAN OP_IF 
+                                                                                 /*                                                                                             */
+                                                                                 /*             // DripMine contract must be passed on                                          */
+                                                                                 /*             // OP_INPUTINDEX OP_UTXOBYTECODE OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY */
+OP_INPUTINDEX OP_UTXOBYTECODE                                                    /*             require(tx.inputs[this.activeInputIndex].lockingBytecode ==                     */
+OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUAL OP_VERIFY                               /*                     tx.outputs[this.activeInputIndex].lockingBytecode);                     */
+                                                                                 /*                                                                                             */
+                                                                                 /*             // Calculate maxPayout                                                          */
+                                                                                 /*             // Decay half-life of 4 years                                                   */
+                                                                                 /*             // OP_INPUTINDEX OP_UTXOVALUE 2811 OP_MUL c685744f OP_DIV                       */
+OP_INPUTINDEX OP_UTXOVALUE <0x2811> OP_MUL <0xc685744f> OP_DIV                   /*             int maxPayout = (tx.inputs[this.activeInputIndex].value * 4392) / 1333036486;   */
+                                                                                 /*                                                                                             */
+                                                                                 /*             // If calculated payout would be too low, switch to flat minPayout              */
+                                                                                 /*             // OP_2DUP OP_GREATERTHAN OP_IF                                                 */
+OP_2DUP OP_GREATERTHAN OP_IF                                      /*             if (maxPayout < minPayout) {                                                    */
+                                                                                 /*                 // OP_OVER OP_NIP                                                           */
+OP_OVER OP_NIP                                                /*                 maxPayout = minPayout;                                                      */
+OP_ENDIF                                                                         /*             } // OP_ENDIF                                                                   */
+                                                                                 /*                                                                                             */
+                                                                                 /*             // TX fee is the payout to miners                                               */
+                                                                                 /*             // OP_INPUTINDEX OP_UTXOVALUE OP_INPUTINDEX OP_OUTPUTVALUE OP_SUB               */
+OP_INPUTINDEX OP_UTXOVALUE                                                       /*             int payout = tx.inputs[this.activeInputIndex].value -                           */
+OP_INPUTINDEX OP_OUTPUTVALUE OP_SUB                                              /*                          tx.outputs[this.activeInputIndex].value;                           */
+                                                                                 /*             // OP_2DUP OP_GREATERTHANOREQUAL OP_VERIFY                                      */
+OP_2DUP OP_GREATERTHANOREQUAL OP_VERIFY                           /*             require(payout <= maxPayout);                                                   */
+                                                                                 /*                                                                                             */
+                                                                                 /*         // else we sweep everything as fee and terminate the contract                       */
+                                                                                 /*         // OP_2DROP OP_ELSE                                                                 */
+OP_2DROP OP_ELSE                                                          /*         } else {                                                                            */
+                                                                                 /*             // Burn the output with remainning value to miners' fees                        */
+                                                                                 /*             // OP_INPUTINDEX OP_OUTPUTVALUE OP_0 OP_NUMEQUALVERIFY                          */
+OP_INPUTINDEX OP_OUTPUTVALUE OP_0 OP_NUMEQUAL OP_VERIFY                          /*             require(tx.outputs[this.activeInputIndex].value == 0);                          */
+                                                                                 /*             // OP_INPUTINDEX OP_OUTPUTBYTECODE 6a OP_EQUALVERIFY                            */
+OP_INPUTINDEX OP_OUTPUTBYTECODE <0x6a> OP_EQUAL OP_VERIFY                        /*             require(tx.outputs[this.activeInputIndex].lockingBytecode == 0x6a);             */
+OP_ENDIF                                                                         /*         } //OP_ENDIF                                                                        */
+OP_1 OP_NIP                                                                      /*     } // OP_DROP OP_1                                                                       */
+                                                                                 /* }                                                                                           */
+                                                                                 /*                                                                                             */

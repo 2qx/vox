@@ -1,0 +1,82 @@
+pragma cashscript ^0.10.0;
+
+// Vault - Store coins locked for tokens until maturation date. 
+//
+// 2024-06-05
+//
+// From: Future Bitcoin Cash
+//
+// Author: 2qx <2qx_in_the_future@small.neomailbox.ch>
+//
+//     If redeeming tokens for coins in the vault: 
+// [ ]   enforce the timelock is met.
+//
+// [ ] Assure the utxo token category matches that of the output.
+// [ ] Assure the the utxo and output lock match per in the transaction.
+// [ ] Assure an equal amounts of coins are exchanged for tokens
+//
+//
+//  inputs              outputs
+//  [0] contract    ->  [0] contract
+//  [1] userPkh     =>  [1] userPkh
+//  [2] coupon?     -^
+//
+
+contract Vault(int locktime) {
+
+    function swap() {
+        
+        // If tokens are flowing back into this contract
+        // OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_GREATERTHAN OP_IF 
+        if(tx.outputs[this.activeInputIndex].tokenAmount > tx.inputs[this.activeInputIndex].tokenAmount){
+        
+
+            // Enforce a BIP65 timelock 
+            // Note, intended for use with block height based locks 
+            // (where:  locktime < 500M).
+            // OP_0 OP_PICK OP_CHECKLOCKTIMEVERIFY OP_DROP
+            require(tx.time >= locktime);
+
+
+        } // OP_ENDIF 
+         
+        // 
+        // Inspired by wrapped.cash c. Nov 2023
+        // Author: Dagur Valberg Johannsson <dagurval@pvv.ntnu.no> 
+        // License: MIT
+        //
+        // ensure the token in and out matches
+        // OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_EQUAL OP_VERIFY 
+        require(
+          tx.inputs[this.activeInputIndex].tokenCategory 
+          == 
+          tx.outputs[this.activeInputIndex].tokenCategory
+          );
+
+
+        // Enforce that this contract lives on
+        // OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUAL OP_VERIFY
+        require(
+          tx.outputs[this.activeInputIndex].lockingBytecode 
+          == 
+          tx.inputs[this.activeInputIndex].lockingBytecode
+          );
+
+
+        // ensure the sum of sats and tokens in 
+        // matches the sum of sats and tokens out.
+        // OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_INPUTINDEX OP_UTXOVALUE OP_ADD
+        // OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_OUTPUTVALUE OP_ADD 
+        // OP_NUMEQUAL
+        // OP_NIP        
+        require(
+          tx.inputs[this.activeInputIndex].tokenAmount + 
+          tx.inputs[this.activeInputIndex].value 
+          == 
+          tx.outputs[this.activeInputIndex].tokenAmount + 
+          tx.outputs[this.activeInputIndex].value
+         );
+
+    }
+
+}

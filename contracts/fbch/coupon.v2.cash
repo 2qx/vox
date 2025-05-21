@@ -1,0 +1,58 @@
+pragma cashscript ^0.10.0;
+
+// Coupon - apply* utxo coupons by spending at least <amount> on <lock>
+//
+// 2024-06-05
+//
+// From: Future Bitcoin Cash
+//
+// Author: 2qx <2qx_in_the_future@small.neomailbox.ch>
+//
+// Allow anyone to use an unspent output (utxo) in a transaction ...
+//
+// ... given:
+//
+// [ ] the zeroth inflow value exceeds a predefined amount 
+// [ ] the zeroth input is to a predefined address
+// [ ] the coupon must be applied as the last input
+//
+// * Limit one per transaction.
+//
+// Note: This contract is designed to run as part of an integrated
+// multi-contract system. It's not in itself sufficient to assure 
+// an advisory doesn't claim all coupons instantly for no cost.
+//
+// Also note: This instance is designed where the `lock`, or destination, 
+// is the first input and output. If the locks isn't spendable, or not the first
+// input, coupons will not be redeemable.
+//
+// ... If there is no time or monetary cost to spend every coupon, 
+// it should be expected that they will all be cleaned at once.
+//
+
+contract Coupon(
+  // Minimum spent (sats) to claim each coupon utxo.
+  int amount,
+  
+  // Contract holding the logic.
+  bytes lock
+){
+
+  function apply() {
+    
+    // assure at the minium amount is sent to the intended contract
+    // OP_0 OP_OUTPUTVALUE OP_0 OP_UTXOVALUE OP_SUB OP_1 OP_ROLL OP_GREATERTHANOREQUAL OP_VERIFY
+    require((tx.outputs[0].value - tx.inputs[0].value) >= amount);
+
+
+    // Check that the Coupon is interacting with an existing Vault instance 
+    // OP_0 OP_UTXOBYTECODE OP_1 OP_ROLL OP_EQUAL OP_VERIFY
+    require(tx.inputs[0].lockingBytecode == lock);
+
+    // The coupon must be spent as the last input, 
+    //   therefore only coupon may be spent at a time.
+    // OP_INPUTINDEX OP_1 OP_ADD OP_TXINPUTCOUNT OP_NUMEQUAL
+    require(this.activeInputIndex+1 == tx.inputs.length);
+  }
+
+}

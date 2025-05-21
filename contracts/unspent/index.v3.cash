@@ -1,0 +1,44 @@
+pragma cashscript 0.10.0;
+
+// Small Index 
+// 
+// A subscription based key-value index 
+//
+
+contract SmallIndex(bytes key) {
+    
+    // Secure outputs with data in token commitments for a given key.
+    // 
+    // All entries pay a fixed storage fee of 1 satoshi per block. 
+    //
+    // If an entry has expired, miners may drop it.
+    //
+    // Miners can drop many expired entires at once.
+    //
+
+    function drop() {
+
+        // Require each input age be higher than the utxo value
+        // OP_INPUTINDEX OP_UTXOVALUE OP_CHECKSEQUENCEVERIFY OP_DROP
+        require(tx.age >= tx.inputs[this.activeInputIndex].value, "must satisfy age (bip68)");
+
+        // See TokenBurner - Dagur Valberg Johannsson
+        //
+        // Require a single output
+        // OP_TXOUTPUTCOUNT OP_1 OP_NUMEQUALVERIFY 
+        require(tx.outputs.length == 1);
+
+        // Without BCH
+        // OP_0 OP_OUTPUTVALUE OP_0 OP_NUMEQUALVERIFY
+        require(tx.outputs[0].value == 0);
+
+        // Without tokens
+        // OP_0 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY
+        require(tx.outputs[0].tokenCategory == 0x);
+
+        // As an empty OP_RETURN
+        // OP_0 OP_OUTPUTBYTECODE 6a OP_EQUAL
+        require(tx.outputs[0].lockingBytecode == 0x6a);
+    }
+    
+}

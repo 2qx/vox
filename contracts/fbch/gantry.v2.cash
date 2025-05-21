@@ -1,0 +1,148 @@
+pragma cashscript ^0.10.0;
+
+// Gantry - Create vault contracts with fungible tokens in a uniform way. 
+//
+// 2024-08-08 
+//
+// From: Future Bitcoin Cash
+//
+// Author: 2qx <2qx_in_the_future@small.neomailbox.ch>
+//
+// NFT commentment stores the next series locktime in 32-bit LE
+//
+// [ ] Require the minting baton in the input
+// [ ] Get the current step increment for the chain of futures
+// [ ] Get the current vault locktime to be printed.
+//
+//   either
+// [ ] Mint an array of FT utxos, 
+// [ ] send them off to a Vault
+//
+//   or
+// [ ] skip every 10th print.
+//
+// [ ] increment locktime height value stored on NFT baton
+// [ ] assure NFT baton is returned
+//
+//
+//  Gantry i/o Flow:
+//
+//  Inputs              Outputs
+//  [0] NFT mintBaton   ->  [0] NFT mintBaton
+//  [1] topup sats?     =>  [1] FTs Vault
+//                      =>  [2] FTs Vault
+//                      =>  [3] FTs Vault
+//                      =>  [4] FTs Vault
+//                      =>  [5] FTs Vault
+//                      =>  [6] FTs Vault
+//                      =>  [7] FTs Vault
+//                          [8] OP_RETURN FBCH <locktime>
+//  
+//  ... but skip every 10th token print, 
+//   which will be printed by the gantry of the next order.
+//  [0] NFT mintBaton   =>  [0] NFT mintBaton
+//
+// NOTE: The production version differs from the final audit:
+// - Sats to fund the Gantry transactions are secured in the baton UTXO (line 68),
+// - Some minor optimizations were made to stay under the 201 op_code limit:
+//   - used tokenAmount as number instead of stack variable [92,98,104...]
+//   - inlined op_return tag in single line require (line 137)
+//
+
+
+contract Gantry(
+    int step, 
+    bytes vaultUnlockingBytecode
+    ) {
+
+    function execute() {
+
+        // Gantry covenant and the associated NFT baton must be spent as index 0
+        // input and passed on to index 0 output, funded with some dust BCH in order
+        // to avoid griefing by someone with access to hashrate
+        require(this.activeInputIndex == 0);
+        require(tx.inputs[this.activeInputIndex].lockingBytecode == 
+        tx.outputs[this.activeInputIndex].lockingBytecode);
+        require(tx.inputs[this.activeInputIndex].tokenCategory ==
+            tx.outputs[this.activeInputIndex].tokenCategory);
+        require(tx.outputs[this.activeInputIndex].value == tx.inputs[this.activeInputIndex].value - 8500);
+
+        int locktime = int(tx.inputs[this.activeInputIndex].nftCommitment);
+
+        // Locktime stored in mutable NFT commitment MUST be incremented by <step>
+        // and stored as bytes4 LE uint again.
+        require(tx.outputs[this.activeInputIndex].nftCommitment ==
+            bytes4(locktime + step));
+
+        // Every 10th step, skip creating Vault and just increment the commitment
+        if((locktime / step) % 10 == 0) { 
+            require(tx.outputs.length == 1);
+        } else {
+            // Construct redeem bytecode for the Vault instance being created
+            bytes theVault = 
+                bytes(bytes(locktime).length) + bytes(locktime) + // int locktime
+                vaultUnlockingBytecode;
+            // Construct P2SH32 locking bytecode from redeem bytecode
+            bytes vaultLockingBytecode = 0xaa20 + hash256(theVault) + 0x87;
+
+            // Verify creation of Vault genesis outputs
+            require(tx.outputs[1].lockingBytecode == vaultLockingBytecode);
+            require(tx.outputs[1].tokenCategory == tx.inputs[0].outpointTransactionHash);
+            require(tx.outputs[1].nftCommitment == 0x);
+            require(tx.outputs[1].tokenAmount == 2100000000000000);
+            require(tx.outputs[1].value == 1000);
+
+            require(tx.outputs[2].lockingBytecode == vaultLockingBytecode);       
+            require(tx.outputs[2].tokenCategory == tx.inputs[0].outpointTransactionHash);
+            require(tx.outputs[2].nftCommitment == 0x);
+            require(tx.outputs[2].tokenAmount == 2100000000000000);     
+            require(tx.outputs[2].value == 1000);
+
+            require(tx.outputs[3].lockingBytecode == vaultLockingBytecode);       
+            require(tx.outputs[3].tokenCategory == tx.inputs[0].outpointTransactionHash);
+            require(tx.outputs[3].nftCommitment == 0x);
+            require(tx.outputs[3].tokenAmount == 2100000000000000);     
+            require(tx.outputs[3].value == 1000);
+
+            require(tx.outputs[4].lockingBytecode == vaultLockingBytecode);       
+            require(tx.outputs[4].tokenCategory == tx.inputs[0].outpointTransactionHash);
+            require(tx.outputs[4].nftCommitment == 0x);
+            require(tx.outputs[4].tokenAmount == 2100000000000000);     
+            require(tx.outputs[4].value == 1000);
+
+            require(tx.outputs[5].lockingBytecode == vaultLockingBytecode);       
+            require(tx.outputs[5].tokenCategory == tx.inputs[0].outpointTransactionHash);
+            require(tx.outputs[5].nftCommitment == 0x);
+            require(tx.outputs[5].tokenAmount == 2100000000000000);     
+            require(tx.outputs[5].value == 1000);
+
+            require(tx.outputs[6].lockingBytecode == vaultLockingBytecode);       
+            require(tx.outputs[6].tokenCategory == tx.inputs[0].outpointTransactionHash);
+            require(tx.outputs[6].nftCommitment == 0x);
+            require(tx.outputs[6].tokenAmount == 2100000000000000);     
+            require(tx.outputs[6].value == 1000);
+
+            require(tx.outputs[7].lockingBytecode == vaultLockingBytecode);       
+            require(tx.outputs[7].tokenCategory == tx.inputs[0].outpointTransactionHash);
+            require(tx.outputs[7].nftCommitment == 0x);
+            require(tx.outputs[7].tokenAmount == 2100000000000000);     
+            require(tx.outputs[7].value == 1000);
+
+
+            // Tag FT metadata for indexers 
+            //
+            // 6a              OP_RETURN
+            // 04 46 42 43 48  FBCH
+            // 03 90 05 10     <locktime>
+            require(tx.outputs[8].lockingBytecode == 0x6a0446424348 +
+                                  bytes(bytes(locktime).length) +  bytes(locktime));
+            require(tx.outputs[8].tokenCategory == 0x);
+            require(tx.outputs[8].value == 0);
+
+            // Ensure no other outputs can be created
+            require(tx.outputs.length == 9);  
+
+        }     
+        
+    }
+}

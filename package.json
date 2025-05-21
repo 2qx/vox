@@ -1,0 +1,32 @@
+{
+  "name": "vox-meta",
+  "private": "true",
+  "description": "A collection of tools & libraries for decentralized finance.",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "test": "c8 ava --config ./config/ava.config.js",
+    "test:xc8": "ava --config ./config/ava.config.js",
+    "typedoc": "pnpm -r run typedoc"
+  },
+  "devDependencies": {
+    "@ava/typescript": "^5.0.0",
+    "@types/node": "^20.14.10",
+    "ava": "^6.2.0",
+    "c8": "^10.1.3",
+    "typedoc": "^0.28.1",
+    "typescript": "^5.8.2"
+  },
+  "engines": {
+    "node": ">=20.18.0",
+    "pnpm": "10.6.3"
+  },
+  "packageManager": "pnpm@10.6.3",
+  "type": "module",
+  "c8": {
+    "exclude": [
+      "**/tests/*.js"
+    ]
+  },
+  "pnpm": {
+  }
+}

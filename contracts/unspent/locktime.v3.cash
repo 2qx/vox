@@ -1,0 +1,59 @@
+
+// Unspent Phi
+//
+// Locktime v3 
+//
+// Locktime: lock funds until a certain block time.
+//
+// - Allow spending after a predefined staticblocktime (BIP65).
+// - Allow chaining many utxos in parallel, with each utxo contributing to the fee.
+// 
+// String & op_return serializations:
+//
+// L,3,<Locktime>,<receiptLockingBytecode>,<contractBytecode>
+// 
+// 6a 047574786f
+// 01 50
+// 01 03
+// ...
+//
+// A contract to hodl until a pre-defined block
+// 
+contract Locktime(
+
+  // length of time to lock contract, blocks
+  int locktime,
+
+  // LockingBytecode of the beneficiary, the address receiving payments
+  bytes recipientLockingBytecode
+
+) {
+  function execute() {
+
+    // Require version 2 for BIP68 support
+    // OP_TXVERSION OP_2 OP_NUMEQUALVERIFY
+    require(tx.version == 2);
+    
+    // Check that time has passed and that time locks are enabled
+    // OP_CHECKLOCKTIMEVERIFY OP_DROP
+    require(tx.time >= locktime, "must meet locktime (bip65)");
+
+    // Check that each output sends to the recipient
+    // OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY
+    require(tx.outputs[this.activeInputIndex].lockingBytecode == recipientLockingBytecode, "must pay receipt");
+
+    // Check that each output sends the balance minus an executor allowance
+    // OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE c409 OP_SUB OP_GREATERTHANOREQUAL
+    require(tx.outputs[this.activeInputIndex].value >= tx.inputs[this.activeInputIndex].value - 2500, "executor fee too high");
+
+    // Require tokens go forward
+    // OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_NUMEQUALVERIFY 
+    require(tx.outputs[this.activeInputIndex].tokenAmount == tx.inputs[this.activeInputIndex].tokenAmount, "must pass tokens");
+
+    // OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY 
+    require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory, "must be same token");
+
+    // OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_EQUAL
+    require(tx.outputs[this.activeInputIndex].nftCommitment == tx.inputs[this.activeInputIndex].nftCommitment, "must pass NFT");
+  }
+}

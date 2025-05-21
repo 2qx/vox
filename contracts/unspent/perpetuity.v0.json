@@ -1,0 +1,109 @@
+{
+    "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+    "description": "Imported from cashscript",
+    "name": "Perpetuity",
+    "entities": {
+      "parameters": {
+        "description": "Contract creation and function parameters",
+        "name": "parameters",
+        "scripts": [
+          "lock",
+          "unlock_lock"
+        ],
+        "variables": {
+          "period": {
+            "description": "\"period\" parameter of this contract",
+            "name": "period",
+            "type": "WalletData"
+          },
+          "recipient_pkh": {
+            "description": "\"recipientPkh\" parameter of this contract",
+            "name": "recipientPkh",
+            "type": "WalletData"
+          },
+          "executor_allowance": {
+            "description": "\"executorAllowance\" parameter of this contract",
+            "name": "executorAllowance",
+            "type": "WalletData"
+          },
+          "decay": {
+            "description": "\"decay\" parameter of this contract",
+            "name": "decay",
+            "type": "WalletData"
+          }
+        }
+      }
+    },
+    "scenarios": {
+      "evaluate_function": {
+        "data": {
+          "bytecode": {
+            "period": "0xa00f",
+            "recipient_pkh": "0x138bc399dac8a78d240402a6ca4e302f6d21d4eb",
+            "executor_allowance": "0x480d",
+            "decay": "0x2c01"
+          },
+          "currentBlockHeight": 2,
+          "currentBlockTime": 1744828752,
+          "keys": {
+            "privateKeys": {}
+          }
+        },
+        "description": "An example evaluation where this script execution passes.",
+        "name": "Evaluate",
+        "transaction": {
+          "inputs": [
+            {
+              "outpointIndex": 1,
+              "outpointTransactionHash": "afe7be3964969486e034dda945fd8cd8410526c99d404e372046711c00318645",
+              "sequenceNumber": 4000,
+              "unlockingBytecode": [
+                "slot"
+              ]
+            }
+          ],
+          "locktime": 894239,
+          "outputs": [
+            {
+              "lockingBytecode": "76a914138bc399dac8a78d240402a6ca4e302f6d21d4eb88ac",
+              "valueSatoshis": 16845
+            },
+            {
+              "lockingBytecode": {},
+              "valueSatoshis": 5033120
+            }
+          ],
+          "version": 2
+        },
+        "sourceOutputs": [
+          {
+            "lockingBytecode": [
+              "slot"
+            ],
+            "valueSatoshis": 5053363
+          }
+        ]
+      }
+    },
+    "scripts": {
+      "unlock_lock": {
+        "passes": [
+          "evaluate_function"
+        ],
+        "name": "unlock",
+        "script": "// none\n",
+        "unlocks": "lock"
+      },
+      "lock": {
+        "lockingType": "p2sh20",
+        "name": "lock",
+        "script": "<decay> <executor_allowance> <recipient_pkh> <period> <0x76a914> OP_ROT OP_CAT <0x88ac> OP_CAT OP_0 OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_CHECKSEQUENCEVERIFY OP_DROP OP_1 OP_OUTPUTBYTECODE <0xa914> OP_ACTIVEBYTECODE OP_HASH160 OP_CAT <0x87> OP_CAT OP_EQUALVERIFY OP_INPUTINDEX OP_UTXOVALUE OP_DUP OP_3 OP_ROLL OP_DIV OP_SWAP\nOP_OVER\nOP_SUB\nOP_ROT\nOP_SUB\nOP_0\nOP_OUTPUTVALUE\nOP_ROT\nOP_GREATERTHANOREQUAL\nOP_VERIFY\nOP_1\nOP_OUTPUTVALUE\nOP_LESSTHANOREQUAL"
+      }
+    },
+    "supported": [
+      "BCH_2023_05",
+      "BCH_2022_05",
+      "BCH_2024_05"
+    ],
+    "version": 0
+  }

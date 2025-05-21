@@ -1,0 +1,527 @@
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "This templates for Future Bitcoin Cash ecosystem of contracts ",
+  "name": "FBCH: Future Bitcoin Cash",
+  "entities": {
+    "coupon_vault": {
+      "description": "An entity that holds coupons \"owned\" by the covenant.",
+      "name": "Coupon Vault",
+      "variables": {
+        "coupon_amount": {
+          "description": "Minimum required threshold to claim the coupon",
+          "name": "Coupon Amount (Satoshis)",
+          "type": "WalletData"
+        },
+        "vault_locktime": {
+          "description": "The timestamp (blocks) when the future vault will become bidirectional",
+          "name": "Vault Locktime (blocks)",
+          "type": "WalletData"
+        }
+      }
+    },
+    "future_vault": {
+      "description": "An entity that holds coupons \"owned\" by the covenant.",
+      "name": "Future Vault",
+      "variables": {
+        "locktime": {
+          "description": "The timestamp (blocks) when the future vault will become bidirectional",
+          "name": "Vault Locktime (blocks)",
+          "type": "WalletData"
+        }
+      }
+    },
+    "future_channel": {
+      "description": "Vault holding messages to be burned into coupons.",
+      "name": "Future Chan",
+      "variables": {
+        "channel": {
+          "description": "The subject of the channel",
+          "name": "Channel (bytes)",
+          "type": "WalletData"
+        }
+      }
+    },
+    "funder": {
+      "description": "The party paying transaction fees or editing.",
+      "name": "Funding party",
+      "scripts": ["fund_lock", "fund_unlock"],
+      "variables": {
+        "key": {
+          "description": "The private key that controls this wallet.",
+          "name": "Key",
+          "type": "HdKey"
+        }
+      }
+    }
+  },
+  "scenarios": {
+    "base": {
+      "data": {
+        "bytecode": {
+        }
+      },
+      "description": "",
+      "name": "Unnamed Scenario",
+      "transaction": {}
+    },
+    "clear_message": {
+      "description": "",
+      "extends": "base",
+      "name": "Place First Order (15,000 sat purchase)",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"]
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "thread_covenant"
+            },
+            "valueSatoshis": 35000
+          },
+          {
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {},
+            "valueSatoshis": 123456
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 10000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        }
+      ]
+    },
+    "burn_message": {
+      "description": "",
+      "extends": "base",
+      "name": "Place Second Order (50 ft sell)",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"]
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "thread_covenant"
+            },
+            "valueSatoshis": 45000
+          },
+          {
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {},
+            "valueSatoshis": 123456
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 35000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        }
+      ]
+    },
+    "edit_message": {
+      "description": "",
+      "extends": "second_order",
+      "name": "Accept Second Order (50 ft sell)",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1,
+            "unlockingBytecode": ["slot"]
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": {
+            "script": "thread_covenant"
+          },
+          "valueSatoshis": 35000
+        },
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 1000
+        }
+      ]
+    },
+    "claim_coupon": {
+      "description": "pool: 2,000,000ft/10,000,000,000sat; order: 5000ft/200,000,000sat; fees:123,456",
+      "extends": "base",
+      "name": "Process Tick",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"]
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          },
+          {},
+          {},
+          {},
+          {}
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "dex_covenant"
+            },
+            "valueSatoshis": 10086908806
+          },
+          {
+            "lockingBytecode": {
+              "script": "token_pool"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {
+              "script": "withdrawal_covenant"
+            },
+            "valueSatoshis": 1123456
+          },
+          {
+            "lockingBytecode": {
+              "script": "withdrawal_token_pool"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {
+              "script": "market_maker_covenant"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {
+              "script": "payout_covenant"
+            },
+            "valueSatoshis": 1000
+          },
+          {},
+          {
+            "lockingBytecode": {
+              "script": "thread_factory"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {
+              "script": "thread_factory"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {
+              "script": "thread_factory"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": {
+              "script": "thread_factory"
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "valueSatoshis": 45678
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 10000000000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        },
+        {
+          "lockingBytecode": {
+            "script": "withdrawal_covenant"
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "withdrawal_token_pool"
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "market_maker_covenant"
+          },
+          "valueSatoshis": 1000
+        },
+        {
+          "valueSatoshis": 44678
+        }
+      ]
+    },
+    "place_bch": {
+      "description": "pool: 2,000,000ft/10,000,000,000sat; order: 5000ft/200,000,000sat; fees:123,456",
+      "extends": "process_tick",
+      "name": "Process Tick (Market Maker)",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          },
+          {},
+          {},
+          {
+            "unlockingBytecode": ["slot"]
+          },
+          {}
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": "dex_covenant",
+          "valueSatoshis": 10000000000
+        },
+        {
+          "lockingBytecode": {
+            "script": "token_pool"
+          },
+          "valueSatoshis": 1000
+        },
+        {
+          "lockingBytecode": {
+            "script": "withdrawal_covenant"
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "withdrawal_token_pool"
+          }
+        },
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 1000
+        },
+        {
+          "valueSatoshis": 44678
+        }
+      ]
+    },
+    "redeem_fbch": {
+      "description": "",
+      "extends": "base",
+      "name": "Withdraw (50 Tokens, 20000 sat)",
+      "transaction": {
+        "inputs": [
+          {},
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 1
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 2,
+            "unlockingBytecode": ["slot"]
+          },
+          {}
+        ],
+        "outputs": [
+          {
+            "valueSatoshis": 123456
+          },
+          {
+            "valueSatoshis": 1000,
+            "lockingBytecode": {
+              "script": "withdrawal_token_pool"
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "withdrawal_covenant"
+            },
+            "valueSatoshis": 50000
+          },
+          {
+            "valueSatoshis": 123456
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "valueSatoshis": 123456
+        },
+        {
+          "lockingBytecode": {
+            "script": "withdrawal_token_pool"
+          },
+          "valueSatoshis": 1000
+        },
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 30000
+        },
+        {
+          "valueSatoshis": 143456
+        }
+      ]
+    },
+    "step_gantry": {
+      "description": "",
+      "extends": "base",
+      "name": "Withdraw (50 Tokens, 20000 sat)",
+      "transaction": {
+        "inputs": [
+          {},
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 3,
+            "unlockingBytecode": ["slot"]
+          },
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 2
+          },
+          {}
+        ],
+        "outputs": [
+          {
+            "valueSatoshis": 123456
+          },
+          {
+            "valueSatoshis": 1000,
+            "lockingBytecode": {}
+          },
+          {
+            "lockingBytecode": {
+              "script": "withdrawal_covenant"
+            },
+            "valueSatoshis": 50000
+          },
+          {
+            "valueSatoshis": 123456
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "valueSatoshis": 123456
+        },
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 1000
+        },
+        {
+          "lockingBytecode": {
+            "script": "withdrawal_covenant"
+          },
+          "valueSatoshis": 30000
+        },
+        {
+          "valueSatoshis": 143456
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "clear_message": {
+      "passes": ["clear_message", "burn_message"],
+      "name": "Clear Message",
+      "script": "<OP_0> // function index\n",
+      "unlocks": "channel_lock"
+    },
+    "edit_message": {
+      "passes": ["edit_message"],
+      "name": "Edit Message",
+      "script": "<OP_1> // function index\n",
+      "unlocks": "channel_lock"
+    },
+    "channel_lock": {
+      "lockingType": "p2sh32",
+      "name": "Transform message to coupon",
+      "script": "<channel> OP_OVER OP_0 OP_NUMEQUAL OP_IF OP_INPUTINDEX OP_UTXOVALUE OP_10 OP_DIV <0xe803> OP_MUL <0x80969800> OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_10 OP_MUL OP_NUMEQUAL OP_DUP OP_IF <0x00e1f505> OP_ROT OP_DROP OP_SWAP OP_ENDIF OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_NUMEQUAL OP_DUP OP_IF <0xe803> OP_CHECKSEQUENCEVERIFY OP_DROP OP_ENDIF OP_NOT OP_SWAP OP_NOT OP_BOOLAND OP_IF OP_OVER <0x1027> OP_SUB OP_CHECKLOCKTIMEVERIFY OP_DROP OP_ELSE OP_OVER OP_SIZE OP_NIP OP_2 OP_PICK OP_CAT <0xc0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77> OP_CAT <0xaa20> OP_OVER OP_HASH256 OP_CAT <0x87> OP_CAT OP_2 OP_PICK OP_SIZE OP_NIP OP_3 OP_PICK OP_CAT OP_OVER OP_SIZE OP_NIP OP_CAT OP_OVER OP_CAT <0x00cc00c694a16900c788c08bc39c> OP_CAT <0xaa20> OP_OVER OP_HASH256 OP_CAT <0x87> OP_CAT OP_INPUTINDEX OP_OUTPUTBYTECODE OP_OVER OP_EQUALVERIFY OP_2DROP OP_2DROP OP_ENDIF OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY OP_2DROP OP_2DROP OP_1 OP_ELSE OP_SWAP OP_1 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_NUMEQUALVERIFY OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY OP_TXINPUTCOUNT OP_1SUB OP_UTXOTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY <0x20> OP_SPLIT OP_DROP OP_2 OP_CAT OP_EQUAL OP_NIP OP_ENDIF"
+    },
+    "unlock_coupon": {
+      "passes": ["claim_coupon"],
+      "name": "Unlock Coupon",
+      "script": "// \"claim\" function parameters\n// none\n",
+      "unlocks": "coupon_lock"
+    },
+    "coupon_lock": {
+      "lockingType": "p2sh32",
+      "name": "Coupon Lock",
+      "script": "<lock> <amount> OP_0 OP_OUTPUTVALUE OP_0 OP_UTXOVALUE OP_SUB OP_1 OP_ROLL OP_GREATERTHANOREQUAL OP_VERIFY\n OP_0 OP_UTXOBYTECODE OP_1 OP_ROLL OP_EQUAL OP_VERIFY \nOP_INPUTINDEX OP_1 OP_ADD OP_TXINPUTCOUNT OP_NUMEQUAL"
+    },
+    "fund_lock": {
+      "lockingType": "standard",
+      "name": "P2PKH Lock",
+      "script":
+        "OP_DUP\nOP_HASH160 <$(<key.public_key> OP_HASH160\n)> OP_EQUALVERIFY\nOP_CHECKSIG"
+    },
+    "fund_unlock": {
+      "name": "Unlock",
+      "script": "<key.schnorr_signature.all_outputs>\n<key.public_key>",
+      "unlocks": "fund_lock"
+    },
+    "unlock_vault": {
+      "passes": ["place_bch", "redeem_fbch"],
+      "name": "Unlock Vault",
+      "script": "// \"swap\" function parameters\n// none\n",
+      "unlocks": "vault_lock"
+    },
+    "vault_lock": {
+      "lockingType": "p2sh32",
+      "name": "Vault Locking Script",
+      "script": "<locktime> OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_GREATERTHAN OP_IF OP_DUP OP_CHECKLOCKTIMEVERIFY OP_DROP OP_ENDIF OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_INPUTINDEX OP_UTXOVALUE OP_ADD OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_OUTPUTVALUE OP_ADD OP_NUMEQUAL OP_NIP"
+    }
+  },
+  "supported": ["BCH_SPEC"],
+  "version": 0
+}

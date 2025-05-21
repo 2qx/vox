@@ -1,0 +1,146 @@
+pragma cashscript ~0.10.0;
+    
+// FutureChan - A message board contract.
+//
+// Message board for data written in mutable or immutable NFT commitments. 
+//
+// - Messages can be removed after a week.
+// - Messages can be censored early by paying a 9 times multiplier penalty.  
+// - Messages must contain a value greater than 1/100th of a block time 2.5 months.
+// - Messages with insufficient value may be cleared by anyone at any time.
+// 
+// - Messages can be edited (or deleted) using an NFT with minting capability.
+// 
+// - Clearing (or censoring) messages must create 0.1 FBCH (or 1 FBCH) coupons.
+//
+// - Many different channels can be used by using a different channel identifier.
+// - Note: `cashc` compiler must be patched to not error from channel identifier usage. 
+//
+//
+
+contract FutureChan(bytes channel) {
+    
+    // OP_OVER OP_0 OP_NUMEQUAL OP_IF
+    function clearMessage() {
+        
+        // Chan messages will create a 0.1 FBCH coupon targeting a FBCH vault 
+        // where vault time is specified using the number of sats on the message.
+        // Example #1: 9873 sats => ( 9873 % 10 ) * 1000 => FBCH-0987000; 0.1 BCH coupon
+        //         #2:  543 sats =>  ( 543 % 10 ) * 1000 => MEV BURN
+        //         #3: 9873 sats =>               98,730 => FBCH-0987000; 1 BCH coupon
+
+        // OP_INPUTINDEX OP_UTXOVALUE OP_10 OP_DIV e803 OP_MUL 
+        int vaultTime = int(tx.inputs[this.activeInputIndex].value / 10)*1000;
+
+        // Default to a 0.1 BCH series coupon
+        // 80969800 
+        int amount = 10000000;
+
+        // If the message is being censored, the burner must provide 9 X the initial value to a 1 BCH coupon
+        // OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_10 OP_MUL OP_NUMEQUAL 
+        bool isPrematureBurn = tx.outputs[this.activeInputIndex].value == tx.inputs[this.activeInputIndex].value*10;
+
+        // If this is an early burn (moderation), create a 1 BCH coupon 
+        // OP_DUP OP_IF   
+        if(isPrematureBurn){
+
+            // 00e1f505 OP_ROT OP_DROP OP_SWAP
+            amount = 100000000;
+        } // OP_ENDIF
+
+        // If the message has matured, the full value is used for a coupon
+        // OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_NUMEQUAL 
+        bool hasMatured = tx.outputs[this.activeInputIndex].value == tx.inputs[this.activeInputIndex].value;
+
+        // If not early, require the message is a week old
+        // OP_DUP OP_IF 
+        if(hasMatured){
+
+            // Require the message be at least a week old
+            // e803 OP_CHECKSEQUENCEVERIFY 
+            require(tx.age >= 1000);
+
+        }  // OP_DROP OP_ENDIF 
+
+        // If sats specifed a bad locktime (allow an early burn, no coupon, pure MEV)        
+        // OP_NOT OP_SWAP OP_NOT OP_BOOLAND OP_IF 
+        if(!hasMatured && !isPrematureBurn){
+
+            // If the vault time indicated is less than ~2.5 months into the future.
+            // Let the message be cleared and the value be taken by anyone.
+            // OP_OVER 1027 OP_SUB OP_CHECKLOCKTIMEVERIFY OP_DROP 
+            require(tx.time >= ( vaultTime - 10000 ));
+
+        } 
+
+        // Otherwise, the sats must pay an FBCH coupon
+        // OP_ELSE 
+        else{
+
+            // Calculate the future vault corresponding to the locktime
+            // OP_OVER OP_SIZE 
+            // OP_NIP OP_2 OP_PICK 
+            // OP_CAT c0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77 OP_CAT 
+            bytes theVault = bytes(bytes(vaultTime).length) + 
+                            bytes(vaultTime) + 
+                            0xc0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77;
+
+            // Construct P2SH32 locking bytecode from redeem bytecode
+            // aa20 OP_OVER OP_HASH256 OP_CAT 87 
+            bytes vaultLockingBytecode = 0xaa20 + hash256(theVault) + 0x87;
+
+            // Calculate the coupon vault corresponding to the locktime
+            // OP_CAT OP_2 OP_PICK OP_SIZE OP_NIP 
+            // OP_3 OP_PICK OP_CAT OP_OVER OP_SIZE OP_NIP 
+            // OP_CAT OP_OVER OP_CAT 00cc00c694a16900c788c08bc39c OP_CAT 
+            bytes theCoupon = bytes(bytes(amount).length) + bytes(amount) + 
+                            bytes(vaultLockingBytecode.length) + vaultLockingBytecode +
+                            0x00cc00c694a16900c788c08bc39c;
+
+            // Construct P2SH32 locking bytecode from redeem bytecode
+            // aa20 OP_OVER OP_HASH256 OP_CAT 87 OP_CAT 
+            bytes couponLockingBytecode = 0xaa20 + hash256(theCoupon) + 0x87;
+
+            // Send the message value to the coupon vault.
+            // OP_INPUTINDEX OP_OUTPUTBYTECODE OP_OVER OP_EQUALVERIFY 
+            require(tx.outputs[this.activeInputIndex].lockingBytecode == couponLockingBytecode);
+
+        } // OP_2DROP OP_2DROP OP_ENDIF
+
+        // Without CashTokens
+        // OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY 
+        require(tx.outputs[this.activeInputIndex].tokenCategory == 0x);
+
+    } // OP_2DROP OP_2DROP 
+
+
+    // Messages on mutable NFTs may be edited (or deleted) using a minting NFT of the same token category.  
+    // Messages on immutable NFTs may only be deleted. 
+    //
+    // oldMessage[0]          -> editedMessage[0]
+    // oldMessage[1]          -> editedMessage[1]
+    // oldMessage[n]          -> editedMessage[n]
+    // mintingBaton[in.len-1] -> extendedMessage[n+1]
+    //                        -> extendedMessage[n+2]
+    //                        -> mintingBaton[out.len-1]
+    //
+    // OP_1 OP_ELSE OP_SWAP OP_1 OP_NUMEQUALVERIFY 
+    function editMessage(){
+
+        // Sats must be carried forward.
+        // OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_NUMEQUALVERIFY 
+        require(tx.outputs[this.activeInputIndex].value == tx.inputs[this.activeInputIndex].value);
+
+        // ... to an output on this same contract
+        // OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY 
+        require(tx.outputs[this.activeInputIndex].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);
+        
+        // But neither the commitment, NFT nor token data are required as outputs. They may be omitted.
+
+        // As long as last input carried a matching minting NFT
+        // OP_TXINPUTCOUNT OP_1SUB OP_UTXOTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY 20 OP_SPLIT OP_DROP OP_2 OP_CAT OP_EQUAL 
+        require(tx.inputs[tx.inputs.length - 1].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory.split(32)[0] + 0x02);
+
+    } // OP_NIP  
+
+} // OP_ENDIF

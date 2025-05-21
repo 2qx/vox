@@ -1,0 +1,4 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "sourceLinkTemplate": "https://github.com/2qx/vox/blob/{path}#L{line}"
+}

@@ -1,0 +1,99 @@
+{
+    "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+    "description": "Drip Mine: An MEV faucet",
+    "name": "DripMine",
+    "entities": {
+      "covenant": {
+        "description": "Contract creation and function parameters",
+        "name": "covenant",
+        "scripts": [
+          "lock",
+          "unlock_lock"
+        ],
+        "variables": {
+          "dust_limit": {
+            "description": "Minimum dust allowed for contract utxo",
+            "name": "Dust Limit",
+            "type": "WalletData"
+          },
+          "min_payout": {
+            "description": "Minimum allowed payout",
+            "name": "Minimum Payout",
+            "type": "WalletData"
+          },
+          "max_payout_numerator": {
+            "description": "numerator for maximum payout",
+            "name": "Max Payout Numerator",
+            "type": "WalletData"
+          },
+          "max_payout_denominator": {
+            "description": "divisor for max payout parameter",
+            "name": "Max Payout Denominator",
+            "type": "WalletData"
+          }
+        }
+      }
+    },
+    "scenarios": {
+      "base": {
+        "data": {
+          "bytecode": {
+            "dust_limit": "576",
+            "min_payout": "164",
+            "max_payout_numerator": "4392",
+            "max_payout_denominator": "1333036486"
+          }
+        },
+        "description": "A set of working parameters with a half-life of decay of roughly four years",
+        "name": "Base Scenario"
+      },
+      "evaluate_function": {
+        "description": "Drip miner extractable value (MEV) as fee or remit balance below threshold as OP_RETURN.",
+        "extends": "base",
+        "name": "Drip",
+        "transaction": {
+          "inputs": [
+            {
+              "unlockingBytecode": [
+                "slot"
+              ]
+            }
+          ],
+          "outputs": [
+            {
+              "lockingBytecode": {
+                "script": "drip_mine_covenant"
+              }
+            }
+          ],
+          "version": 2
+        },
+        "sourceOutputs": [
+          {
+            "lockingBytecode": [
+              "slot"
+            ]
+          }
+        ]
+      }
+    },
+    "scripts": {
+      "unlock_lock": {
+        "passes": [
+          "evaluate_function"
+        ],
+        "name": "unlock",
+        "script": "// empty",
+        "unlocks": "drip_mine_covenant"
+      },
+      "drip_mine_covenant": {
+        "lockingType": "p2sh32",
+        "name": "lock",
+        "script": "OP_1 OP_CHECKSEQUENCEVERIFY OP_DROP \nOP_TXINPUTCOUNT OP_1 OP_NUMEQUALVERIFY \nOP_TXOUTPUTCOUNT OP_1 OP_NUMEQUALVERIFY \n<dust_limit> \n<min_payout> \nOP_INPUTINDEX OP_UTXOVALUE OP_ROT OP_2 OP_PICK OP_ADD OP_GREATERTHAN OP_IF \n    OP_INPUTINDEX OP_UTXOBYTECODE OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY \n    OP_INPUTINDEX OP_UTXOVALUE <max_payout_numerator> OP_MUL <max_payout_denominator> OP_DIV \n    OP_2DUP OP_GREATERTHAN OP_IF \n        OP_OVER OP_NIP \n    OP_ENDIF \n    OP_INPUTINDEX OP_UTXOVALUE OP_INPUTINDEX OP_OUTPUTVALUE OP_SUB \n    OP_2DUP OP_GREATERTHANOREQUAL OP_VERIFY \n    OP_2DROP OP_ELSE \n        OP_INPUTINDEX OP_OUTPUTVALUE OP_0 OP_NUMEQUALVERIFY \n        OP_INPUTINDEX OP_OUTPUTBYTECODE <0x6a> OP_EQUALVERIFY \n    OP_ENDIF \nOP_DROP OP_1"
+      }
+    },
+    "supported": [
+      "BCH_2023_05"
+    ],
+    "version": 0
+  }

@@ -1,0 +1,75 @@
+  pragma cashscript >= 0.10.0;
+
+  // v20250227
+
+  // A token faucet with proof of work.
+  contract Mine() {
+
+    function execute(int age) {
+
+        // Require a version 2 transaction (for timelock support).
+        require(tx.version == 2);
+
+        // Check that time has passed and that time locks are enabled
+        require(tx.age >= age);
+        
+        // Require the thread lives on
+        require(
+            tx.outputs[this.activeInputIndex].lockingBytecode == 
+            tx.inputs[this.activeInputIndex].lockingBytecode
+            );
+
+        // Allow 800 token dust, plus 400 network allowance for early adopters
+        // Once the principal value of the utxo has been exhausted, token miners must 
+        // provide their own dust and transaction sats
+        require(
+            tx.outputs[this.activeInputIndex].value >= 
+            tx.inputs[this.activeInputIndex].value - 1200
+            );
+
+        // Require the same token lives on
+        require(
+            tx.outputs[this.activeInputIndex].tokenCategory == 
+            tx.inputs[this.activeInputIndex].tokenCategory
+            );
+
+        // Allow at least one fungible token to be withdraw, 
+        //  plus a fraction of the running token balance.
+        require(
+            tx.outputs[this.activeInputIndex].tokenAmount >= 
+            (
+                tx.inputs[this.activeInputIndex].tokenAmount - 
+                (tx.inputs[this.activeInputIndex].tokenAmount/50000)
+            ) - 1
+        );
+        
+        bytes thisHash = sha256(
+            0x0200000001 +
+            tx.inputs[0].outpointTransactionHash + 
+            bytes4(tx.inputs[0].outpointIndex) 
+        );
+
+        // TODO: DAA function here.
+        bytes prevTarget = tx.inputs[this.activeInputIndex].nftCommitment.split(16)[0];
+        
+        bytes nextTarget = tx.outputs[this.activeInputIndex].nftCommitment.split(16)[0];
+        
+        require(int(nextTarget) == int(prevTarget)*10/age);
+        bytes zeros = thisHash.split(16)[0];
+
+        require(zeros == nextTarget);
+        // tx.inputs[this.activeInputIndex].nftCommitment
+        // require(
+        //     tx.outputs[this.activeInputIndex].nftCommitment == 
+        //     tx.inputs[this.activeInputIndex].nftCommitment
+        //     );
+
+        // // Check that the new nonce creates a hash with difficulty leading zeros when hashed with the active bytecode
+        // bytes zeros = bytes20(0);
+        // bytes hash = sha256(prevNonce + age + bytes20(nextNonce));
+        // require(hash.split(difficulty)[0] == zeros.split(difficulty)[0]);
+
+
+    }
+
+  }
