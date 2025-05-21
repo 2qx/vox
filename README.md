@@ -1,4 +1,4 @@
-<img src="./static/vox.svg">
+<img width=100px src="./static/vox.svg">
 
 # vox.cash
 
