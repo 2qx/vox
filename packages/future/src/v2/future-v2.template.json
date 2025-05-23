@@ -4,24 +4,26 @@
   "name": "FBCH: Future Bitcoin Cash",
   "entities": {
     "coupon_vault": {
-      "description": "An entity that holds coupons \"owned\" by the covenant.",
+      "description": "An entity that holds coupons 'owned' by the covenant.",
       "name": "Coupon Vault",
+      "scripts": ["coupon_unlock", "coupon_lock"],
       "variables": {
-        "coupon_amount": {
+        "amount": {
           "description": "Minimum required threshold to claim the coupon",
           "name": "Coupon Amount (Satoshis)",
           "type": "WalletData"
         },
-        "vault_locktime": {
-          "description": "The timestamp (blocks) when the future vault will become bidirectional",
-          "name": "Vault Locktime (blocks)",
+        "lock":{
+          "description": "The locking script the message coupon will target",
+          "name": "Coupon destination",
           "type": "WalletData"
         }
       }
     },
     "future_vault": {
-      "description": "An entity that holds coupons \"owned\" by the covenant.",
+      "description": "An entity that holds coupons 'owned' by the covenant.",
       "name": "Future Vault",
+      "scripts": ["vault_lock", "vault_unlock"],
       "variables": {
         "locktime": {
           "description": "The timestamp (blocks) when the future vault will become bidirectional",
@@ -33,18 +35,29 @@
     "future_channel": {
       "description": "Vault holding messages to be burned into coupons.",
       "name": "Future Chan",
+      "scripts": ["clear_message", "edit_message", "channel_lock"],
       "variables": {
         "channel": {
           "description": "The subject of the channel",
           "name": "Channel (bytes)",
           "type": "WalletData"
+        },
+        "lock":{
+          "description": "The locking script the message coupon will target",
+          "name": "Coupon destination",
+          "type": "WalletData"
+        },
+        "amount": {
+          "description": "Minimum required threshold to claim the coupon",
+          "name": "Coupon Amount (Satoshis)",
+          "type": "WalletData"
         }
       }
     },
-    "funder": {
-      "description": "The party paying transaction fees or editing.",
-      "name": "Funding party",
-      "scripts": ["fund_lock", "fund_unlock"],
+    "wallet": {
+      "description": "The entity paying transaction fees, swapping or editing messages.",
+      "name": "Funding Entity",
+      "scripts": ["wallet_lock", "wallet_unlock"],
       "variables": {
         "key": {
           "description": "The private key that controls this wallet.",
@@ -58,6 +71,10 @@
     "base": {
       "data": {
         "bytecode": {
+          "fee": "0",
+          "funding_value": "0",
+          "channel":"",
+          "amount":"10000000"
         }
       },
       "description": "",
@@ -65,105 +82,105 @@
       "transaction": {}
     },
     "clear_message": {
-      "description": "",
+      "description": "Should clear a message",
       "extends": "base",
-      "name": "Place First Order (15,000 sat purchase)",
+      "data": {
+        "bytecode": {
+          "lock": "0x6a",
+          "amount": "10000000"
+        }
+      },
+      "name": "Clear Message",
       "transaction": {
         "inputs": [
           {
-            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
-            "outpointIndex": 0,
-            "unlockingBytecode": ["slot"]
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
+            }
           },
           {
-            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
-            "outpointIndex": 1
+            "unlockingBytecode": ["slot"]
           }
         ],
         "outputs": [
           {
             "lockingBytecode": {
-              "script": "thread_covenant"
+              "script": "wallet_lock"
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "coupon_lock"
             },
-            "valueSatoshis": 35000
-          },
-          {
-            "valueSatoshis": 1000
-          },
-          {
-            "lockingBytecode": {},
-            "valueSatoshis": 123456
+            "valueSatoshis": 10000
           }
         ]
       },
       "sourceOutputs": [
+        {},
         {
           "lockingBytecode": ["slot"],
-          "valueSatoshis": 10000
-        },
-        {
-          "lockingBytecode": {
-            "script": "token_pool"
-          },
-          "valueSatoshis": 1000
+          "valueSatoshis": 10001,
+          "token": {
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "nft": {
+              "commitment": "6a00000000000000000000000000000000000000000000000000000000beef",
+              "capability": "none"
+            }
+          }
         }
       ]
     },
     "burn_message": {
       "description": "",
       "extends": "base",
-      "name": "Place Second Order (50 ft sell)",
+      "data": {
+        "bytecode": {
+          "channel": "",
+          "lock": "0x6a",
+          "amount": "10000000"
+        }
+      },
+      "name": "Burn a channel message",
       "transaction": {
         "inputs": [
           {
-            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
-            "outpointIndex": 0,
-            "unlockingBytecode": ["slot"]
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
+            }
           },
           {
-            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
-            "outpointIndex": 1
+            "unlockingBytecode": ["slot"]
           }
         ],
         "outputs": [
           {
             "lockingBytecode": {
-              "script": "thread_covenant"
-            },
-            "valueSatoshis": 45000
+              "script": "wallet_lock"
+            }
           },
           {
-            "valueSatoshis": 1000
-          },
-          {
-            "lockingBytecode": {},
-            "valueSatoshis": 123456
+            "lockingBytecode": {
+              "script": "coupon_lock"
+            }
           }
         ]
       },
       "sourceOutputs": [
+        {},
         {
           "lockingBytecode": ["slot"],
           "valueSatoshis": 35000
-        },
-        {
-          "lockingBytecode": {
-            "script": "token_pool"
-          },
-          "valueSatoshis": 1000
         }
       ]
     },
     "edit_message": {
       "description": "",
-      "extends": "second_order",
-      "name": "Accept Second Order (50 ft sell)",
+      "extends": "base",
+      "name": "",
       "transaction": {
         "inputs": [
-          {
-            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
-            "outpointIndex": 0
-          },
+          {},
           {
             "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
             "outpointIndex": 1,
@@ -172,12 +189,7 @@
         ]
       },
       "sourceOutputs": [
-        {
-          "lockingBytecode": {
-            "script": "thread_covenant"
-          },
-          "valueSatoshis": 35000
-        },
+        {},
         {
           "lockingBytecode": ["slot"],
           "valueSatoshis": 1000
@@ -187,7 +199,14 @@
     "claim_coupon": {
       "description": "pool: 2,000,000ft/10,000,000,000sat; order: 5000ft/200,000,000sat; fees:123,456",
       "extends": "base",
-      "name": "Process Tick",
+      "data": {
+        "bytecode": {
+          "channel": "",
+          "lock": "0x6a",
+          "amount": "10000000"
+        }
+      },
+      "name": "Claim Coupon",
       "transaction": {
         "inputs": [
           {
@@ -305,7 +324,12 @@
     },
     "place_bch": {
       "description": "pool: 2,000,000ft/10,000,000,000sat; order: 5000ft/200,000,000sat; fees:123,456",
-      "extends": "process_tick",
+      "extends": "base",
+      "data": {
+        "bytecode": {
+          "locktime":"0"
+        }
+      },
       "name": "Process Tick (Market Maker)",
       "transaction": {
         "inputs": [
@@ -358,6 +382,11 @@
     "redeem_fbch": {
       "description": "",
       "extends": "base",
+      "data": {
+        "bytecode": {
+          "locktime":"0"
+        }
+      },
       "name": "Withdraw (50 Tokens, 20000 sat)",
       "transaction": {
         "inputs": [
@@ -472,13 +501,15 @@
   },
   "scripts": {
     "clear_message": {
-      "passes": ["clear_message", "burn_message"],
+      "passes": ["clear_message","burn_message"],
+      "fails": ["edit_message"],
       "name": "Clear Message",
       "script": "<OP_0> // function index\n",
       "unlocks": "channel_lock"
     },
     "edit_message": {
       "passes": ["edit_message"],
+      "fails": ["clear_message","burn_message"],
       "name": "Edit Message",
       "script": "<OP_1> // function index\n",
       "unlocks": "channel_lock"
@@ -486,9 +517,9 @@
     "channel_lock": {
       "lockingType": "p2sh32",
       "name": "Transform message to coupon",
-      "script": "<channel> OP_OVER OP_0 OP_NUMEQUAL OP_IF OP_INPUTINDEX OP_UTXOVALUE OP_10 OP_DIV <0xe803> OP_MUL <0x80969800> OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_10 OP_MUL OP_NUMEQUAL OP_DUP OP_IF <0x00e1f505> OP_ROT OP_DROP OP_SWAP OP_ENDIF OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_NUMEQUAL OP_DUP OP_IF <0xe803> OP_CHECKSEQUENCEVERIFY OP_DROP OP_ENDIF OP_NOT OP_SWAP OP_NOT OP_BOOLAND OP_IF OP_OVER <0x1027> OP_SUB OP_CHECKLOCKTIMEVERIFY OP_DROP OP_ELSE OP_OVER OP_SIZE OP_NIP OP_2 OP_PICK OP_CAT <0xc0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77> OP_CAT <0xaa20> OP_OVER OP_HASH256 OP_CAT <0x87> OP_CAT OP_2 OP_PICK OP_SIZE OP_NIP OP_3 OP_PICK OP_CAT OP_OVER OP_SIZE OP_NIP OP_CAT OP_OVER OP_CAT <0x00cc00c694a16900c788c08bc39c> OP_CAT <0xaa20> OP_OVER OP_HASH256 OP_CAT <0x87> OP_CAT OP_INPUTINDEX OP_OUTPUTBYTECODE OP_OVER OP_EQUALVERIFY OP_2DROP OP_2DROP OP_ENDIF OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY OP_2DROP OP_2DROP OP_1 OP_ELSE OP_SWAP OP_1 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_NUMEQUALVERIFY OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY OP_TXINPUTCOUNT OP_1SUB OP_UTXOTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY <0x20> OP_SPLIT OP_DROP OP_2 OP_CAT OP_EQUAL OP_NIP OP_ENDIF"
+      "script": "<channel>\nOP_OVER OP_0 OP_NUMEQUAL OP_IF\nOP_INPUTINDEX OP_UTXOVALUE OP_10 OP_DIV <0xe803> OP_MUL <0x80969800> OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_10 OP_MUL OP_NUMEQUAL OP_DUP OP_IF <0x00e1f505> OP_ROT OP_DROP OP_SWAP OP_ENDIF OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_NUMEQUAL OP_DUP OP_IF <0xe803> OP_CHECKSEQUENCEVERIFY OP_DROP OP_ENDIF OP_NOT OP_SWAP OP_NOT OP_BOOLAND OP_IF OP_OVER <0x1027> OP_SUB OP_CHECKLOCKTIMEVERIFY OP_DROP OP_ELSE OP_OVER OP_SIZE OP_NIP OP_2 OP_PICK OP_CAT <0xc0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77> OP_CAT <0xaa20> OP_OVER OP_HASH256 OP_CAT <0x87> OP_CAT OP_2 OP_PICK OP_SIZE OP_NIP OP_3 OP_PICK OP_CAT OP_OVER OP_SIZE OP_NIP OP_CAT OP_OVER OP_CAT <0x00cc00c694a16900c788c08bc39c> OP_CAT <0xaa20> OP_OVER OP_HASH256 OP_CAT <0x87> OP_CAT OP_INPUTINDEX OP_OUTPUTBYTECODE OP_OVER OP_EQUALVERIFY OP_2DROP OP_2DROP OP_ENDIF OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY OP_2DROP OP_2DROP OP_1 OP_ELSE OP_SWAP OP_1 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_NUMEQUALVERIFY OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY OP_TXINPUTCOUNT OP_1SUB OP_UTXOTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY <0x20> OP_SPLIT OP_DROP OP_2 OP_CAT OP_EQUAL OP_NIP OP_ENDIF"
     },
-    "unlock_coupon": {
+    "coupon_unlock": {
       "passes": ["claim_coupon"],
       "name": "Unlock Coupon",
       "script": "// \"claim\" function parameters\n// none\n",
@@ -497,20 +528,19 @@
     "coupon_lock": {
       "lockingType": "p2sh32",
       "name": "Coupon Lock",
-      "script": "<lock> <amount> OP_0 OP_OUTPUTVALUE OP_0 OP_UTXOVALUE OP_SUB OP_1 OP_ROLL OP_GREATERTHANOREQUAL OP_VERIFY\n OP_0 OP_UTXOBYTECODE OP_1 OP_ROLL OP_EQUAL OP_VERIFY \nOP_INPUTINDEX OP_1 OP_ADD OP_TXINPUTCOUNT OP_NUMEQUAL"
+      "script": "<lock> <amount>\nOP_0 OP_OUTPUTVALUE OP_0 OP_UTXOVALUE OP_SUB OP_1 OP_ROLL OP_GREATERTHANOREQUAL OP_VERIFY\n OP_0 OP_UTXOBYTECODE OP_1 OP_ROLL OP_EQUAL OP_VERIFY \nOP_INPUTINDEX OP_1 OP_ADD OP_TXINPUTCOUNT OP_NUMEQUAL"
     },
-    "fund_lock": {
+    "wallet_lock": {
       "lockingType": "standard",
-      "name": "P2PKH Lock",
-      "script":
-        "OP_DUP\nOP_HASH160 <$(<key.public_key> OP_HASH160\n)> OP_EQUALVERIFY\nOP_CHECKSIG"
+      "name": "Wallet Lock",
+      "script": "OP_DUP\nOP_HASH160 <$(<key.public_key> OP_HASH160\n)> OP_EQUALVERIFY\nOP_CHECKSIG"
     },
-    "fund_unlock": {
-      "name": "Unlock",
+    "wallet_unlock": {
+      "name": "Wallet Unlock",
       "script": "<key.schnorr_signature.all_outputs>\n<key.public_key>",
-      "unlocks": "fund_lock"
+      "unlocks": "wallet_lock"
     },
-    "unlock_vault": {
+    "vault_unlock": {
       "passes": ["place_bch", "redeem_fbch"],
       "name": "Unlock Vault",
       "script": "// \"swap\" function parameters\n// none\n",
@@ -519,7 +549,7 @@
     "vault_lock": {
       "lockingType": "p2sh32",
       "name": "Vault Locking Script",
-      "script": "<locktime> OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_GREATERTHAN OP_IF OP_DUP OP_CHECKLOCKTIMEVERIFY OP_DROP OP_ENDIF OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_INPUTINDEX OP_UTXOVALUE OP_ADD OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_OUTPUTVALUE OP_ADD OP_NUMEQUAL OP_NIP"
+      "script": "<locktime> OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT\nOP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_GREATERTHAN\n OP_IF OP_DUP OP_CHECKLOCKTIMEVERIFY OP_DROP OP_ENDIF\nOP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY\nOP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY\nOP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_INPUTINDEX OP_UTXOVALUE OP_ADD\nOP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_OUTPUTVALUE OP_ADD\nOP_NUMEQUAL OP_NIP"
     }
   },
   "supported": ["BCH_SPEC"],

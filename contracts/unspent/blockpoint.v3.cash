@@ -1,0 +1,42 @@
+// BlockPoints is a multi-threaded token reward system for 
+// holders of Bitcoin Cash. 
+// 
+// Points are rewarded proportional to the age and amount first input used. 
+//
+// This contract must be used as the last input, it does not tract it's own sats.
+
+contract BlockPoints() {
+
+    function release(int age) {
+
+        // Force a block based relative timelock
+        // 0065cd1d OP_OVER OP_GREATERTHANOREQUAL OP_VERIFY
+        require(500000000 >= age);
+
+        // Ensure the first input exceeds the age claimed
+        // OP_0 OP_INPUTSEQUENCENUMBER OP_OVER OP_GREATERTHANOREQUAL OP_VERIFY
+        require(tx.inputs[0].sequenceNumber >= age);
+        
+        // Require the token vault thread to exceed the age claimed
+        // OP_DUP OP_CHECKSEQUENCEVERIFY OP_DROP
+        require(tx.age >= age);
+
+        // Allow anyone to withdraw a token amount proportional to the value of their aged utxo.
+        // one token per coin per block 
+        // 
+        // OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT 
+        // OP_INPUTINDEX OP_UTXOTOKENAMOUNT 
+        // OP_ROT OP_0 OP_UTXOVALUE OP_MUL 00E1F505 OP_DIV OP_SUB OP_GREATERTHANOREQUAL
+        require(
+            tx.outputs[this.activeInputIndex].tokenAmount >= 
+            tx.inputs[this.activeInputIndex].tokenAmount - 
+            (age * tx.inputs[0].value/100000000)
+        );
+
+        // This thread must be in the last input position
+        // to prevent users building transactions with multiple airdrop threads. 
+        //
+        // OP_INPUTINDEX OP_1ADD OP_TXINPUTCOUNT OP_NUMEQUAL
+        require(this.activeInputIndex+1 == tx.inputs.length);
+    }
+}

@@ -71,7 +71,7 @@ export class Vault {
                     "locktime": bigIntToVmNumber(BigInt(time)),
                 }
             },
-            scriptId: 'unlock_vault',
+            scriptId: 'vault_unlock',
         })
         if (!lockingBytecodeResult.success) {
             /* c8 ignore next */

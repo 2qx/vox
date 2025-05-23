@@ -16,7 +16,7 @@ import type {
 } from '@unspent/tau';
 
 import Future from "./auth.js"
-import { Vault } from "./vault.js"
+
 import { toBin } from './util.js';
 
 export class Channel {
@@ -62,6 +62,7 @@ export class Channel {
                 data: {
                     "bytecode": {
                         "channel": toBin(channel),
+                        "locktime": bigIntToVmNumber(BigInt((Number(utxo.value) / 10) * 1000))
                     }
                 },
                 valueSatoshis: BigInt(utxo.value),
@@ -89,7 +90,7 @@ export class Channel {
 
     static getOutput(utxo: AddressListUnspentEntry, isPremature: boolean): OutputTemplate<CompilerBCH> {
 
-        let futureTime = utxo.value * 1000
+        let futureTime = utxo.value/10 * 1000
         let outputValue = isPremature ? utxo.value * 10 : utxo.value
         let couponThreshold = isPremature ? 100000000 : 10000000
 
@@ -106,11 +107,10 @@ export class Channel {
     }
 
     static getCouponLockingBytecode(time: number, threshold: number) {
-        let couponVaultLock = Vault.getCouponLockingBytecode(threshold, time)
         const lockingBytecodeResult = this.compiler.generateBytecode({
             data: {
                 "bytecode": {
-                    "lock": couponVaultLock,
+                    "vault_locktime": bigIntToVmNumber(BigInt(time)),
                     "amount": bigIntToVmNumber(BigInt(threshold))
                 }
             },
@@ -137,7 +137,7 @@ export class Channel {
         const result = generateTransaction({
             locktime: locktime,
             version: 2,
-            inputs, 
+            inputs,
             outputs,
         });
 
