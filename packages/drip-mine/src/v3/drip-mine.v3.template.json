@@ -4,8 +4,8 @@
   "name": "DripMine",
   "entities": {
     "covenant": {
-      "description": "Contract creation and function parameters",
-      "name": "covenant",
+      "description": "Emit MEV as fees to miners.",
+      "name": "Drip Mine",
       "scripts": ["unlock_return", "unlock_burn"],
       "variables": {
         "dust_limit": {
@@ -42,30 +42,41 @@
         }
       },
       "description": "A set of working parameters with a half-life of decay of roughly four years",
-      "name": "Base Scenario"
+      "name": "Base Scenario",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "0e09765ada34fa0bd94ef9df8497173e8aefc560f3eb7c9e0e88b345c4cccb36",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"],
+            "sequenceNumber": 1
+          }
+        ]
+      }
     },
     "return": {
       "description": "Drip value as fee, returning balance to thread.",
       "extends": "base",
       "name": "Drip",
       "transaction": {
-        "inputs": [
-          {
-            "unlockingBytecode": ["slot"]
-          }
-        ],
         "outputs": [
           {
             "lockingBytecode": {
-              "script": "drip_mine_covenant"
-            }
+              "script": "drip_mine_covenant",
+              "overrides": {
+                "bytecode": {}
+              }
+            },
+            "valueSatoshis": 4536
           }
         ],
+        "locktime": 0,
         "version": 2
       },
       "sourceOutputs": [
         {
-          "lockingBytecode": ["slot"]
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 4700
         }
       ]
     },
@@ -74,21 +85,20 @@
       "extends": "base",
       "name": "Drip Burn",
       "transaction": {
-        "inputs": [
-          {
-            "unlockingBytecode": ["slot"]
-          }
-        ],
+        "locktime": 0,
         "outputs": [
           {
-            "lockingBytecode": "0x6a"
+            "lockingBytecode":{
+              "script":"op_return"
+            }
           }
         ],
         "version": 2
       },
       "sourceOutputs": [
         {
-          "lockingBytecode": ["slot"]
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 500
         }
       ]
     }
@@ -96,24 +106,27 @@
   "scripts": {
     "unlock_return": {
       "passes": ["return"],
-      "name": "unlock",
+      "name": "Drip MEV",
       "script": "// empty",
       "unlocks": "drip_mine_covenant"
     },
     "unlock_burn": {
       "passes": ["burn"],
-      "name": "unlock",
+      "name": "Final MEV Burn",
       "script": "// empty",
       "unlocks": "drip_mine_covenant"
     },
+    "op_return":{
+      "name":"OP_RETURN",
+      "lockingType": "standard",
+      "script": "OP_RETURN"
+    },
     "drip_mine_covenant": {
       "lockingType": "p2sh32",
-      "name": "lock",
+      "name": "Drip Mine Covenant",
       "script": "OP_1 OP_CHECKSEQUENCEVERIFY OP_DROP \nOP_TXINPUTCOUNT OP_1 OP_NUMEQUALVERIFY \nOP_TXOUTPUTCOUNT OP_1 OP_NUMEQUALVERIFY \n<dust_limit> \n<min_payout> \nOP_INPUTINDEX OP_UTXOVALUE OP_ROT OP_2 OP_PICK OP_ADD OP_GREATERTHAN OP_IF \n    OP_INPUTINDEX OP_UTXOBYTECODE OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY \n    OP_INPUTINDEX OP_UTXOVALUE <decay_numerator> OP_MUL <decay_denominator> OP_DIV \n    OP_2DUP OP_GREATERTHAN OP_IF \n        OP_OVER OP_NIP \n    OP_ENDIF \n    OP_INPUTINDEX OP_UTXOVALUE OP_INPUTINDEX OP_OUTPUTVALUE OP_SUB \n    OP_2DUP OP_GREATERTHANOREQUAL OP_VERIFY \n    OP_2DROP OP_ELSE \n        OP_INPUTINDEX OP_OUTPUTVALUE OP_0 OP_NUMEQUALVERIFY \n        OP_INPUTINDEX OP_OUTPUTBYTECODE <0x6a> OP_EQUALVERIFY \n    OP_ENDIF \nOP_DROP OP_1"
     }
   },
-  "supported": [
-    "BCH_2023_05"
-  ],
+  "supported": ["BCH_2023_05"],
   "version": 0
 }

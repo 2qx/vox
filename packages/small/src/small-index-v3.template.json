@@ -1,0 +1,81 @@
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "Small Index: A distributed key-value database system.",
+  "name": "SmallIndex",
+  "entities": {
+    "small_index_covenant": {
+      "description": "Store data records in NFT commitments. \n\nEach \"key\" corresponds to a different contract address, where the token balance stores the values for that key. Each record exists in the data commitment of a non-fungible token of any category (currently 40 bytes in length). Each record pays a flat storage fee of one satoshi per block. Expired records can be burned by anyone to benefit the party mining the next block.\n\n The Small Index covenant defines a storage mechanism, but the schema for data within the records is left to application designers. Since anyone may write to any record, applications must verify all claims, or use an authorization scheme to validate data.",
+      "name": "Small Index Covenant",
+      "scripts": ["drop_record_spending_path"],
+      "variables": {
+        "key": {
+          "description": "Bytes representing the key of the index. Each new key results in a new covenant address. ",
+          "name": "Key",
+          "type": "WalletData"
+        }
+      }
+    }
+  },
+  "scenarios": {
+    "drop": {
+      "description": "Drop a expired record value from the dataset. This spending pathway 'burns' token data as an return operation (OP_RETURN) output, and releases the satoshi value to be claimed by the party mining the next block.",
+      "data": {
+        "bytecode": {
+          "key": ""
+        }
+      },
+      "name": "Record drop",
+      "transaction": {
+        "locktime": 0,
+        "inputs": [
+          {
+            "outpointTransactionHash": "0e09765ada34fa0bd94ef9df8497173e8aefc560f3eb7c9e0e88b345c4cccb36",
+            "outpointIndex": 0,
+            "unlockingBytecode": ["slot"],
+            "sequenceNumber": 500
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "op_return_output"
+            }
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "valueSatoshis": 500,
+          "token": {
+            "nft": {
+              "commitment": "0x6a<TST><'Hello World'>"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "drop_record_spending_path": {
+      "passes": ["drop"],
+      "timeLockType": "height",
+      "name": "Drop Record",
+      "script": "// Dropping a record is authorized using only introspection from properties of the expired record unspent output.",
+      "unlocks": "small_index_lock"
+    },
+    "op_return_output": {
+      "name": "Return Operation",
+      "lockingType": "standard",
+      "script": "OP_RETURN"
+    },
+    "small_index_lock": {
+      "lockingType": "p2sh32",
+      "name": "Small Index Locking Script",
+      "script": "<key> OP_DROP\n\nOP_INPUTINDEX OP_UTXOVALUE OP_CHECKSEQUENCEVERIFY OP_DROP\n OP_TXOUTPUTCOUNT OP_1 OP_NUMEQUALVERIFY\n OP_0 OP_OUTPUTVALUE OP_0 OP_NUMEQUALVERIFY\n OP_0 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY\n OP_0 OP_OUTPUTBYTECODE <0x6a> OP_EQUAL"
+    }
+  },
+  "supported": ["BCH_2023_05", "BCH_2024_05", "BCH_2025_05","BCH_SPEC"],
+  "version": 0
+}

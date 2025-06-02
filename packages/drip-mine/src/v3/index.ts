@@ -1,4 +1,4 @@
-import templateV3 from './unspent-drip-v3.template.json' with { type: "json" };
+import templateV3 from './drip-mine.v3.template.json' with { type: "json" };
 
 import {
   hexToBin,

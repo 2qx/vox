@@ -1,0 +1,97 @@
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "Dutch: A descending ask token auction contract.",
+  "name": "Dutch",
+  "entities": {
+    "dutch_auction_covenant": {
+      "description": "Auction tokens",
+      "name": "Dutch Auction Covenant",
+      "scripts": ["buy_spending_path"],
+      "variables": {
+        "recipient": {
+          "description": "Locking bytecode for the proceeds from the auction sale.",
+          "name": "Recipient",
+          "type": "AddressData"
+        },
+        "open": {
+          "description": "Integer setting the starting minimum bid value in satoshis.",
+          "name": "Open",
+          "type": "WalletData"
+        }
+      }
+    }
+  },
+  "scenarios": {
+    "base": {
+      "data": {
+        "bytecode": {
+          "recipient": "0x6a",
+          "open": "100_000_000_000"
+        },
+        "currentBlockHeight": 100
+      }
+    },
+    "buy": {
+      "extends": "base",
+      "data": {
+        "bytecode": {
+          "recipient": "0xa914e78564d75c446f8c00c757a2bd783d30c4f0819a87"
+        }
+      },
+      "description": "Anyone may buy any token output held by the auction contract by paying the consignor (receipt) the minimum required bid in the corresponding output.",
+      "name": "Buy token",
+      "transaction": {
+        "inputs": [
+          {
+            "unlockingBytecode": ["slot"],
+            "sequenceNumber": 10
+          },
+          {}
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": "a914e78564d75c446f8c00c757a2bd783d30c4f0819a87",
+            "valueSatoshis": 10000000000
+          },
+          {
+            "token": {
+              "amount": 10,
+              "category": "0xbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef"
+            },
+            "valueSatoshis": 800
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": ["slot"],
+          "token": {
+            "amount": 10,
+            "category": "0xbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef"
+          },
+          "valueSatoshis": 800
+        },
+        {
+          "valueSatoshis": 10000000000
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "buy_spending_path": {
+      "passes": ["buy"],
+      "name": "Buy Lot",
+      "script": "// ",
+      "timeLockType": "height",
+      "unlocks": "dutch_auction_lock"
+    },
+    "dutch_auction_lock": {
+      "lockingType": "p2sh32",
+      "name": "Dutch Auction Lock Script",
+      "script": "<recipient> <open> \n\n// Require version 2 for BIP68 support\nOP_TXVERSION OP_2 OP_NUMEQUALVERIFY \n// require(tx.version == 2);\n\n// The asking price is the opening bid divided by the utxo age in blocks.\nOP_INPUTINDEX OP_OUTPUTVALUE OP_DIV \n// int requiredAge = open/tx.outputs[this.activeInputIndex].value;\n\n// Require the active input nSequence number is provided in blocks.\n<65535> OP_OVER OP_GREATERTHAN OP_VERIFY \n// require(65535 > requiredAge);\n\n// Enforce the minium ask given the age of the input. \n  OP_CHECKSEQUENCEVERIFY OP_DROP \n// require(tx.age >= requiredAge);\n\n// Check that each output sends to the consignor\nOP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUAL\n// require(tx.outputs[this.activeInputIndex].lockingBytecode == \n//       recipientLockingBytecode,);\n"
+    }
+  },
+  "supported": ["BCH_2023_05", "BCH_2024_05", "BCH_2025_05", "BCH_SPEC"],
+  "version": 0
+}
