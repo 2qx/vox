@@ -4,7 +4,7 @@
   "name": "Dutch",
   "entities": {
     "dutch_auction_covenant": {
-      "description": "Auction tokens",
+      "description": "Allow anyone to spend tokens held by the contract, provided the consignor is paid in the same transaction and a minimum ask descending price is met",
       "name": "Dutch Auction Covenant",
       "scripts": ["buy_spending_path"],
       "variables": {
@@ -25,10 +25,8 @@
     "base": {
       "data": {
         "bytecode": {
-          "recipient": "0x6a",
           "open": "100_000_000_000"
-        },
-        "currentBlockHeight": 100
+        }
       }
     },
     "buy": {
@@ -36,7 +34,8 @@
       "data": {
         "bytecode": {
           "recipient": "0xa914e78564d75c446f8c00c757a2bd783d30c4f0819a87"
-        }
+        },
+        "currentBlockHeight": 100
       },
       "description": "Anyone may buy any token output held by the auction contract by paying the consignor (receipt) the minimum required bid in the corresponding output.",
       "name": "Buy token",

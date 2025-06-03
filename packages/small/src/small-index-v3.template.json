@@ -73,7 +73,7 @@
     "small_index_lock": {
       "lockingType": "p2sh32",
       "name": "Small Index Locking Script",
-      "script": "<key> OP_DROP\n\nOP_INPUTINDEX OP_UTXOVALUE OP_CHECKSEQUENCEVERIFY OP_DROP\n OP_TXOUTPUTCOUNT OP_1 OP_NUMEQUALVERIFY\n OP_0 OP_OUTPUTVALUE OP_0 OP_NUMEQUALVERIFY\n OP_0 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY\n OP_0 OP_OUTPUTBYTECODE <0x6a> OP_EQUAL"
+      "script": "// Including the key here creates a different covenant for each key-value\n<key> OP_DROP\n\n// Require each input age be higher than the utxo value\n    OP_INPUTINDEX OP_UTXOVALUE OP_CHECKSEQUENCEVERIFY OP_DROP\n// require(tx.age >= tx.inputs[this.activeInputIndex].value);\n\n// See TokenBurner - Dagur Valberg Johannsson\n//\n// Require a single output\n   OP_TXOUTPUTCOUNT OP_1 OP_NUMEQUALVERIFY \n// require(tx.outputs.length == 1);\n\n// Without BCH\n   OP_0 OP_OUTPUTVALUE OP_0 OP_NUMEQUALVERIFY\n// require(tx.outputs[0].value == 0);\n\n// Without tokens\n   OP_0 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY\n// require(tx.outputs[0].tokenCategory == 0x);\n\n// As an empty OP_RETURN\n   OP_0 OP_OUTPUTBYTECODE <0x6a> OP_EQUAL\n// require(tx.outputs[0].lockingBytecode == 0x6a);"
     }
   },
   "supported": ["BCH_2023_05", "BCH_2024_05", "BCH_2025_05","BCH_SPEC"],

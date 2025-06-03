@@ -1,6 +1,6 @@
 {
   "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
-  "description": "Drip Mine: An MEV faucet",
+  "description": "Drip Mine: An MEV faucet\n Contributed by Bitcoin Cash Autist - 2025 \n https://gitlab.com/0353F40E/drip-mine",
   "name": "DripMine",
   "entities": {
     "covenant": {
@@ -8,26 +8,7 @@
       "name": "Drip Mine",
       "scripts": ["unlock_return", "unlock_burn"],
       "variables": {
-        "dust_limit": {
-          "description": "Minimum dust allowed for contract utxo",
-          "name": "Dust Limit",
-          "type": "WalletData"
-        },
-        "min_payout": {
-          "description": "Minimum allowed payout",
-          "name": "Minimum Payout",
-          "type": "WalletData"
-        },
-        "decay_numerator": {
-          "description": "Numerator for maximum payout",
-          "name": "Max Payout Numerator",
-          "type": "WalletData"
-        },
-        "decay_denominator": {
-          "description": "Divisor for max payout parameter",
-          "name": "Max Payout Denominator",
-          "type": "WalletData"
-        }
+        
       }
     }
   },
@@ -35,10 +16,6 @@
     "base": {
       "data": {
         "bytecode": {
-          "dust_limit": "576",
-          "min_payout": "164",
-          "decay_numerator": "4392",
-          "decay_denominator": "1333036486"
         }
       },
       "description": "A set of working parameters with a half-life of decay of roughly four years",

@@ -24,14 +24,7 @@ const MIN_PAYOUT = 164;
 const DECAY_NUMERATOR = 4392;
 const DECAY_DENOMINATOR = 1333036486;
 
-const V3_DATA = {
-  "bytecode": {
-    "dust_limit": hexToBin("4002"),
-    "min_payout": hexToBin("a400"),
-    "decay_numerator": hexToBin("2811"),
-    "decay_denominator": hexToBin("c685744f")
-  }
-}
+
 
 export function libauthCompiler(template_json: any): CompilerBCH {
   const template = importWalletTemplate(template_json);
@@ -63,7 +56,6 @@ export default class DripV3 {
       return {
         lockingBytecode: {
           compiler: this.compiler,
-          data: V3_DATA,
           script: 'drip_mine_covenant'
         },
         valueSatoshis: BigInt(outputValue),
@@ -84,7 +76,6 @@ export default class DripV3 {
       unlockingBytecode: {
         compiler: this.compiler,
         script: 'unlock_return',
-        data: V3_DATA,
         valueSatoshis: BigInt(utxo.value),
       },
     } as InputTemplate<CompilerBCH>

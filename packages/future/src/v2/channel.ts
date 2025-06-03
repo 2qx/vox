@@ -27,14 +27,16 @@ export class Channel {
         const lockingBytecodeResult = this.compiler.generateBytecode({
             data: {
                 "bytecode": {
-                    "channel": toBin(channel)
+                    "channel": toBin(channel),
+                    "vault_script": hexToBin("c0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77"),
+                    "coupon_script": hexToBin("00cc00c694a16900c788c08bc39c")
                 }
             },
             scriptId: 'channel_lock',
         })
         if (!lockingBytecodeResult.success) {
             /* c8 ignore next */
-            throw new Error('Failed to generate bytecode, script: drip, ' + JSON.stringify(lockingBytecodeResult, null, '  '));
+            throw new Error('Failed to generate bytecode, script: , ' + JSON.stringify(lockingBytecodeResult, null, '  '));
         }
         return lockingBytecodeResult.bytecode
     }
@@ -62,7 +64,10 @@ export class Channel {
                 data: {
                     "bytecode": {
                         "channel": toBin(channel),
-                        "locktime": bigIntToVmNumber(BigInt((Number(utxo.value) / 10) * 1000))
+                        "locktime": bigIntToVmNumber(BigInt((Number(utxo.value) / 10) * 1000)),
+
+                        "vault_script": hexToBin("c0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77"),
+                        "coupon_script": hexToBin("00cc00c694a16900c788c08bc39c")
                     }
                 },
                 valueSatoshis: BigInt(utxo.value),
@@ -90,7 +95,7 @@ export class Channel {
 
     static getOutput(utxo: AddressListUnspentEntry, isPremature: boolean): OutputTemplate<CompilerBCH> {
 
-        let futureTime = utxo.value/10 * 1000
+        let futureTime = utxo.value / 10 * 1000
         let outputValue = isPremature ? utxo.value * 10 : utxo.value
         let couponThreshold = isPremature ? 100000000 : 10000000
 
