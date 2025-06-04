@@ -17,7 +17,7 @@
           "type": "WalletData"
         },
         "lock": {
-          "description": "The locking script the message coupon will target",
+          "description": "The locking script the coupon will target",
           "name": "Coupon destination",
           "type": "WalletData"
         }
@@ -90,7 +90,7 @@
       "data": {
         "bytecode": {
           "channel": "",
-          "lock":"",
+          "lock": "",
           "amount": "10000000",
           "vault_script": "0xc0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77",
           "coupon_script": "0x00cc00c694a16900c788c08bc39c"
@@ -103,11 +103,11 @@
       }
     },
     "clear_spam": {
-      "description": "Should clear a message sent with insufficient sats",
-      "extends": "default_channel",
       "data": {
         "currentBlockHeight": 990000
       },
+      "description": "Should clear a message sent with insufficient sats",
+      "extends": "default_channel",
       "name": "Clear Spam Message",
       "transaction": {
         "inputs": [
@@ -159,15 +159,14 @@
           },
           "valueSatoshis": 1009900
         }
-        
       ]
     },
     "transform_message": {
-      "description": "Should transform a message into a coupon",
-      "extends": "default_channel",
       "data": {
         "currentBlockHeight": 990000
       },
+      "description": "Should transform a message into a coupon",
+      "extends": "default_channel",
       "name": "Transform Message",
       "transaction": {
         "inputs": [
@@ -216,17 +215,17 @@
       ]
     },
     "burn_message": {
-      "description": "",
-      "extends": "default_channel",
       "data": {
         "bytecode": {
           "channel": "",
-          "lock":"",
+          "lock": "",
           "amount": "100000000",
           "vault_script": "0xc0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77",
           "coupon_script": "0x00cc00c694a16900c788c08bc39c"
         }
       },
+      "description": "",
+      "extends": "default_channel",
       "name": "Burn (censor) message",
       "transaction": {
         "inputs": [
@@ -337,7 +336,6 @@
       ]
     },
     "claim_coupon": {
-      "description": "Claim a coupon",
       "data": {
         "bytecode": {
           "lock": "0xaa2082590fa4fd4f322dea535de4ebcebb6e65526e71432027a8ed6a3a201391d82c87",
@@ -345,6 +343,7 @@
           "locktime": "1000"
         }
       },
+      "description": "Claim a coupon",
       "name": "Claim Coupon",
       "transaction": {
         "inputs": [
@@ -404,12 +403,12 @@
       ]
     },
     "place_bch": {
-      "description": "Place BCH into a Future Vault",
       "data": {
         "bytecode": {
           "locktime": "1000"
         }
       },
+      "description": "Place BCH into a Future Vault",
       "name": "Place BCH for FBCH",
       "transaction": {
         "inputs": [
@@ -461,17 +460,20 @@
           }
         },
         {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
           "valueSatoshis": 21000000
         }
       ]
     },
     "redeem_fbch": {
-      "description": "",
       "data": {
         "bytecode": {
           "locktime": "1000"
         }
       },
+      "description": "",
       "name": "Redeem FBCH for BCH",
       "transaction": {
         "locktime": 1000,
@@ -491,21 +493,17 @@
         ],
         "outputs": [
           {
-            "valueSatoshis": 21000000,
+            "valueSatoshis": 1000,
             "lockingBytecode": {
               "script": "vault_lock"
             },
             "token": {
-              "amount": 1000,
+              "amount": 21000000,
               "category": "dead00000000000000000000000000000000000000000000000000000000beef"
             }
           },
           {
-            "valueSatoshis": 1000,
-            "token": {
-              "amount": 20999000,
-              "category": "dead00000000000000000000000000000000000000000000000000000000beef"
-            }
+            "valueSatoshis": 21000000
           }
         ]
       },
@@ -514,9 +512,9 @@
           "lockingBytecode": [
             "slot"
           ],
-          "valueSatoshis": 1000,
+          "valueSatoshis": 21000000,
           "token": {
-            "amount": 21000000,
+            "amount": 1000,
             "category": "dead00000000000000000000000000000000000000000000000000000000beef"
           }
         },
@@ -524,44 +522,43 @@
           "lockingBytecode": {
             "script": "wallet_lock"
           },
-          "valueSatoshis": 21000000
+          "valueSatoshis": 1000,
+          "token": {
+            "amount": 20999000,
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef"
+          }
         }
       ]
     }
   },
   "scripts": {
     "process_message": {
-      "passes": [
-        "clear_spam",
-        "transform_message",
-        "burn_message"
-      ],
       "fails": [
         "edit_message"
+      ],
+      "passes": [
+        "burn_message",
+        "clear_spam",
+        "transform_message"
       ],
       "name": "Process Messages",
       "script": "OP_0 // function index\n",
-      "unlocks": "channel_lock",
-      "timeLockType": "height"
+      "timeLockType": "height",
+      "unlocks": "channel_lock"
     },
     "edit_message": {
+      "fails": [
+        "burn_message",
+        "clear_spam",
+        "transform_message"
+      ],
       "passes": [
         "edit_message"
       ],
-      "fails": [
-        "clear_spam",
-        "transform_message",
-        "burn_message"
-      ],
       "name": "Edit Message",
       "script": "OP_1 // function index\n",
-      "unlocks": "channel_lock",
-      "timeLockType": "height"
-    },
-    "channel_lock": {
-      "lockingType": "p2sh32",
-      "name": "Channel Message Lock",
-      "script": "<channel>\nOP_OVER OP_0 OP_NUMEQUAL OP_IF\nOP_INPUTINDEX OP_UTXOVALUE OP_10 OP_DIV <1000> OP_MUL\n<10_000_000>\nOP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_10 OP_MUL OP_NUMEQUAL\nOP_DUP OP_IF\n<100_000_000> OP_ROT OP_DROP OP_SWAP\nOP_ENDIF\nOP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_NUMEQUAL\nOP_DUP OP_IF\n<1_000> OP_CHECKSEQUENCEVERIFY\nOP_DROP OP_ENDIF\nOP_NOT OP_SWAP OP_NOT OP_BOOLAND OP_IF\nOP_OVER <10_000> OP_SUB OP_CHECKLOCKTIMEVERIFY OP_DROP\nOP_ELSE\n  OP_OVER OP_SIZE\n  OP_NIP OP_2 OP_PICK\n   OP_CAT <vault_script> OP_CAT\n <0xaa20> OP_OVER OP_HASH256 OP_CAT <0x87> OP_CAT\n OP_2 OP_PICK OP_SIZE OP_NIP\n OP_3 OP_PICK OP_CAT OP_OVER OP_SIZE OP_NIP\n OP_CAT OP_OVER OP_CAT\n <coupon_script> OP_CAT <0xaa20> OP_OVER OP_HASH256 OP_CAT <0x87> OP_CAT OP_INPUTINDEX OP_OUTPUTBYTECODE OP_OVER OP_EQUALVERIFY\n OP_2DROP OP_2DROP OP_ENDIF OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY\n OP_2DROP OP_2DROP OP_1 OP_ELSE OP_SWAP OP_1 OP_NUMEQUALVERIFY\n OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_NUMEQUALVERIFY\n OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY\n OP_TXINPUTCOUNT OP_1SUB OP_UTXOTOKENCATEGORY\nOP_INPUTINDEX OP_UTXOTOKENCATEGORY <32> OP_SPLIT OP_DROP OP_2 OP_CAT OP_EQUAL\nOP_NIP\nOP_ENDIF"
+      "timeLockType": "height",
+      "unlocks": "channel_lock"
     },
     "coupon_unlock": {
       "passes": [
@@ -571,26 +568,6 @@
       "script": "// \"claim\" function parameters\n// none\n",
       "unlocks": "coupon_lock"
     },
-    "coupon_lock": {
-      "lockingType": "p2sh32",
-      "name": "Coupon Lock",
-      "script": "<lock> <amount>\nOP_0 OP_OUTPUTVALUE OP_0 OP_UTXOVALUE OP_SUB OP_1 OP_ROLL OP_GREATERTHANOREQUAL OP_VERIFY\n OP_0 OP_UTXOBYTECODE OP_1 OP_ROLL OP_EQUAL OP_VERIFY \nOP_INPUTINDEX OP_1 OP_ADD OP_TXINPUTCOUNT OP_NUMEQUAL"
-    },
-    "coupon_lock_2": {
-      "lockingType": "p2sh32",
-      "name": "Coupon Lock",
-      "script": "$(<0xaa20>$(<locktime><vault_script> OP_HASH256)<0x87>) <amount>\nOP_0 OP_OUTPUTVALUE OP_0 OP_UTXOVALUE OP_SUB OP_1 OP_ROLL OP_GREATERTHANOREQUAL OP_VERIFY\n OP_0 OP_UTXOBYTECODE OP_1 OP_ROLL OP_EQUAL OP_VERIFY \nOP_INPUTINDEX OP_1 OP_ADD OP_TXINPUTCOUNT OP_NUMEQUAL"
-    },
-    "wallet_lock": {
-      "lockingType": "standard",
-      "name": "Wallet Lock",
-      "script": "OP_DUP\nOP_HASH160 <$(<key.public_key> OP_HASH160\n)> OP_EQUALVERIFY\nOP_CHECKSIG"
-    },
-    "wallet_unlock": {
-      "name": "Wallet Unlock",
-      "script": "<key.schnorr_signature.all_outputs>\n<key.public_key>",
-      "unlocks": "wallet_lock"
-    },
     "vault_unlock": {
       "passes": [
         "place_bch",
@@ -598,13 +575,33 @@
       ],
       "name": "Unlock Future Vault",
       "script": "// \"swap\" function parameters\n// none\n",
-      "unlocks": "vault_lock",
-      "timeLockType": "height"
+      "timeLockType": "height",
+      "unlocks": "vault_lock"
+    },
+    "channel_lock": {
+      "lockingType": "p2sh32",
+      "name": "Channel Message Lock",
+      "script": "// pragma cashscript ~0.10.0;\n// FutureChan - A message board contract.\n//\n// Message board for data written in mutable or immutable NFT commitments. \n//\n// - Messages can be removed after a week.\n// - Messages can be censored early by paying a 9 times multiplier penalty.  \n// - Messages must contain a value greater than 1/100th of a block time 2.5 months.\n// - Messages with insufficient value may be cleared by anyone at any time.\n// \n// - Messages can be edited (or deleted) using an NFT with minting capability.\n// \n// - Clearing (or censoring) messages must create 0.1 FBCH (or 1 FBCH) coupons.\n//\n// - Many different channels can be used by using a different channel identifier.\n// - Note: `cashc` compiler must be patched to not error from channel identifier usage. \n//\n//\n<channel>\n// contract FutureChan(bytes channel) {\n    \n    OP_OVER OP_0 OP_NUMEQUAL OP_IF\n    // function clearMessage() {\n        \n        // Chan messages will create a 0.1 FBCH coupon targeting a FBCH vault \n        // where vault time is specified using the number of sats on the message.\n        // Example #1: 9873 sats => ( 9873 % 10 ) * 1000 => FBCH-0987000; 0.1 BCH coupon\n        //         #2:  543 sats =>  ( 543 % 10 ) * 1000 => MEV BURN\n        //         #3: 9873 sats =>               98,730 => FBCH-0987000; 1 BCH coupon\n\n        OP_INPUTINDEX OP_UTXOVALUE OP_10 OP_DIV <1_000> OP_MUL \n        // int vaultTime = int(tx.inputs[this.activeInputIndex].value / 10)*1000;\n\n        // Default to a 0.1 BCH series coupon\n        <10_000_000>\n        // int amount = 10000000;\n\n        // If the message is being censored, the burner must provide 9 X the initial value to a 1 BCH coupon\n        OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_10 OP_MUL OP_NUMEQUAL \n        // bool isPrematureBurn = tx.outputs[this.activeInputIndex].value == tx.inputs[this.activeInputIndex].value*10;\n\n        // If this is an early burn (moderation), create a 1 BCH coupon \n        OP_DUP OP_IF   \n        // if(isPrematureBurn){\n\n            <100_000_000> OP_ROT OP_DROP OP_SWAP\n            // amount = 100000000;\n        // } \n        OP_ENDIF\n\n        // If the message has matured, the full value is used for a coupon\n        OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_NUMEQUAL \n        // bool hasMatured = tx.outputs[this.activeInputIndex].value == tx.inputs[this.activeInputIndex].value;\n\n        // If not early, require the message is a week old\n        OP_DUP OP_IF \n        // if(hasMatured){\n\n            // Require the message be at least a week old\n            <1000> OP_CHECKSEQUENCEVERIFY \n            // require(tx.age >= 1000);\n\n        // }  \n        OP_DROP OP_ENDIF \n\n        // If sats specifed a bad locktime (allow an early burn, no coupon, pure MEV)        \n        OP_NOT OP_SWAP OP_NOT OP_BOOLAND OP_IF \n        // if(!hasMatured && !isPrematureBurn){\n\n            // If the vault time indicated is less than ~2.5 months into the future.\n            // Let the message be cleared and the value be taken by anyone.\n            OP_OVER <10_000> OP_SUB OP_CHECKLOCKTIMEVERIFY OP_DROP \n        //     require(tx.time >= ( vaultTime - 10000 ));\n\n        // } \n\n        // Otherwise, the sats must pay an FBCH coupon\n        OP_ELSE \n        // else{\n\n            // Calculate the future vault corresponding to the locktime\n            OP_OVER OP_SIZE \n            OP_NIP OP_2 OP_PICK \n            OP_CAT <0xc0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77> OP_CAT \n            // bytes theVault = bytes(bytes(vaultTime).length) + \n            //                 bytes(vaultTime) + \n            //                 0xc0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77;\n\n            // Construct P2SH32 locking bytecode from redeem bytecode\n            <0xaa20> OP_OVER OP_HASH256 OP_CAT <0x87> \n            // bytes vaultLockingBytecode = 0xaa20 + hash256(theVault) + 0x87;\n\n            // Calculate the coupon vault corresponding to the locktime\n            OP_CAT OP_2 OP_PICK OP_SIZE OP_NIP \n            OP_3 OP_PICK OP_CAT OP_OVER OP_SIZE OP_NIP \n            OP_CAT OP_OVER OP_CAT <0x00cc00c694a16900c788c08bc39c> OP_CAT \n            // bytes theCoupon = bytes(bytes(amount).length) + bytes(amount) + \n            //                 bytes(vaultLockingBytecode.length) + vaultLockingBytecode +\n            //                 0x00cc00c694a16900c788c08bc39c;\n\n            // Construct P2SH32 locking bytecode from redeem bytecode\n            <0xaa20> OP_OVER OP_HASH256 OP_CAT <0x87> OP_CAT \n            // bytes couponLockingBytecode = 0xaa20 + hash256(theCoupon) + 0x87;\n\n            // Send the message value to the coupon vault.\n            OP_INPUTINDEX OP_OUTPUTBYTECODE OP_OVER OP_EQUALVERIFY \n            // require(tx.outputs[this.activeInputIndex].lockingBytecode == couponLockingBytecode);\n\n        // } \n        OP_2DROP OP_2DROP OP_ENDIF\n\n        // Without CashTokens\n        OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY \n        // require(tx.outputs[this.activeInputIndex].tokenCategory == 0x);\n\n    // } \n    OP_2DROP OP_2DROP \n\n\n    // Messages on mutable NFTs may be edited (or deleted) using a minting NFT of the same token category.  \n    // Messages on immutable NFTs may only be deleted. \n    //\n    // oldMessage[0]          -> editedMessage[0]\n    // oldMessage[1]          -> editedMessage[1]\n    // oldMessage[n]          -> editedMessage[n]\n    // mintingBaton[in.len-1] -> extendedMessage[n+1]\n    //                        -> extendedMessage[n+2]\n    //                        -> mintingBaton[out.len-1]\n    //\n    OP_1 OP_ELSE OP_SWAP OP_1 OP_NUMEQUALVERIFY \n    // function editMessage(){\n\n        // Sats must be carried forward.\n        OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_NUMEQUALVERIFY \n        // require(tx.outputs[this.activeInputIndex].value == tx.inputs[this.activeInputIndex].value);\n\n        // ... to an output on this same contract\n        OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY \n        // require(tx.outputs[this.activeInputIndex].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);\n        \n        // But neither the commitment, NFT nor token data are required as outputs. They may be omitted.\n\n        // As long as last input carried a matching minting NFT\n        OP_TXINPUTCOUNT OP_1SUB OP_UTXOTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY <32> OP_SPLIT OP_DROP OP_2 OP_CAT OP_EQUAL \n        // require(tx.inputs[tx.inputs.length - 1].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory.split(32)[0] + 0x02);\n\n   // }\n    OP_NIP  \n\n// } \n OP_ENDIF"
+    },
+    "coupon_lock": {
+      "lockingType": "p2sh32",
+      "name": "Coupon Lock",
+      "script": "<lock> <amount>\n// contract Coupon(\n//   // Minimum spent (sats) to claim each coupon utxo.\n//   int amount,\n  \n//   // Contract holding the logic.\n//   bytes lock\n// ){\n\n//   function apply() {\n    \n    // assure at the minium amount is sent to the intended contract\n    OP_0 OP_OUTPUTVALUE OP_0 OP_UTXOVALUE OP_SUB OP_1 OP_ROLL OP_GREATERTHANOREQUAL OP_VERIFY\n    // require((tx.outputs[0].value - tx.inputs[0].value) >= amount);\n\n\n    // Check that the Coupon is interacting with an existing Vault instance \n    OP_0 OP_UTXOBYTECODE OP_1 OP_ROLL OP_EQUAL OP_VERIFY\n    // require(tx.inputs[0].lockingBytecode == lock);\n\n    // The coupon must be spent as the last input, \n    //   therefore only coupon may be spent at a time.\n    OP_INPUTINDEX OP_1 OP_ADD OP_TXINPUTCOUNT OP_NUMEQUAL\n    // require(this.activeInputIndex+1 == tx.inputs.length);\n // }\n"
+    },
+        "wallet_unlock": {
+      "name": "Wallet Unlock",
+      "script": "<key.schnorr_signature.all_outputs>\n<key.public_key>",
+      "unlocks": "wallet_lock"
+    },
+    "wallet_lock": {
+      "lockingType": "standard",
+      "name": "Wallet Lock",
+      "script": "OP_DUP\nOP_HASH160 <$(<key.public_key> OP_HASH160\n)> OP_EQUALVERIFY\nOP_CHECKSIG"
     },
     "vault_lock": {
       "lockingType": "p2sh32",
       "name": "Lock Future Vault",
-      "script": "<locktime> OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT\nOP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_GREATERTHAN\n OP_IF OP_DUP OP_CHECKLOCKTIMEVERIFY OP_DROP OP_ENDIF\nOP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY\nOP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY\nOP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_INPUTINDEX OP_UTXOVALUE OP_ADD\nOP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_OUTPUTVALUE OP_ADD\nOP_NUMEQUAL OP_NIP"
+      "script": "<locktime> \n// contract Vault(int locktime) {\n\n    // function swap() {\n        \n        // If tokens are flowing back into this contract\n        OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_GREATERTHAN OP_IF \n        // if(tx.outputs[this.activeInputIndex].tokenAmount > tx.inputs[this.activeInputIndex].tokenAmount){\n        \n            // Enforce a BIP65 timelock \n            // Note, intended for use with block height based locks \n            // (where:  locktime < 500M).\n            OP_0 OP_PICK OP_CHECKLOCKTIMEVERIFY OP_DROP\n            // require(tx.time >= locktime);\n\n        //} \n        OP_ENDIF \n        \n        // Inspired by wrapped.cash c. Nov 2023\n        // Author: Dagur Valberg Johannsson <dagurval@pvv.ntnu.no> \n        // License: MIT\n        //\n        // ensure the token in and out matches\n        OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_EQUAL OP_VERIFY \n        // require(\n        //   tx.inputs[this.activeInputIndex].tokenCategory \n        //   == \n        //   tx.outputs[this.activeInputIndex].tokenCategory\n        //   );\n\n        // Enforce that this contract lives on\n        OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUAL OP_VERIFY\n        // require(\n        //   tx.outputs[this.activeInputIndex].lockingBytecode \n        //   == \n        //   tx.inputs[this.activeInputIndex].lockingBytecode\n        //   );\n\n        // ensure the sum of sats and tokens in \n        // matches the sum of sats and tokens out.\n        OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_INPUTINDEX OP_UTXOVALUE OP_ADD\n        OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_OUTPUTVALUE OP_ADD \n        OP_NUMEQUAL\n        OP_NIP        \n        // require(\n        //   tx.inputs[this.activeInputIndex].tokenAmount + \n        //   tx.inputs[this.activeInputIndex].value \n        //   == \n        //   tx.outputs[this.activeInputIndex].tokenAmount + \n        //   tx.outputs[this.activeInputIndex].value\n        //  );\n//     }\n// }"
     },
     "gantry_lock": {
       "lockingType": "p2sh32",
@@ -617,8 +614,6 @@
       "script": "<vault_script> <gantry_script> <857000> <1_000_000> OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_BIN2NUM OP_2 OP_PICK OP_3 OP_ROLL OP_2 OP_PICK OP_MOD OP_SUB OP_OVER OP_ADD OP_4 OP_NUM2BIN OP_0 OP_OUTPUTTOKENCOMMITMENT OP_EQUALVERIFY OP_3 OP_PICK OP_SIZE OP_NIP OP_4 OP_ROLL OP_CAT OP_OVER OP_SIZE OP_NIP OP_CAT OP_OVER OP_CAT OP_3 OP_ROLL OP_CAT <0xaa20> OP_SWAP OP_HASH256 OP_CAT <0x87> OP_CAT OP_0 OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_INPUTINDEX OP_UTXOTOKENCATEGORY <32> OP_SPLIT OP_DROP OP_1 OP_CAT OP_0 OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY OP_TXOUTPUTCOUNT OP_2 OP_NUMEQUALVERIFY OP_0 OP_OUTPUTVALUE <42500000000> OP_2 OP_PICK OP_DIV OP_GREATERTHAN OP_VERIFY OP_1 OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE <42500000000> OP_3 OP_PICK OP_DIV OP_SUB <1800> OP_SUB OP_GREATERTHAN OP_VERIFY OP_DUP OP_ROT OP_GREATERTHAN OP_IF OP_1 OP_OUTPUTTOKENCOMMITMENT OP_OVER OP_10 OP_DIV OP_4 OP_NUM2BIN OP_EQUALVERIFY OP_1 OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY OP_1 OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY OP_ELSE OP_1 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY OP_ENDIF OP_DROP OP_1"
     }
   },
-  "supported": [
-    "BCH_SPEC"
-  ],
+  "supported": ["BCH_2023_05", "BCH_2024_05", "BCH_2025_05", "BCH_SPEC"],
   "version": 0
 }

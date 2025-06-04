@@ -1,102 +1,102 @@
 {
-    "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
-    "description": "Locktime: A hodl-style locking contract",
-    "name": "Locktime",
-    "entities": {
-      "covenant": {
-        "description": "Lock coins (or tokens) until some later time. Assets may be automatically released from the vault if the parameters or the contract are published.",
-        "name": "Locktime Vault",
-        "scripts": [
-          "locktime_covenant",
-          "unlock"
-        ],
-        "variables": {
-            "executor_allowance": {
-            "description": "Allowance to facilitate network fees for release of assets from the vault.",
-            "name": "Executor Allowance",
-            "type": "WalletData"
-          },
-          "locktime": {
-            "description": "The absolute block time to lock assets until. May be a block in the past.",
-            "name": "Locktime",
-            "type": "WalletData"
-          },
-          
-          "recipient": {
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "Locktime: A hodl-style locking contract",
+  "name": "Locktime",
+  "entities": {
+    "covenant": {
+      "description": "Lock coins (or tokens) until some later time. Assets may be automatically released from the vault if the parameters or the contract are published.",
+      "name": "Locktime Vault",
+      "scripts": [
+        "locktime_covenant",
+        "unlock"
+      ],
+      "variables": {
+        "executor_allowance": {
+          "description": "Allowance to facilitate network fees for release of assets from the vault.",
+          "name": "Executor Allowance",
+          "type": "WalletData"
+        },
+        "locktime": {
+          "description": "The absolute block time to lock assets until. May be a block in the past.",
+          "name": "Locktime",
+          "type": "WalletData"
+        },
+        "recipient": {
           "description": "Locking bytecode assets can be sent to when the locktime is reached.",
           "name": "Recipient",
           "type": "AddressData"
         }
-        }
       }
-    },
-    "scenarios": {
-      "base": {
-        "data": {
-          "bytecode": {
-            "executor_allowance": "2500"
-          }
-        },
-        "name": "Base Scenario"
+    }
+  },
+  "scenarios": {
+    "base": {
+      "data": {
+        "bytecode": {
+          "executor_allowance": "2500"
+        }
       },
-      "release": {
-        "data": {
-          "bytecode": {
-            "locktime": "10",
-            "recipient": "0xa914e78564d75c446f8c00c757a2bd783d30c4f0819a87"
-          }
-        },
-        "description": "",
-        "extends": "base",
-        "name": "Release Assets",
-        "transaction": {
-          "inputs": [
-            {
-                "unlockingBytecode": [
-                "slot"
-              ],
-              "sequenceNumber": 10
-            }
-          ],
-          "outputs": [
-            {
-              "lockingBytecode": "a914e78564d75c446f8c00c757a2bd783d30c4f0819a87",
-              "valueSatoshis": 800
-            }
-          ],
-          "locktime": 11,
-          "version": 2
-        },
-        "sourceOutputs": [
+      "description": "",
+      "name": "Base Scenario"
+    },
+    "release": {
+      "data": {
+        "bytecode": {
+          "locktime": "10",
+          "recipient": "0xa914e78564d75c446f8c00c757a2bd783d30c4f0819a87"
+        }
+      },
+      "description": "",
+      "extends": "base",
+      "name": "Release Assets",
+      "transaction": {
+        "inputs": [
           {
-            "lockingBytecode": [
+            "unlockingBytecode": [
               "slot"
             ],
+            "sequenceNumber": 10
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": "a914e78564d75c446f8c00c757a2bd783d30c4f0819a87",
             "valueSatoshis": 800
           }
-        ]
-      }
-    },
-    "scripts": {
-      "unlock": {
-        "passes": [
-          "release"
         ],
-        "name": "Unlock",
-        "script": "<recipient> <locktime>  // ",
-        "unlocks": "locktime_covenant"
+        "locktime": 11,
+        "version": 2
       },
-      "locktime_covenant": {
-        "lockingType": "p2sh32",
-        "name": "Locktime Covenant",
-        "script": "// Require version 2 for BIP68 support\nOP_TXVERSION OP_2 OP_NUMEQUALVERIFY\n//require(tx.version == 2);\n\n// Check that time has passed and that time locks are enabled\nOP_CHECKLOCKTIMEVERIFY OP_DROP\n// require(tx.time >= locktime);\n\n// Check that each output sends to the recipient\nOP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY\n// require(tx.outputs[this.activeInputIndex].lockingBytecode == \n//         recipientLockingBytecode);\n\n// Check that each output sends the balance minus an executor allowance\nOP_INPUTINDEX OP_OUTPUTVALUE \nOP_INPUTINDEX OP_UTXOVALUE <executor_allowance> OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY\n// require(tx.outputs[this.activeInputIndex].value >= \n//         tx.inputs[this.activeInputIndex].value - 2500);\n\n// Require tokens go forward\nOP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_NUMEQUALVERIFY \n// require(tx.outputs[this.activeInputIndex].tokenAmount == \n//         tx.inputs[this.activeInputIndex].tokenAmount);\n\n// Must pass the same token\nOP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY \n// require(tx.outputs[this.activeInputIndex].tokenCategory == \n//         tx.inputs[this.activeInputIndex].tokenCategory);\n\n// Must pass along NFT commitments, if present.\nOP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_EQUAL\n// require(tx.outputs[this.activeInputIndex].nftCommitment == \n//         tx.inputs[this.activeInputIndex].nftCommitment);"
-      }
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 800
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "unlock": {
+      "passes": [
+        "release"
+      ],
+      "name": "Unlock",
+      "script": " // ",
+      "unlocks": "locktime_covenant"
     },
-    "supported": [
-      "BCH_2023_05",
-      "BCH_2024_05",
-      "BCH_2025_05",
-      "BCH_SPEC"
-    ],
-    "version": 0
-  }
+    "locktime_covenant": {
+      "lockingType": "p2sh32",
+      "name": "Locktime Covenant",
+      "script": "//\n// A contract to hodl until a pre-defined block\n// \n// contract Locktime(\n<recipient> <locktime> \n//   // length of time to lock contract, blocks\n//   int locktime,\n\n//   // LockingBytecode of the beneficiary, the address receiving payments\n//   bytes recipientLockingBytecode\n\n// ) {\n//   function execute() {\n\n// Require version 2 for BIP68 support\nOP_TXVERSION OP_2 OP_NUMEQUALVERIFY\n//require(tx.version == 2);\n\n// Check that time has passed and that time locks are enabled\nOP_CHECKLOCKTIMEVERIFY OP_DROP\n// require(tx.time >= locktime);\n\n// Check that each output sends to the recipient\nOP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY\n// require(tx.outputs[this.activeInputIndex].lockingBytecode == \n//         recipientLockingBytecode);\n\n// Check that each output sends the balance minus an executor allowance\nOP_INPUTINDEX OP_OUTPUTVALUE \nOP_INPUTINDEX OP_UTXOVALUE <executor_allowance> OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY\n// require(tx.outputs[this.activeInputIndex].value >= \n//         tx.inputs[this.activeInputIndex].value - 2500);\n\n// Require tokens go forward\nOP_INPUTINDEX OP_OUTPUTTOKENAMOUNT \nOP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_NUMEQUALVERIFY \n// require(tx.outputs[this.activeInputIndex].tokenAmount == \n//         tx.inputs[this.activeInputIndex].tokenAmount);\n\n// Must pass the same token\nOP_INPUTINDEX OP_OUTPUTTOKENCATEGORY \nOP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY \n// require(tx.outputs[this.activeInputIndex].tokenCategory == \n//         tx.inputs[this.activeInputIndex].tokenCategory);\n\n// Must pass along NFT commitments, if present.\nOP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT \nOP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_EQUAL\n// require(tx.outputs[this.activeInputIndex].nftCommitment == \n//         tx.inputs[this.activeInputIndex].nftCommitment);\n\n// }\n//}"
+    }
+  },
+  "supported": [
+    "BCH_2023_05",
+    "BCH_2024_05",
+    "BCH_2025_05",
+    "BCH_SPEC"
+  ],
+  "version": 0
+}

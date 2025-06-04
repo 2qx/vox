@@ -1,0 +1,87 @@
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "Pay one percent of a fund monthly in perpetuity",
+  "name": "Perpetuity",
+  "entities": {
+    "trust": {
+      "description": "Contract creation and function trust",
+      "name": "Trust configuration",
+      "scripts": [
+        "lock",
+        "unlock_lock"
+      ],
+      "variables": {
+        "recipient": {
+          "description": "Locking bytecode receiveing payments",
+          "name": "recipientLockingBytecode",
+          "type": "WalletData"
+        }
+      }
+    }
+  },
+  "scenarios": {
+    "installment": {
+      "data": {
+        "bytecode": {
+          "recipient": "0xa914e78564d75c446f8c00c757a2bd783d30c4f0819a87"
+        }
+      },
+      "description": "Pay a monthly installment.",
+      "name": "Installment",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "outpointIndex": 0,
+            "unlockingBytecode": [
+              "slot"
+            ],
+            "sequenceNumber": 4383
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": "a914e78564d75c446f8c00c757a2bd783d30c4f0819a87",
+            "valueSatoshis": 100000
+          },
+          {
+            "lockingBytecode": {},
+            "valueSatoshis": 9899950
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 10000000
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "unlock_lock": {
+      "passes": [
+        "installment"
+      ],
+      "name": "unlock",
+      "script": "// \n// none\n",
+      "unlocks": "lock"
+    },
+    "lock": {
+      "lockingType": "p2sh32",
+      "name": "lock",
+      "script": "// \"Perpetuity\" contract constructor parameters\n<recipient> \n\n// contract Perpetuity(\n\n // lockingBytecode of the beneficiary, \n // the address receiving payments\n//  bytes recipientLockingBytecode,\n\n// ) {\n//  function execute() {\n\n  // Force tx version equal to 2 to force BIP68 support\n  OP_TXVERSION OP_2 OP_NUMEQUALVERIFY \n//   require(tx.version == 2);\n  \n  // Check that time has passed and that time locks are enabled\n  <4383> OP_CHECKSEQUENCEVERIFY OP_DROP \n//   require(tx.age >= 4383);\n\n  // Limit to a single utxo input\n  OP_TXINPUTCOUNT OP_1 OP_NUMEQUALVERIFY \n//   require(tx.inputs.length == 1);\n\n  // Check that the first output sends to the recipient\n  OP_0 OP_OUTPUTBYTECODE OP_EQUALVERIFY \n//   require(tx.outputs[0].lockingBytecode == recipientLockingBytecode);\n\n  // Check that the output sends a normal installment\n  OP_0 OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE <100> OP_DIV OP_GREATERTHANOREQUAL OP_VERIFY \n//   require(tx.outputs[0].value >= tx.inputs[this.activeInputIndex].value/100);\n\n  // require the second output match the active bytecode\n  OP_1 OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY \n//   require(tx.outputs[1].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);\n\n  // balance was returned to the contract, minus 5/1,000,000 for executor fee\n  OP_1 OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE <989995> OP_MUL <1000000> OP_DIV OP_GREATERTHANOREQUAL\n//   require(tx.outputs[1].value >= tx.inputs[this.activeInputIndex].value*989995/1000000);\n  \n//  }\n// }"
+    }
+  },
+  "supported": [
+    "BCH_2022_05",
+    "BCH_2023_05",
+    "BCH_2024_05",
+    "BCH_2025_05",
+    "BCH_SPEC"
+  ],
+  "version": 0
+}
