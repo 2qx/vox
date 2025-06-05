@@ -34,6 +34,7 @@ export class Channel {
             },
             scriptId: 'channel_lock',
         })
+
         if (!lockingBytecodeResult.success) {
             /* c8 ignore next */
             throw new Error('Failed to generate bytecode, script: , ' + JSON.stringify(lockingBytecodeResult, null, '  '));
@@ -60,7 +61,7 @@ export class Channel {
             sequenceNumber: 1,
             unlockingBytecode: {
                 compiler: this.compiler,
-                script: 'clear_message',
+                script: 'process_message',
                 data: {
                     "bytecode": {
                         "channel": toBin(channel),

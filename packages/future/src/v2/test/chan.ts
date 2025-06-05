@@ -19,7 +19,7 @@ test('Should calculate a channel addresses', (t) => {
 test('Should clear a messages', (t) => {
     let baseScenario = Channel.compiler.generateScenario({
         debug: true,
-        scenarioId: 'clear_message',
+        scenarioId: 'transform_message',
     });
     if(typeof baseScenario === "string") throw baseScenario;
     if(typeof baseScenario.scenario === "string") throw baseScenario.scenario;
