@@ -7,6 +7,10 @@ export const COUPON_ADDRESSES = {
     }
 }
 
+export const COUPON_1E6_LOCK = "aa206ff0c730cf850dcdb17428a777c5b4cfa0059f1220ac1910f5fb93aec9bd9fb687" 
+                                                                                                                    
+export const COUPON_1E6_UNLOCK = "23aa201080af3a1ecbaba50a6b8a0b20ce3c27381d0e9363ed606f60fa212d868b022187048096980000cc00c694 517aa26900c7517a8769c05193 c39c"
+//                                 "23aa201080af3a1ecbaba50a6b8a0b20ce3c27381d0e9363ed606f60fa212d868b022187048096980000cc00c694a16900c788c08bc39c"
 export const VAULT_ADDRESSES = {
     "100000": "bitcoincash:rwrkc8ut9pecqdydtncc6sj87anajksxu3eun5uvu5zdxspqkz68ghgf63ahv",
     "900000": "bitcoincash:rw4wzu4rmls78c82twspt7ecuf78pzrmjdgxyuwd4qvz799nat55za7pg6992",

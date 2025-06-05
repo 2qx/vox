@@ -1,8 +1,6 @@
 import {
     bigIntToVmNumber,
     CashAddressNetworkPrefix,
-    hash256,
-    hexToBin,
     lockingBytecodeToCashAddress
 } from "@bitauth/libauth"
 
@@ -11,6 +9,8 @@ import Future from  './auth.js'
 
 export class Vault {
 
+    static compiler = Future.compiler();
+    
     locktime: number = 0;
     //static unlockingScript = "c0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77"
 
@@ -64,8 +64,7 @@ export class Vault {
      */
     static getUnlockingBytecode(time: number) {
 
-        const compiler = Future.compiler()
-        const lockingBytecodeResult = compiler.generateBytecode({
+        const bytecodeResult = this.compiler.generateBytecode({
             data: {
                 "bytecode": {
                     "locktime": bigIntToVmNumber(BigInt(time)),
@@ -73,11 +72,11 @@ export class Vault {
             },
             scriptId: 'vault_unlock',
         })
-        if (!lockingBytecodeResult.success) {
+        if (!bytecodeResult.success) {
             /* c8 ignore next */
-            throw new Error('Failed to generate bytecode, script: FutureChan, ' + JSON.stringify(lockingBytecodeResult, null, '  '));
+            throw new Error('Failed to generate bytecode, script: FutureChan, ' + JSON.stringify(bytecodeResult, null, '  '));
         }
-        return lockingBytecodeResult.bytecode.slice(1)
+        return bytecodeResult.bytecode.slice(1)
     }
 
     /**
@@ -87,16 +86,21 @@ export class Vault {
      * @param time - block time of the vault lock
      */
     static getLockingBytecode(time: number) {
+        const bytecodeResult = this.compiler.generateBytecode({
+            data: {
+                "bytecode": {
+                    "locktime": bigIntToVmNumber(BigInt(time)),
+                }
+            },
+            scriptId: 'vault_lock',
+        })
 
-        return new Uint8Array(
-            [
-                ...hexToBin("aa20"),
-                ...hash256(
-                    this.getUnlockingBytecode(time)
-                ),
-                ...hexToBin("87")
-            ]
-        );
+        if (!bytecodeResult.success) {
+            /* c8 ignore next */
+            throw new Error('Failed to generate bytecode, script: , ' + JSON.stringify(bytecodeResult, null, '  '));
+        }
+        return bytecodeResult.bytecode
+        
     }
 
 }

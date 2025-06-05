@@ -1,14 +1,13 @@
 import {
-    bigIntToVmNumber,
-    CashAddressNetworkPrefix,
-    encodeDataPush,
-    hash256,
-    hexToBin,
-    lockingBytecodeToCashAddress,
-
+  bigIntToVmNumber,
+  CashAddressNetworkPrefix,
+  lockingBytecodeToCashAddress,
 } from "@bitauth/libauth";
+import Future from './auth.js'
 
 export class Coupon {
+
+  static compiler = Future.compiler();
 
   amount: number = 1000000;
   lock: Uint8Array = new Uint8Array(0);
@@ -38,16 +37,21 @@ export class Coupon {
    * @param lock - the vault locking bytecode
    */
   static getUnlockingBytecode(amount: number, lock: Uint8Array) {
-    const amountVm = encodeDataPush(bigIntToVmNumber(BigInt(amount)))
-    const lockVm = encodeDataPush(lock)
-    const unlockingScript = hexToBin(this.unlockingScript)
-    return new Uint8Array(
-      [
-        ...lockVm,
-        ...amountVm,
-        ...unlockingScript
-      ]
-    )
+
+    const bytecodeResult = this.compiler.generateBytecode({
+      data: {
+        "bytecode": {
+          "amount": bigIntToVmNumber(BigInt(amount)),
+          "lock": lock,
+        }
+      },
+      scriptId: 'coupon_unlock',
+    })
+    if (!bytecodeResult.success) {
+      /* c8 ignore next */
+      throw new Error('Failed to generate bytecode, script: FutureChan, ' + JSON.stringify(bytecodeResult, null, '  '));
+    }
+    return bytecodeResult.bytecode.slice(1)
   }
 
   /**
@@ -58,13 +62,20 @@ export class Coupon {
    * @param lock - the Vault locking bytecode
    */
   static getLockingBytecode(amount: number, lock: Uint8Array) {
-    return new Uint8Array(
-      [
-        ...hexToBin("aa20"),
-        ...hash256(this.getUnlockingBytecode(amount, lock)),
-        ...hexToBin("87")
-      ]
-    );
+    const bytecodeResult = this.compiler.generateBytecode({
+      data: {
+        "bytecode": {
+          "amount": bigIntToVmNumber(BigInt(amount)),
+          "lock": lock,
+        }
+      },
+      scriptId: 'coupon_lock',
+    })
+    if (!bytecodeResult.success) {
+      /* c8 ignore next */
+      throw new Error('Failed to generate bytecode, script: FutureChan, ' + JSON.stringify(bytecodeResult, null, '  '));
+    }
+    return bytecodeResult.bytecode
   }
 
 

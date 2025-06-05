@@ -9,6 +9,7 @@ import { binToHex } from '@bitauth/libauth';
 import { Vault } from '../index.js';
 
 test('Should calculate vault unlocking bytecode', (t) => {
+    
     t.assert(
         "00c0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77" ==
         binToHex(Vault.getUnlockingBytecode(0)),
