@@ -9,7 +9,7 @@ import Future from  './auth.js'
 
 export class Vault {
 
-    static compiler = Future.compiler();
+    static compiler = Future.compiler;
     
     locktime: number = 0;
     //static unlockingScript = "c0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77"

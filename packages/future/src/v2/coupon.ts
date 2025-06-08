@@ -7,7 +7,7 @@ import Future from './auth.js'
 
 export class Coupon {
 
-  static compiler = Future.compiler();
+  static compiler = Future.compiler;
 
   amount: number = 1000000;
   lock: Uint8Array = new Uint8Array(0);

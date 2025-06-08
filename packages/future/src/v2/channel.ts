@@ -21,7 +21,7 @@ import { toBin } from './util.js';
 
 export class Channel {
 
-    static compiler = Future.compiler();
+    static compiler = Future.compiler;
 
     static getLockingBytecode(channel?: string): Uint8Array {
         const lockingBytecodeResult = this.compiler.generateBytecode({
