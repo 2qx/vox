@@ -3,6 +3,8 @@
   "private": "true",
   "description": "A collection of tools & libraries for decentralized finance.",
   "scripts": {
+    "app:build": "pnpm --filter app run build",
+    "app:dev": "pnpm --filter app run dev",
     "build": "pnpm -r run build",
     "test": "c8 ava --config ./config/ava.config.js",
     "test:xc8": "ava --config ./config/ava.config.js",

@@ -2,21 +2,19 @@ import templateV3 from './drip-mine.v3.template.json' with { type: "json" };
 
 import {
   hexToBin,
-  createCompilerBCH,
-  compilerOperationsBCH,
   CompilerBCH,
-  CompilerConfiguration,
-  CompilationContextBCH,
   generateTransaction,
-  importWalletTemplate,
   InputTemplate,
   OutputTemplate,
   Transaction,
-  walletTemplateToCompilerConfiguration,
 } from '@bitauth/libauth';
 
+import {
+  getLibauthCompiler
+} from '@unspent/tau';
+
 import type {
-  AddressListUnspentEntry
+  AddressListUnspentEntry,
 } from '@unspent/tau';
 
 const DUST_LIMIT = 576;
@@ -26,25 +24,11 @@ const DECAY_DENOMINATOR = 1333036486;
 
 
 
-export function libauthCompiler(template_json: any): CompilerBCH {
-  const template = importWalletTemplate(template_json);
-  if (typeof template == 'string') {
-    /* c8 ignore next */
-    throw new Error(`Failed import libauth template, error: ${template}`);
-  };
-  return createCompilerBCH({
-    ...walletTemplateToCompilerConfiguration(template),
-    operations: {
-      ...compilerOperationsBCH,
-    }
-  } as CompilerConfiguration<CompilationContextBCH>);
-}
-
 export default class DripV3 {
 
   static template = templateV3
 
-  static compiler = libauthCompiler(this.template)
+  static compiler = getLibauthCompiler(this.template)
 
   static getOutput(utxo: AddressListUnspentEntry): OutputTemplate<CompilerBCH> {
 

@@ -14,23 +14,35 @@
   },
   "scenarios": {
     "base": {
-      "data": {
-        "bytecode": {}
-      },
       "description": "A set of working parameters with a half-life of decay of roughly four years",
       "name": "Base Scenario",
       "transaction": {
         "inputs": [
           {
-            "outpointTransactionHash": "0e09765ada34fa0bd94ef9df8497173e8aefc560f3eb7c9e0e88b345c4cccb36",
             "outpointIndex": 0,
             "unlockingBytecode": [
               "slot"
             ],
             "sequenceNumber": 1
           }
-        ]
-      }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "drip_mine_covenant"
+            }
+          }
+        ],
+        "locktime": 0,
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ]
+        }
+      ]
     },
     "return": {
       "description": "Drip value as fee, returning balance to thread.",
@@ -39,17 +51,9 @@
       "transaction": {
         "outputs": [
           {
-            "lockingBytecode": {
-              "script": "drip_mine_covenant",
-              "overrides": {
-                "bytecode": {}
-              }
-            },
             "valueSatoshis": 4536
           }
-        ],
-        "locktime": 0,
-        "version": 2
+        ]
       },
       "sourceOutputs": [
         {
@@ -65,15 +69,13 @@
       "extends": "base",
       "name": "Drip Burn",
       "transaction": {
-        "locktime": 0,
         "outputs": [
           {
             "lockingBytecode": {
               "script": "op_return"
             }
           }
-        ],
-        "version": 2
+        ]
       },
       "sourceOutputs": [
         {

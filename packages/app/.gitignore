@@ -1,12 +1,3 @@
-**/node_modules/
-tmp/
-temp/
-coverage/
-*~
-*#
-
-docs
-
 node_modules
 
 # Output

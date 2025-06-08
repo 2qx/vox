@@ -1,29 +1,32 @@
-import templateV3 from './future-v2.template.json' with { type: "json" };
+import template_json from './future-v2.template.json' with { type: "json" };
 
 import {
-    createCompilerBCH,
-    compilerOperationsBCH,
-    CompilerBCH,
-    CompilerConfiguration,
-    CompilationContextBCH,
-    importWalletTemplate,
-    walletTemplateToCompilerConfiguration,
-  } from '@bitauth/libauth';
+  importWalletTemplate,
+} from '@bitauth/libauth';
+
+import { getLibauthCompiler } from '@unspent/tau';
 
 export default class Future {
 
-  static compiler(): CompilerBCH {
-    const future_template = importWalletTemplate(templateV3);
-    if (typeof future_template == 'string') {
+
+  static compiler = getLibauthCompiler(template_json)
+
+  static generateTests() {
+    const template = importWalletTemplate(template_json);
+    if (typeof template == 'string') {
       /* c8 ignore next */
-      throw new Error(`Failed import libauth template (future), error: ${future_template}`);
+      throw new Error(`Failed import libauth template (future), error: ${template}`);
     };
-    return createCompilerBCH({
-      ...walletTemplateToCompilerConfiguration(future_template),
-      operations: {
-        ...compilerOperationsBCH,
-      }
-    } as CompilerConfiguration<CompilationContextBCH>);
+    //const config = walletTemplateToCompilerConfiguration(template)
+    if (template!.scripts) {
+      
+    }
   }
+
+  //   const setupTx = compiler.generateScenario({
+  //   debug: true,
+  //   scenarioId: 'setupTx',
+  //   unlockingScriptId: 'p2pkhUnlock',
+  // });
 
 }
