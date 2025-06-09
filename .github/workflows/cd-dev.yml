@@ -8,30 +8,34 @@ on:
       - bugfix/*
   pull_request:
 
+
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-22.04
-    permissions:
-      contents: write
-    concurrency:
-      group: ${{ github.workflow }}-${{ github.ref }}
+    strategy:
+      matrix:
+        node-version: [23]
     steps:
-      - uses: actions/checkout@v4
+    - uses: actions/checkout@v4
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 10
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'pnpm'
+    - name: Install dependencies
+      run: pnpm install
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 23
-          cache: 'pnpm'
+    - run: pnpm
+    - run: pnpm app:build
 
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm
-      - run: pnpm app:build
-
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        #if: ${{ github.ref == 'refs/heads/main' }}
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          cname: vox.cash
-          publish_dir: ./docs
+    - name: Deploy
+      uses: peaceiris/actions-gh-pages@v3
+      #if: ${{ github.ref == 'refs/heads/main' }}
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        cname: vox.cash
+        publish_dir: ./docs
