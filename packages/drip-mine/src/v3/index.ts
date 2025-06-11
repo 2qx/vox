@@ -1,12 +1,17 @@
 import templateV3 from './drip-mine.v3.template.json' with { type: "json" };
 
 import {
+  binToHex,
   hexToBin,
   CompilerBCH,
   generateTransaction,
   InputTemplate,
+  lockingBytecodeToCashAddress,
+  CashAddressNetworkPrefix,
   OutputTemplate,
+  sha256,
   Transaction,
+  swapEndianness,
 } from '@bitauth/libauth';
 
 import {
@@ -24,11 +29,37 @@ const DECAY_DENOMINATOR = 1333036486;
 
 
 
-export default class DripV3 {
+export default class Drip {
 
   static template = templateV3
 
   static compiler = getLibauthCompiler(this.template)
+
+  static getLockingBytecode(): Uint8Array {
+    const lockingBytecodeResult = this.compiler.generateBytecode({
+      data: {},
+      scriptId: 'drip_mine_covenant'
+    })
+
+    if (!lockingBytecodeResult.success) {
+      /* c8 ignore next */
+      throw new Error('Failed to generate bytecode, script: , ' + JSON.stringify(lockingBytecodeResult, null, '  '));
+    }
+    return lockingBytecodeResult.bytecode
+  }
+
+  static getScriptHash(reversed=true):string{
+    let hashHex = binToHex(sha256.hash(this.getLockingBytecode()))
+    if(reversed)  return swapEndianness(hashHex)
+      return hashHex
+  }
+
+  static getAddress(prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
+    const bytecode = this.getLockingBytecode()
+    const result = lockingBytecodeToCashAddress({ prefix: prefix, bytecode: bytecode, tokenSupport: false })
+    if (typeof result === 'string') throw (result)
+    return result.address
+  }
 
   static getOutput(utxo: AddressListUnspentEntry): OutputTemplate<CompilerBCH> {
 
@@ -43,7 +74,7 @@ export default class DripV3 {
           script: 'drip_mine_covenant'
         },
         valueSatoshis: BigInt(outputValue),
-      } 
+      }
     } else {
       return {
         lockingBytecode: hexToBin("6a"),

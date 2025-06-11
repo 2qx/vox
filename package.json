@@ -32,6 +32,9 @@
   "pnpm": {
     "onlyBuiltDependencies": [
       "esbuild"
-    ]
+    ],
+    "patchedDependencies": {
+      "@electrum-cash/network": "patches/@electrum-cash__network.patch"
+    }
   }
 }

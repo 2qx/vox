@@ -1,0 +1,15 @@
+diff --git a/dist/index.mjs b/dist/index.mjs
+index 697e963dc2fb0bfc48f745d70f57b27c74142ce3..e3117ef2032be3b0195f1e78f402c1fda3c8e4c5 100644
+--- a/dist/index.mjs
++++ b/dist/index.mjs
+@@ -2,8 +2,8 @@ import {EventEmitter as $4QiMX$EventEmitter} from "events";
+ import {Mutex as $4QiMX$Mutex} from "async-mutex";
+ import $4QiMX$debug from "debug";
+ import {parse as $4QiMX$parse, parseNumberAndBigInt as $4QiMX$parseNumberAndBigInt, stringify as $4QiMX$stringify} from "lossless-json";
+-import {connect as $4QiMX$connect, TLSSocket as $4QiMX$TLSSocket} from "tls";
+-import {isIP as $4QiMX$isIP, connect as $4QiMX$connect1} from "net";
++// import {connect as $4QiMX$connect, TLSSocket as $4QiMX$TLSSocket} from "tls";
++// import {isIP as $4QiMX$isIP, connect as $4QiMX$connect1} from "net";
+ import {WebSocket as $4QiMX$WebSocket} from "@monsterbitar/isomorphic-ws";
+ 
+ 

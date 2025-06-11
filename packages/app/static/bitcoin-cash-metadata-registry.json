@@ -1,0 +1,27 @@
+{
+  "$schema": "https://cashtokens.org/bcmr-v2.schema.json",
+  "version": { "major": 0, "minor": 1, "patch": 0 },
+  "latestRevision": "2025-05-23T12:56:53.407Z",
+  "registryIdentity": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+  "identities": {
+    "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c": {
+      "2025-05-23T12:56:53.407Z": {
+        "name": "Block Points",
+        "uris": {
+          "web": "https://vox.cash",
+          "icon": "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='UTF-8' standalone='no'%3F%3E%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height:400px;'%3E%3Cdefs%3E%3ClinearGradient id='grad' gradientTransform='rotate(75)'%3E%3Cstop offset='5%25' stop-color='aqua' /%3E%3Cstop offset='95%25' stop-color='%2300808099' /%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath style='fill:url(%23grad)' d='M 6 1 C 3.23 1 1 3.23 1 6 L 1 10 C 1 12.77 3.23 15 6 15 L 10 15 C 12.77 15 15 12.77 15 10 L 15 6 C 15 3.23 12.77 1 10 1 L 6 1 z M 8 7 A 1 1 0 0 1 9 8 A 1 1 0 0 1 8 9 A 1 1 0 0 1 7 8 A 1 1 0 0 1 8 7 z ' /%3E%3C/svg%3E"
+        },
+        "token": {
+          "symbol": "BPT",
+          "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+          "decimals": 0
+        },
+        "description": "A reward token for aged unspent outputs."
+      }
+    }
+  },
+  "extensions": {
+    "authNft": "18c578981c30f131cf5f5603f62873a1d03caefabc013f6d879bae4a72e67cb5",
+    "tokenStandard": "AuthGuard"
+  }
+}
