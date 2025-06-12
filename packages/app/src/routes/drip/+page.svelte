@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { encodeTransactionBCH, binToHex } from '@bitauth/libauth';
+	import Readme from './README.md'
+
 	import { blo } from 'blo';
 	// Import library features.
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
@@ -8,12 +10,15 @@
 
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
+	import BitauthLink from '$lib/BitauthLink.svelte';
+
 	let unspent: any[] = [];
 	let electrumClient: any;
 	let scripthash = Drip.getScriptHash();
 	let contractState = '';
 	let connectionStatus = '';
 
+	
 	const handleNotifications = function (data: any) {
 		if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
@@ -28,10 +33,10 @@
 
 	const broadcast = async function (raw_tx: string) {
 		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
-		if (response instanceof Error){
+		if (response instanceof Error) {
 			connectionStatus = ConnectionStatus[electrumClient.status];
-			throw response
-		};
+			throw response;
+		}
 		response as any[];
 	};
 
@@ -87,27 +92,33 @@
 		{:else}
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
+		<BitauthLink template={Drip.template} />
 	</div>
 	<h3>Unlock Miner Extractable Value (MEV)</h3>
 	<div class="grid">
-		{#each unspent as item, index}
-			{#if item.height !== 0}
-				<div class="row">
-					<button onclick={() => processOutput(item, index)}>
-						<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
-						<p>{Number(item.value).toLocaleString()}</p>
-					</button>
-				</div>
+		{#if unspent.length>0}
+			{#each unspent as item, index}
+				{#if item.height !== 0}
+					<div class="row">
+						<button onclick={() => processOutput(item, index)}>
+							<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
+							<p>{Number(item.value).toLocaleString()}</p>
+						</button>
+					</div>
 				{:else}
-				<div class="row">
-					<button disabled>
-						<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
-						<p>{Number(item.value).toLocaleString()}</p>
-					</button>
-				</div>
-			{/if}
-		{/each}
+					<div class="row">
+						<button disabled>
+							<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
+							<p>{Number(item.value).toLocaleString()}</p>
+						</button>
+					</div>
+				{/if}
+			{/each}
+		{:else}
+			<p>No connection?</p>
+		{/if}
 	</div>
+	<Readme />
 </section>
 
 <style>
@@ -141,7 +152,7 @@
 		font-weight: 600;
 		margin: 0px;
 	}
-	button:disabled{
+	button:disabled {
 		filter: grayscale(100%);
 	}
 </style>

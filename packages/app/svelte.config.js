@@ -18,7 +18,7 @@ const config = {
 			fallback: '200.html'
 		})
 	},
-	extensions: ['.svelte', '.svx']
+	extensions: ['.svelte', '.svx', '.md']
 };
 
 export default config;

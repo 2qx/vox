@@ -13,9 +13,8 @@
 	</main>
 
 	<footer>
-		<p>
-			
-		</p>
+		<p>More markets, more freedom, more power.</p>
+		<p><a href="https://github.com/2qx/vox" target="_blank">Open source</a></p>
 	</footer>
 </div>
 

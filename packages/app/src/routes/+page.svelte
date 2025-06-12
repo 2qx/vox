@@ -84,12 +84,11 @@
 </script>
 
 <svelte:head>
-	<title>Home</title>
+	<title>vox</title>
 	<meta name="description" content="vox dot cash" />
 </svelte:head>
-
+<h1>Welcome!</h1>
 <section>
-	<h1>Welcome!</h1>
 	<div class="welcome">
 		{#each protocols as item}
 			<div class="app-button">
@@ -109,8 +108,6 @@
 			</div>
 		{/each}
 	</div>
-
-	<p>More markets, more freedom, more power.</p>
 </section>
 
 <style>
@@ -118,8 +115,8 @@
 		justify-content: center;
 		align-items: center;
 		flex: 0.6;
+		display: flex;
 	}
-	
 
 	h1 {
 		width: 100%;
@@ -130,18 +127,17 @@
 		flex-direction: row;
 		flex-wrap: wrap;
 		align-items: flex-start;
+		margin: auto;
 	}
 
 	.welcome .app-button {
 		justify-content: center;
-		align-items: center;
 		text-align: center;
-		padding: 10px;
+		padding: auto;
 		border-radius: 50%;
-		
 	}
 
-	.app-button button{
+	.app-button button {
 		background-color: transparent;
 		background-repeat: no-repeat;
 		border: none;
