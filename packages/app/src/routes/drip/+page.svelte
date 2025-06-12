@@ -76,12 +76,14 @@
 <section>
 	<div class="grid">
 		{#each unspent as item}
-			<div class="row">
-				<button onclick={() => processOutput(item)} disabled={item.height == 0}>
-					<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
-					<p>{Number(item.value).toLocaleString()}</p>
-				</button>
-			</div>
+			{#if item.height !== 0}
+				<div class="row">
+					<button onclick={() => processOutput(item)}>
+						<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
+						<p>{Number(item.value).toLocaleString()}</p>
+					</button>
+				</div>
+			{/if}
 		{/each}
 	</div>
 </section>
@@ -109,7 +111,8 @@
 	}
 
 	button p {
-		font-size: small;
+		font-size: x-small;
 		font-weight: 600;
+		margin: 0px;
 	}
 </style>
