@@ -28,8 +28,10 @@
 
 	const broadcast = async function (raw_tx: string) {
 		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
-		if (response instanceof Error) throw response;
-		console.log(response);
+		if (response instanceof Error){
+			connectionStatus = ConnectionStatus[electrumClient.status];
+			throw response
+		};
 		response as any[];
 	};
 

@@ -8,7 +8,7 @@
 			disabled: true
 		},
 		{
-			name: 'Block Points',
+			name: 'BPT',
 			description: 'A zero-timelock savings reward token.',
 			image: '/BPT.svg',
 			link: '/bpt',
@@ -36,7 +36,7 @@
 			disabled: true
 		},
 		{
-			name: 'Future BCH',
+			name: 'FBCH',
 			description: 'Tokenized timelocked BCH',
 			image: '/FBCH.svg',
 			link: '/future',
@@ -63,7 +63,7 @@
 			disabled: true
 		},
 		{
-			name: 'Wrapped BCH',
+			name: 'WBCH',
 			description: 'Wrapped Bitcoin Cash CashToken.',
 			image: '/WBCH.svg',
 			disabled: true
