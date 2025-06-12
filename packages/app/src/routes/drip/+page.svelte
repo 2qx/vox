@@ -94,7 +94,7 @@
 		{/if}
 		<BitauthLink template={Drip.template} />
 	</div>
-	<h3>Unlock Miner Extractable Value (MEV)</h3>
+	<p>Release miner extractable value (MEV) on Bitcoin Cash (BCH) from your browser!</p>
 	<div class="grid">
 		{#if unspent.length>0}
 			{#each unspent as item, index}
