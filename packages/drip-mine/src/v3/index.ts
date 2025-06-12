@@ -67,7 +67,7 @@ export default class Drip {
     fee = fee < MIN_PAYOUT ? MIN_PAYOUT : fee
     let outputValue = utxo.value - fee
 
-    if (outputValue >= BigInt(DUST_LIMIT + MIN_PAYOUT)) {
+    if (utxo.value > BigInt(DUST_LIMIT + MIN_PAYOUT)) {
       return {
         lockingBytecode: {
           compiler: this.compiler,
@@ -84,19 +84,20 @@ export default class Drip {
   }
 
   static getInput(utxo: AddressListUnspentEntry): InputTemplate<CompilerBCH> {
+    let unlockingScript = utxo.value > BigInt(DUST_LIMIT + MIN_PAYOUT) ? 'unlock_return' : 'unlock_burn'
     return {
       outpointIndex: utxo.tx_pos,
       outpointTransactionHash: hexToBin(utxo.tx_hash),
       sequenceNumber: 1,
       unlockingBytecode: {
         compiler: this.compiler,
-        script: 'unlock_return',
+        script: unlockingScript,
         valueSatoshis: BigInt(utxo.value),
       },
     } as InputTemplate<CompilerBCH>
   }
 
-  static processOutpoint(utxo: AddressListUnspentEntry, locktime?: number): Transaction {
+  static processOutpoint(utxo: AddressListUnspentEntry): Transaction {
 
     const inputs: InputTemplate<CompilerBCH>[] = [];
     const outputs: OutputTemplate<CompilerBCH>[] = [];
@@ -105,7 +106,7 @@ export default class Drip {
     inputs.push(this.getInput(utxo));
 
     const result = generateTransaction({
-      locktime: locktime ? locktime : utxo.height + 1,
+      locktime: 0,
       version: 2,
       inputs, outputs,
     });

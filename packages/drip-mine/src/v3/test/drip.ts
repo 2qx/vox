@@ -14,7 +14,7 @@ import DripV3 from '../index.js';
 test('Should drip a minimum transaction', (t) => {
 
   const utxo = SAMPLE_UTXO_TXHASH as AddressListUnspentEntry
-  const result = DripV3.processOutpoint(utxo, 897416);
+  const result = DripV3.processOutpoint(utxo);
   const tx = encodeTransaction(result)
   const txHex = binToHex(tx)
   t.assert(txHex == TXN_VALID, "transaction hex should match")

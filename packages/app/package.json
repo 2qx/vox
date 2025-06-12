@@ -38,6 +38,7 @@
 		"@bitauth/libauth": "^3.0.0",
 		"@unspent/drip": "workspace:*",
 		"@electrum-cash/network":"^4.1.1",
-		"blo":"2.0.0"
+		"blo":"2.0.0",
+		"pako":"2.1.0"
 	}
 }

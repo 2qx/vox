@@ -9,39 +9,38 @@
 	let unspent: any[] = [];
 	let electrumClient: any;
 	let scripthash = Drip.getScriptHash();
-	let contractState = "";
+	let contractState = '';
 
 	const handleNotifications = function (data: any) {
 		if (data.method === 'blockchain.scripthash.subscribe') {
-			if(data.params[1] !== contractState){
-				contractState = data.params[1]
-				updateUnspent()
+			if (data.params[1] !== contractState) {
+				contractState = data.params[1];
+				updateUnspent();
 			}
 		} else {
 			console.log(data);
 		}
 	};
 
-	const broadcast = async function(raw_tx:string){
-		
+	const broadcast = async function (raw_tx: string) {
 		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
 		if (response instanceof Error) throw response;
-		console.log(response)
+		console.log(response);
 		response as any[];
-	}
+	};
 
 	const processOutput = async function (utxo: any) {
 		let txn = Drip.processOutpoint(utxo);
-		let raw_tx = binToHex(encodeTransactionBCH(txn))
-		console.log(raw_tx)
-		await broadcast(raw_tx)
+		let raw_tx = binToHex(encodeTransactionBCH(txn));
+		console.log(raw_tx);
+		await broadcast(raw_tx);
 	};
 
-	const updateUnspent = async function (){
+	const updateUnspent = async function () {
 		let response = await electrumClient.request('blockchain.scripthash.listunspent', scripthash);
 		if (response instanceof Error) throw response;
 		unspent = response as any[];
-	}
+	};
 
 	onMount(async () => {
 		// Initialize an electrum client.
@@ -52,13 +51,12 @@
 
 		// Listen for notifications.
 		electrumClient.on('notification', handleNotifications);
-		
+
 		console.log(scripthash);
 		// Set up a subscription for new block headers.
 		//await electrumClient.subscribe('blockchain.scripthash.transactions.subscribe',[scripthash]);
 		await electrumClient.subscribe('blockchain.scripthash.subscribe', scripthash);
-		updateUnspent()
-		
+		updateUnspent();
 	});
 
 	onDestroy(async () => {
@@ -76,36 +74,42 @@
 </svelte:head>
 
 <section>
-	{#each unspent as item}
-		<div class="grid">
+	<div class="grid">
+		{#each unspent as item}
 			<div class="row">
-				<button onclick={() => processOutput(item)}>
-					{item.height}
+				<button onclick={() => processOutput(item)} disabled={item.height == 0}>
 					<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
-					{Number(item.value).toLocaleString()} sats
+					<p>{Number(item.value).toLocaleString()}</p>
 				</button>
 			</div>
-		</div>
-	{/each}
+		{/each}
+	</div>
 </section>
 
 <style>
+	section {
+		justify-content: center;
+		align-items: center;
+		flex: 0.6;
+	}
+
 	.grid {
-		--width: min(100vw, 40vh, 380px);
-		max-width: var(--width);
-		align-self: center;
-		justify-self: center;
-		width: 100%;
-		height: 100%;
 		display: flex;
-		flex-direction: column;
-		justify-content: flex-start;
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-items: flex-start;
 	}
 
 	.grid .row {
-		display: grid;
-		grid-template-columns: repeat(5, 1fr);
+		justify-content: center;
+		align-items: center;
+		text-align: center;
 		grid-gap: 0.2rem;
 		margin: 0 0 0.2rem 0;
+	}
+
+	button p {
+		font-size: small;
+		font-weight: 600;
 	}
 </style>
