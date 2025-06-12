@@ -1,1 +1,0 @@
-.grid.svelte-fn4n7t{--width: min(100vw, 40vh, 380px);max-width:var(--width);align-self:center;justify-self:center;width:100%;height:100%;display:flex;flex-direction:column;justify-content:flex-start}.grid.svelte-fn4n7t .row:where(.svelte-fn4n7t){display:grid;grid-template-columns:repeat(5,1fr);grid-gap:.2rem;margin:0 0 .2rem}
