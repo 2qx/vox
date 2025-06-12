@@ -45,7 +45,7 @@
 
 		{
 			name: 'Locktime',
-			description: 'Timed asset vault.',
+			description: 'Timed vault.',
 			image: '/locktime.svg',
 			link: '/locktime',
 			disabled: true
@@ -119,27 +119,40 @@
 		align-items: center;
 		flex: 0.6;
 	}
+	
 
 	h1 {
 		width: 100%;
 	}
 
 	.welcome {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		width: 100%;
-		padding: 0 0 calc(100% * 395 / 1048) 0;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-items: flex-start;
 	}
 
 	.welcome .app-button {
 		justify-content: center;
 		align-items: center;
 		text-align: center;
-		padding: 10%;
+		padding: 10px;
 		border-radius: 50%;
+		
+	}
+
+	.app-button button{
+		background-color: transparent;
+		background-repeat: no-repeat;
+		border: none;
+		cursor: pointer;
+		overflow: hidden;
+		outline: none;
+		font-weight: 600;
 	}
 
 	.app-button button:disabled {
-		filter: grayscale(100%);
+		filter: grayscale(95%) opacity(30%) blur(5px);
+		font-weight: 100;
 	}
 </style>

@@ -88,7 +88,7 @@
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
 	</div>
-
+	<h3>Unlock Miner Extractable Value (MEV)</h3>
 	<div class="grid">
 		{#each unspent as item, index}
 			{#if item.height !== 0}
