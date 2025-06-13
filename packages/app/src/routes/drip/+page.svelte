@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { encodeTransactionBCH, binToHex } from '@bitauth/libauth';
-	import Readme from './README.md'
+	import Readme from './README.md';
 
 	import { blo } from 'blo';
 	// Import library features.
@@ -13,12 +13,16 @@
 	import BitauthLink from '$lib/BitauthLink.svelte';
 
 	let unspent: any[] = [];
+	let mempool: any[] = [];
 	let electrumClient: any;
 	let scripthash = Drip.getScriptHash();
 	let contractState = '';
 	let connectionStatus = '';
 
+	let timer:any;
+
 	
+
 	const handleNotifications = function (data: any) {
 		if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
@@ -42,16 +46,24 @@
 
 	const processOutput = async function (utxo: any, index: number) {
 		unspent.splice(index, 1);
+		unspent = unspent;
 		let txn = Drip.processOutpoint(utxo);
 		let raw_tx = binToHex(encodeTransactionBCH(txn));
 		console.log(raw_tx);
 		await broadcast(raw_tx);
 	};
 
+	const debounceUnspent = (newUnspent:any) => {
+		clearTimeout(timer);
+		timer = setTimeout(() => {unspent = newUnspent}, 1000);
+	}
+
 	const updateUnspent = async function () {
+
 		let response = await electrumClient.request('blockchain.scripthash.listunspent', scripthash);
 		if (response instanceof Error) throw response;
-		unspent = response as any[];
+		debounceUnspent(response.filter((i: any) => i.height > 0) as any[]);
+		mempool = response.filter((i: any) => i.height == 0) as any[];
 	};
 
 	onMount(async () => {
@@ -95,27 +107,34 @@
 		<BitauthLink template={Drip.template} />
 	</div>
 	<p>Release miner extractable value (MEV) on Bitcoin Cash (BCH) from your browser!</p>
+	<h3>Unspent Transaction Outputs (utxos)</h3>
 	<div class="grid">
-		{#if unspent.length>0}
+		{#if unspent.length > 0}
 			{#each unspent as item, index}
-				{#if item.height !== 0}
-					<div class="row">
-						<button onclick={() => processOutput(item, index)}>
-							<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
-							<p>{Number(item.value).toLocaleString()}</p>
-						</button>
-					</div>
-				{:else}
-					<div class="row">
-						<button disabled>
-							<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
-							<p>{Number(item.value).toLocaleString()}</p>
-						</button>
-					</div>
-				{/if}
+				<div class="row">
+					<button onclick={() => processOutput(item, index)}>
+						<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
+						<p>{Number(item.value).toLocaleString()}</p>
+					</button>
+				</div>
 			{/each}
 		{:else}
-			<p>No connection?</p>
+			<p>No unspent outputs</p>
+		{/if}
+	</div>
+	<h3>Mempool Transactions</h3>
+	<div class="grid">
+		{#if mempool.length > 0}
+			{#each mempool as item, index}
+				<div class="row">
+					<button disabled>
+						<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
+						<p>{Number(item.value).toLocaleString()}</p>
+					</button>
+				</div>
+			{/each}
+		{:else}
+			<p>No pending transactions</p>
 		{/if}
 	</div>
 	<Readme />

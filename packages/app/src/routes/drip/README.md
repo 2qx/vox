@@ -11,7 +11,7 @@ Anyone-can-spend outputs held by the drip-mine covenant by clicking the colorful
 Anyone may contribute to the MEV fund by sending outputs here: 
 
 ```
-    bitcoincash:pwsu8f4ftnsugunzy8wruhuayvtpz9mt88euwvwtp5jvv58wnd95c0td3wpdp
+bitcoincash:pwsu8f4ftnsugunzy8wruhuayvtpz9mt88euwvwtp5jvv58wnd95c0td3wpdp
 ```
 
 When the value of an unspent transaction output locked by the covenant falls below 740 satoshis, all the value is claimed in the next transaction and the output is 'burned'.

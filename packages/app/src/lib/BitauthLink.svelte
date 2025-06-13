@@ -10,7 +10,6 @@
 	const base64toBase64Url = (base64: string) => base64.replace(/\+/g, '-').replace(/\//g, '_');
 	const stringToUriPayload = (content: string) =>
 		base64toBase64Url(binToBase64(deflate(utf8ToBin(content))));
-	console.log(template);
 	const payload = stringToUriPayload(JSON.stringify(template));
 </script>
 

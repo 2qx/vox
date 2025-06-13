@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import logo from '$lib/images/vox.svg';
-	import github from '$lib/images/github.svg';
+	import wallet from '$lib/images/hot.svg';
 </script>
 
 <header>
@@ -26,9 +26,9 @@
 		</svg>
 	</nav>
 
-	<div class="corner">
-		<a href="https://github.com/2qx/vox">
-			<img src={github} alt="GitHub" />
+	<div class="corner wallet">
+		<a href="/wallet">
+			<img src={wallet} alt="Wallet" />
 		</a>
 	</div>
 </header>
@@ -120,5 +120,10 @@
 
 	a:hover {
 		color: var(--color-theme-1);
+	}
+
+	.wallet {
+		filter: grayscale(95%) opacity(90%);
+		font-weight: 100;
 	}
 </style>
