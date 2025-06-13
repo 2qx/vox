@@ -1,5 +1,12 @@
 <script lang="ts">
-	import { encodeTransactionBCH, binToHex } from '@bitauth/libauth';
+	import {
+		encodeTransactionBCH,
+		binToHex,
+		sha256,
+		utf8ToBin,
+		swapEndianness,
+		hash256
+	} from '@bitauth/libauth';
 	import Readme from './README.md';
 
 	import { blo } from 'blo';
@@ -13,22 +20,26 @@
 	import BitauthLink from '$lib/BitauthLink.svelte';
 
 	let unspent: any[] = [];
-	let mempool: any[] = [];
 	let electrumClient: any;
 	let scripthash = Drip.getScriptHash();
 	let contractState = '';
 	let connectionStatus = '';
 
-	let timer:any;
+	let timer: any;
 
-	
+	const debounceUnspent = () => {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			updateUnspent();
+		}, 750);
+	};
 
 	const handleNotifications = function (data: any) {
 		if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
 				connectionStatus = ConnectionStatus[electrumClient.status];
-				updateUnspent();
+				debounceUnspent();
 			}
 		} else {
 			console.log(data);
@@ -45,25 +56,26 @@
 	};
 
 	const processOutput = async function (utxo: any, index: number) {
-		unspent.splice(index, 1);
-		unspent = unspent;
 		let txn = Drip.processOutpoint(utxo);
 		let raw_tx = binToHex(encodeTransactionBCH(txn));
-		console.log(raw_tx);
+		let new_id = swapEndianness(binToHex(hash256(encodeTransactionBCH(txn))));
+		let outValue = Number(txn.outputs[0].valueSatoshis);
+		unspent.splice(index, 1);
+		unspent = unspent;
+		let insertIdx = unspent.filter((i) => i.height > 0 || i.value < outValue).length;
+		unspent.splice(insertIdx, 0, {
+			height: 0,
+			tx_hash: new_id,
+			value: outValue
+		});
+
 		await broadcast(raw_tx);
 	};
 
-	const debounceUnspent = (newUnspent:any) => {
-		clearTimeout(timer);
-		timer = setTimeout(() => {unspent = newUnspent}, 1000);
-	}
-
 	const updateUnspent = async function () {
-
 		let response = await electrumClient.request('blockchain.scripthash.listunspent', scripthash);
 		if (response instanceof Error) throw response;
-		debounceUnspent(response.filter((i: any) => i.height > 0) as any[]);
-		mempool = response.filter((i: any) => i.height == 0) as any[];
+		unspent = response;
 	};
 
 	onMount(async () => {
@@ -110,7 +122,7 @@
 	<h3>Unspent Transaction Outputs (utxos)</h3>
 	<div class="grid">
 		{#if unspent.length > 0}
-			{#each unspent as item, index}
+			{#each unspent.filter((i: any) => i.height > 0) as item, index}
 				<div class="row">
 					<button onclick={() => processOutput(item, index)}>
 						<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
@@ -124,8 +136,8 @@
 	</div>
 	<h3>Mempool Transactions</h3>
 	<div class="grid">
-		{#if mempool.length > 0}
-			{#each mempool as item, index}
+		{#if unspent.length > 0}
+			{#each unspent.filter((i: any) => i.height <= 0) as item, index}
 				<div class="row">
 					<button disabled>
 						<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
