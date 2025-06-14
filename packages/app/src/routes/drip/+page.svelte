@@ -21,7 +21,8 @@
 
 	let unspent: any[] = [];
 	let electrumClient: any;
-	let scripthash = Drip.getScriptHash();
+	let scripthash = "";
+	scripthash = Drip.getScriptHash();
 	let contractState = '';
 	let connectionStatus = '';
 
@@ -38,6 +39,7 @@
 		if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
+				console.log('currentState ', contractState);
 				connectionStatus = ConnectionStatus[electrumClient.status];
 				debounceUnspent();
 			}
@@ -46,6 +48,15 @@
 		}
 	};
 
+	const guessState = function (unspent: any) {
+		let unspentString = unspent
+			.map((i: any) => {
+				return `${i.tx_hash}:${i.height}:`;
+			})
+			.join('');
+			console.log("serialized unspents: ", unspentString)
+		return binToHex(sha256.hash(utf8ToBin(unspentString)));
+	};
 	const broadcast = async function (raw_tx: string) {
 		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
 		if (response instanceof Error) {
@@ -61,19 +72,28 @@
 		let new_id = swapEndianness(binToHex(hash256(encodeTransactionBCH(txn))));
 		let outValue = Number(txn.outputs[0].valueSatoshis);
 		unspent.splice(index, 1);
-		unspent = unspent;
-		let insertIdx = unspent.filter((i) => i.height > 0 || i.value < outValue).length;
+
+		let insertIdx = unspent.filter((i) =>
+			i.height > 0
+				? true
+				: i.value < outValue
+					? true
+					: i.value == outValue && i.tx_hash < new_id
+						? true
+						: false
+		).length;
 		unspent.splice(insertIdx, 0, {
 			height: 0,
 			tx_hash: new_id,
 			value: outValue
 		});
-
+		unspent = unspent;
+		//let nextState = guessState(unspent);
 		await broadcast(raw_tx);
 	};
 
 	const updateUnspent = async function () {
-		let response = await electrumClient.request('blockchain.scripthash.listunspent', scripthash);
+		let response = await electrumClient.request('blockchain.scripthash.listunspent', scripthash, "exclude_tokens");
 		if (response instanceof Error) throw response;
 		unspent = response;
 	};
@@ -88,7 +108,6 @@
 		// Listen for notifications.
 		electrumClient.on('notification', handleNotifications);
 
-		console.log(scripthash);
 		// Set up a subscription for new block headers.
 		//await electrumClient.subscribe('blockchain.scripthash.transactions.subscribe',[scripthash]);
 		await electrumClient.subscribe('blockchain.scripthash.subscribe', scripthash);
