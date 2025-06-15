@@ -140,7 +140,7 @@
 	<p>Release miner extractable value (MEV) on Bitcoin Cash (BCH) from your browser!</p>
 	<h3>Unspent Transaction Outputs (utxos)</h3>
 	<div class="grid">
-		{#if unspent.length > 0}
+		{#if unspent.filter((i: any) => i.height > 0).length > 0}
 			{#each unspent.filter((i: any) => i.height > 0) as item, index}
 				<div class="row">
 					<button onclick={() => processOutput(item, index)}>
@@ -150,12 +150,12 @@
 				</div>
 			{/each}
 		{:else}
-			<p>No unspent outputs</p>
+			<p>No spendable outputs, check back in 10 minutes.</p>
 		{/if}
 	</div>
 	<h3>Mempool Transactions</h3>
 	<div class="grid">
-		{#if unspent.length > 0}
+		{#if unspent.filter((i: any) => i.height <= 0).length > 0}
 			{#each unspent.filter((i: any) => i.height <= 0) as item, index}
 				<div class="row">
 					<button disabled>
