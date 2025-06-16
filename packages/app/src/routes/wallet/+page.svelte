@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
 	import type {
 		PostMessage,
 		PostMessageDataRequest,
@@ -26,4 +26,4 @@
 
 		console.log('message was posted?');
 	};
-</script>
+</script> -->

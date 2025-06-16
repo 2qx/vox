@@ -2,8 +2,6 @@
 	import {
 		encodeTransactionBCH,
 		binToHex,
-		sha256,
-		utf8ToBin,
 		swapEndianness,
 		hash256
 	} from '@bitauth/libauth';
@@ -29,6 +27,13 @@
 
 	let timer: any;
 
+	const debounceClearSpent = () => {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			spent = new Set();
+		}, 10000);
+	};
+
 	const handleNotifications = function (data: any) {
 		if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
@@ -41,15 +46,15 @@
 		}
 	};
 
-	const guessState = function (unspent: any) {
-		let unspentString = unspent
-			.map((i: any) => {
-				return `${i.tx_hash}:${i.height}:`;
-			})
-			.join('');
-		console.log('serialized unspents: ', unspentString);
-		return binToHex(sha256.hash(utf8ToBin(unspentString)));
-	};
+	// const guessState = function (unspent: any) {
+	// 	let unspentString = unspent
+	// 		.map((i: any) => {
+	// 			return `${i.tx_hash}:${i.height}:`;
+	// 		})
+	// 		.join('');
+	// 	console.log('serialized unspents: ', unspentString);
+	// 	return binToHex(sha256.hash(utf8ToBin(unspentString)));
+	// };
 
 	const broadcast = async function (raw_tx: string) {
 		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
@@ -63,6 +68,7 @@
 	const processOutput = async function (utxo: any, index: number) {
 		let txn = Drip.processOutpoint(utxo);
 		spent.add(`${utxo.tx_hash}":"${utxo.tx_pos}`);
+		debounceClearSpent()
 		let raw_tx = binToHex(encodeTransactionBCH(txn));
 		let new_id = swapEndianness(binToHex(hash256(encodeTransactionBCH(txn))));
 
@@ -84,7 +90,6 @@
 			value: outValue
 		});
 		unspent = unspent;
-		//let nextState = guessState(unspent);
 		await broadcast(raw_tx);
 	};
 
@@ -96,7 +101,7 @@
 		);
 		if (response instanceof Error) throw response;
 		let unspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
-		if (spent.intersection(unspentIds).size==0) {
+		if (unspent.length == 0 || spent.intersection(unspentIds).size == 0) {
 			unspent = response;
 		}
 	};
