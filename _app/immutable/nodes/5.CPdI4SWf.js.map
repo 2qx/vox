@@ -1,1 +1,0 @@
-{"version":3,"file":"5.CPdI4SWf.js","sources":["../../../../../../src/routes/wallet/+page.ts"],"sourcesContent":["// since there's no dynamic data here, we can prerender\n// it so that it gets served as a static asset in production\nexport const prerender = true;\n"],"names":["prerender"],"mappings":"4DAEO,MAAMA,EAAY"}

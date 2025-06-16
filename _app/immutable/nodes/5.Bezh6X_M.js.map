@@ -1,0 +1,1 @@
+{"version":3,"file":"5.Bezh6X_M.js","sources":["../../../../../../src/routes/wallet/+page.ts"],"sourcesContent":["// since there's no dynamic data here, we can prerender\n// it so that it gets served as a static asset in production\nexport const prerender = true;\n"],"names":["prerender"],"mappings":"uJAEO,MAAMA,EAAY"}
