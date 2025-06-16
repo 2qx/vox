@@ -21,27 +21,20 @@
 
 	let unspent: any[] = [];
 	let electrumClient: any;
-	let scripthash = "";
+	let scripthash = '';
 	scripthash = Drip.getScriptHash();
 	let contractState = '';
 	let connectionStatus = '';
+	let spent = new Set();
 
 	let timer: any;
-
-	const debounceUnspent = () => {
-		clearTimeout(timer);
-		timer = setTimeout(() => {
-			updateUnspent();
-		}, 750);
-	};
 
 	const handleNotifications = function (data: any) {
 		if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
-				console.log('currentState ', contractState);
 				connectionStatus = ConnectionStatus[electrumClient.status];
-				debounceUnspent();
+				updateUnspent();
 			}
 		} else {
 			console.log(data);
@@ -54,9 +47,10 @@
 				return `${i.tx_hash}:${i.height}:`;
 			})
 			.join('');
-			console.log("serialized unspents: ", unspentString)
+		console.log('serialized unspents: ', unspentString);
 		return binToHex(sha256.hash(utf8ToBin(unspentString)));
 	};
+
 	const broadcast = async function (raw_tx: string) {
 		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
 		if (response instanceof Error) {
@@ -68,8 +62,10 @@
 
 	const processOutput = async function (utxo: any, index: number) {
 		let txn = Drip.processOutpoint(utxo);
+		spent.add(`${utxo.tx_hash}":"${utxo.tx_pos}`);
 		let raw_tx = binToHex(encodeTransactionBCH(txn));
 		let new_id = swapEndianness(binToHex(hash256(encodeTransactionBCH(txn))));
+
 		let outValue = Number(txn.outputs[0].valueSatoshis);
 		unspent.splice(index, 1);
 
@@ -93,9 +89,16 @@
 	};
 
 	const updateUnspent = async function () {
-		let response = await electrumClient.request('blockchain.scripthash.listunspent', scripthash, "exclude_tokens");
+		let response = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			scripthash,
+			'exclude_tokens'
+		);
 		if (response instanceof Error) throw response;
-		unspent = response;
+		let unspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
+		if (spent.intersection(unspentIds).size==0) {
+			unspent = response;
+		}
 	};
 
 	onMount(async () => {

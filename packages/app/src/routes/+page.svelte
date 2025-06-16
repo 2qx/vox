@@ -133,7 +133,6 @@
 	.welcome .app-button {
 		justify-content: center;
 		text-align: center;
-		padding: auto;
 		border-radius: 50%;
 	}
 
