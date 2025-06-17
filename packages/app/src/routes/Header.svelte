@@ -1,7 +1,30 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import logo from '$lib/images/vox.svg';
-	import wallet from '$lib/images/hot.svg';
+	import walletIcon from '$lib/images/hot.svg';
+
+	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
+	import { BaseWallet, Wallet } from 'mainnet-js';
+
+	let wallet: any;
+	let walletError = false;
+	let balance: number;
+
+	async function updateWallet() {
+		balance = await wallet.getBalance('bch');
+	}
+
+	onMount(async () => {
+		try {
+			BaseWallet.StorageProvider = IndexedDBProvider;
+			wallet = await Wallet.named(`vox-mainnet`);
+			balance = await wallet.getBalance('bch');
+		} catch (e) {
+			walletError = true;
+			throw e;
+		}
+	});
 </script>
 
 <header>
@@ -16,7 +39,6 @@
 			<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
 		</svg>
 		<ul>
-			
 			<li aria-current={page.url.pathname === '/about' ? 'page' : undefined}>
 				<a href="/about">Help</a>
 			</li>
@@ -25,11 +47,21 @@
 			<path d="M0,0 L0,3 C0.5,3 0.5,3 1,2 L2,0 Z" />
 		</svg>
 	</nav>
-
+	<div></div>
 	<div class="corner wallet">
-		<a href="/wallet">
-			<img src={wallet} alt="Wallet" />
-		</a>
+		{#if wallet}
+			{#if walletError}
+				⚠️
+			{/if}
+			<a href="/wallet">
+				<img width="30" src={walletIcon} alt="wallet" />
+				{#if typeof balance !== 'undefined'}
+					{balance} BCH
+				{:else}
+					0 BCH
+				{/if}
+			</a>
+		{/if}
 	</div>
 </header>
 
@@ -39,8 +71,31 @@
 		justify-content: space-between;
 	}
 
+	.wallet {
+		filter: grayscale(95%) opacity(90%);
+		position: fixed;
+		right: 0px;
+		display: flex;
+		align-items: center;
+		justify-content: right;
+		padding: 10px;
+		background-color: #ffffff88;
+		border-radius: 15px;
+		-moz-border-radius: 15px;
+	}
+
+	.wallet a {
+		color: black;
+		display: flex;
+	}
+
+	.wallet a img {
+		color: black;
+		display: flex;
+		padding: 5px;
+	}
+
 	.corner {
-		width: 3em;
 		height: 3em;
 	}
 
@@ -120,10 +175,5 @@
 
 	a:hover {
 		color: var(--color-theme-1);
-	}
-
-	.wallet {
-		filter: grayscale(95%) opacity(90%);
-		font-weight: 100;
 	}
 </style>
