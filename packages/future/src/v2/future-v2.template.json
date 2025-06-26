@@ -60,12 +60,12 @@
         "vault_script": {
           "description": "Unlocking bytecode for the future vault",
           "name": "Future Vault bytecode",
-          "type": "AddressData"
+          "type": "WalletData"
         },
         "coupon_script": {
           "description": "Unlocking bytecode for the coupon vault",
           "name": "Future coupon bytecode",
-          "type": "AddressData"
+          "type": "WalletData"
         }
       }
     },
@@ -220,8 +220,8 @@
           "channel": "",
           "lock": "",
           "amount": "100000000",
-          "vault_script": "c0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77",
-          "coupon_script": "00cc00c694a16900c788c08bc39c"
+          "vault_script": "0xc0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77",
+          "coupon_script": "0x00cc00c694a16900c788c08bc39c"
         }
       },
       "description": "",

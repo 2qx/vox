@@ -3,8 +3,10 @@
         "Dexie",
         "mainnet",
         "Merkle",
+        "Satoshis",
         "Unlocker",
         "utxo",
-        "utxos"
+        "utxos",
+        "WBCH"
     ]
 }

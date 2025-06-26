@@ -1,8 +1,8 @@
 import type {
-	AddressListUnspentEntry
+	UtxoI
 } from '@unspent/tau';
 
-export const ELECTRUM_LISTUNSPENT_RESULT: AddressListUnspentEntry[] = [
+export const ELECTRUM_LISTUNSPENT_RESULT: UtxoI[] = [
 	{
 		"height": 896376,
 		"tx_hash": "04d8e45c9834d106676f08ecc2def7f2cba2098536443c0cb9f23672128236c8",

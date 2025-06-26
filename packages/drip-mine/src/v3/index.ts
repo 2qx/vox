@@ -1,25 +1,23 @@
 import templateV3 from './drip-mine.v3.template.json' with { type: "json" };
 
 import {
-  binToHex,
   hexToBin,
   CompilerBCH,
   generateTransaction,
   InputTemplate,
-  lockingBytecodeToCashAddress,
   CashAddressNetworkPrefix,
   OutputTemplate,
-  sha256,
   Transaction,
-  swapEndianness,
 } from '@bitauth/libauth';
 
 import {
   getLibauthCompiler
 } from '@unspent/tau';
 
-import type {
-  AddressListUnspentEntry,
+import {
+  UtxoI,
+  getScriptHash,
+  getAddress
 } from '@unspent/tau';
 
 const DUST_LIMIT = 576;
@@ -28,17 +26,16 @@ const DECAY_NUMERATOR = 4392;
 const DECAY_DENOMINATOR = 1333036486;
 
 
-
 export default class Drip {
 
   static template = templateV3
 
-  static compiler = getLibauthCompiler(this.template)
+  static compiler: CompilerBCH = getLibauthCompiler(this.template)
 
-  static getLockingBytecode(): Uint8Array {
+  static getLockingBytecode(data = {}): Uint8Array {
     const lockingBytecodeResult = this.compiler.generateBytecode({
-      data: {},
-      scriptId: 'drip_mine_covenant'
+      data: data,
+      scriptId: 'lock'
     })
 
     if (!lockingBytecodeResult.success) {
@@ -48,20 +45,15 @@ export default class Drip {
     return lockingBytecodeResult.bytecode
   }
 
-  static getScriptHash(reversed=true):string{
-    let hashHex = binToHex(sha256.hash(this.getLockingBytecode()))
-    if(reversed)  return swapEndianness(hashHex)
-      return hashHex
+  static getScriptHash(reversed = true): string {
+    return getScriptHash(this.getLockingBytecode(), reversed)
   }
 
   static getAddress(prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
-    const bytecode = this.getLockingBytecode()
-    const result = lockingBytecodeToCashAddress({ prefix: prefix, bytecode: bytecode, tokenSupport: false })
-    if (typeof result === 'string') throw (result)
-    return result.address
+    return getAddress(this.getLockingBytecode(), prefix)
   }
 
-  static getOutput(utxo: AddressListUnspentEntry): OutputTemplate<CompilerBCH> {
+  static getOutput(utxo: UtxoI): OutputTemplate<CompilerBCH> {
 
     let fee = (utxo.value * DECAY_NUMERATOR) / DECAY_DENOMINATOR
     fee = fee < MIN_PAYOUT ? MIN_PAYOUT : fee
@@ -71,7 +63,7 @@ export default class Drip {
       return {
         lockingBytecode: {
           compiler: this.compiler,
-          script: 'drip_mine_covenant'
+          script: 'lock'
         },
         valueSatoshis: BigInt(outputValue),
       }
@@ -83,7 +75,7 @@ export default class Drip {
     }
   }
 
-  static getInput(utxo: AddressListUnspentEntry): InputTemplate<CompilerBCH> {
+  static getInput(utxo: UtxoI): InputTemplate<CompilerBCH> {
     let unlockingScript = utxo.value > BigInt(DUST_LIMIT + MIN_PAYOUT) ? 'unlock_return' : 'unlock_burn'
     return {
       outpointIndex: utxo.tx_pos,
@@ -97,7 +89,7 @@ export default class Drip {
     } as InputTemplate<CompilerBCH>
   }
 
-  static processOutpoint(utxo: AddressListUnspentEntry): Transaction {
+  static processOutpoint(utxo: UtxoI): Transaction {
 
     const inputs: InputTemplate<CompilerBCH>[] = [];
     const outputs: OutputTemplate<CompilerBCH>[] = [];

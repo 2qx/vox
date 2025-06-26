@@ -19,6 +19,19 @@ export type TokenCommitment = string;
 /** Capability information on the specific NFT. */
 export type TokenCapabilities = 'none' | 'mutable' | 'minting';
 
+// Weird setup to allow both Enum parameters, as well as literal strings
+// https://stackoverflow.com/questions/51433319/typescript-constructor-accept-string-for-enum
+const literal = <L extends string>(l: L): L => l;
+
+export const NFTCapability = {
+  none: literal("none"),
+  mutable: literal("mutable"),
+  minting: literal("minting"),
+};
+
+export type NFTCapability = typeof NFTCapability[keyof typeof NFTCapability];
+
+
 
 export type TransactionHash = string;
 
@@ -63,11 +76,11 @@ export interface TokenData {
  * @property value {Satoshis}                   - TODO: Document me.
  * @property token_data {TokenData}             - TODO: Document me.
  */
-export interface AddressListUnspentEntry extends TokenData {
+export interface UtxoI extends TokenData {
 	tx_pos: TransactionMerklePosition;
 	tx_hash: TransactionHash;
 	height: BlockHeight;
-	value: Satoshis;
+	value: Satoshis; 
 }
 
 

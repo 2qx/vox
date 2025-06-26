@@ -1,7 +1,7 @@
 {
-  "name": "@unspent/drip",
+  "name": "@vox/wrapped",
   "version": "1.0.0",
-  "description": "unspent drip lib",
+  "description": "Swap WBCH and BCH",
   "type": "module",
   "exports": {
     ".": {
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/2qx/unspent.git",
+    "url": "git+https://github.com/2qx/vox.git",
     "directory": "packages/drip"
   },
   "keywords": [
@@ -26,9 +26,9 @@
   "author": "2qx",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/2qx/unspent/issues"
+    "url": "https://github.com/2qx/vox/issues"
   },
-  "homepage": "https://github.com/2qx/unspent#readme",
+  "homepage": "https://github.com/2qx/vox#readme",
   "scripts": {
     "prepare": "pnpm run build",
     "build": "tsc -p tsconfig.json",

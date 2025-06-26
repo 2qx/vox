@@ -12,7 +12,7 @@ import {
 } from "@bitauth/libauth"
 
 import type {
-    AddressListUnspentEntry
+    UtxoI
 } from '@unspent/tau';
 
 import Future from "./auth.js"
@@ -49,11 +49,11 @@ export class Channel {
         return result.address
     }
 
-    static getInputs(channel: string, utxos: AddressListUnspentEntry[]): InputTemplate<CompilerBCH>[] {
+    static getInputs(channel: string, utxos: UtxoI[]): InputTemplate<CompilerBCH>[] {
         return utxos.map(u => this.getInput(channel, u))
     }
 
-    static getInput(channel: string, utxo: AddressListUnspentEntry): InputTemplate<CompilerBCH> {
+    static getInput(channel: string, utxo: UtxoI): InputTemplate<CompilerBCH> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -76,11 +76,11 @@ export class Channel {
         } as InputTemplate<CompilerBCH>
     }
 
-    static getSourceOutputs(channel: string, utxos: AddressListUnspentEntry[]): Output[] {
+    static getSourceOutputs(channel: string, utxos: UtxoI[]): Output[] {
         return utxos.map(u => this.getSourceOutput(channel, u))
     }
 
-    static getSourceOutput(channel: string, utxo: AddressListUnspentEntry): Output {
+    static getSourceOutput(channel: string, utxo: UtxoI): Output {
 
         return {
             outpointIndex: utxo.tx_pos,
@@ -94,7 +94,7 @@ export class Channel {
     }
 
 
-    static getOutput(utxo: AddressListUnspentEntry, isPremature: boolean): OutputTemplate<CompilerBCH> {
+    static getOutput(utxo: UtxoI, isPremature: boolean): OutputTemplate<CompilerBCH> {
 
         let futureTime = utxo.value / 10 * 1000
         let outputValue = isPremature ? utxo.value * 10 : utxo.value
@@ -108,7 +108,7 @@ export class Channel {
         }
     }
 
-    static getOutputs(utxos: AddressListUnspentEntry[], isPremature: boolean): OutputTemplate<CompilerBCH>[] {
+    static getOutputs(utxos: UtxoI[], isPremature: boolean): OutputTemplate<CompilerBCH>[] {
         return utxos.map(u => this.getOutput(u, isPremature))
     }
 
@@ -129,7 +129,7 @@ export class Channel {
         return lockingBytecodeResult.bytecode
     }
 
-    static processOutpoints(channel: string, utxos: AddressListUnspentEntry[], locktime: number): Transaction {
+    static processOutpoints(channel: string, utxos: UtxoI[], locktime: number): Transaction {
 
         const inputs: InputTemplate<CompilerBCH>[] = [];
         const sourceOutputs: Output[] = [];

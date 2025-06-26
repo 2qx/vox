@@ -145,6 +145,15 @@ importers:
         specifier: workspace:*
         version: link:../common
 
+  packages/wrapped:
+    dependencies:
+      '@bitauth/libauth':
+        specifier: ^3.0.0
+        version: 3.0.0
+      '@unspent/tau':
+        specifier: workspace:*
+        version: link:../common
+
 packages:
 
   '@ampproject/remapping@2.3.0':
