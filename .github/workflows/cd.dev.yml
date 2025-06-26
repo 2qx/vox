@@ -30,7 +30,7 @@ jobs:
     - name: Deploy
       uses: peaceiris/actions-gh-pages@v4
       with:
-        github_token: ${{ secrets.ACTIONS_DEPLOY_KEY }}
+        deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
         external_repository: 2qx/unspent.dev
         cname: unspent.dev
         publish_dir: ./docs
