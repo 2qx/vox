@@ -86,12 +86,13 @@
 
 	.uc-image {
 		align-self: center;
+		width: 60%;
 	}
 	.uc-local {
 		position: fixed;
 		top: 5em;
 		z-index: 1;
-		width: 400px;
+		width: 120px;
 		pointer-events: none;
 	}
 
