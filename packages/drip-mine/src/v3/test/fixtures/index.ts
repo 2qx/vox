@@ -292,7 +292,7 @@ export const SAMPLE_UTXO_TXHASH = {
 	"height": 896401,
 	"tx_hash": "0831fe3f964dd30e80843a4aa913bf96f6d41fb513b80ead7cda0be2de4ba12a",
 	"tx_pos": 0,
-	"value": 987654
+	"value": 987000000654
 }
 
 export const TERMINAL_UTXO_TXHASH = {

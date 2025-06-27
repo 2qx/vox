@@ -7,13 +7,11 @@
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 	import { BaseWallet, Wallet } from 'mainnet-js';
 
+	let data;
 	let wallet: any;
 	let walletError = false;
 	let balance: number;
 
-	async function updateWallet() {
-		balance = await wallet.getBalance('bch');
-	}
 
 	onMount(async () => {
 		try {
@@ -26,6 +24,16 @@
 		}
 	});
 </script>
+
+{#if page.url.hostname.includes('127.0.0.1') || page.url.hostname.includes('localhost')}
+	<div class="local">
+		This is a local development instance.
+	</div>
+{:else if page.url.hostname.includes('unspent.dev')}
+	<div class="dev">
+		This is an <b>unstable</b> development version running on <b>chipnet</b>. Please go to <a href="https://vox.cash">vox.cash</a> instead.
+	</div>
+{:else}{/if}
 
 <header>
 	<div class="corner">
@@ -69,6 +77,23 @@
 	header {
 		display: flex;
 		justify-content: space-between;
+	}
+
+	.dev {
+		background-color: rgb(255, 225, 0);
+		font-weight: 900;
+		min-height: 50px;
+		color: rgb(0, 0, 0);
+		text-align: center;
+	}
+
+	.local {
+		width: 100%;
+		background-color: rgb(255, 0, 255);
+		font-weight: 900;
+		min-height: 50px;
+		color: white;
+		text-align: center;
 	}
 
 	.wallet {
@@ -176,4 +201,6 @@
 	a:hover {
 		color: var(--color-theme-1);
 	}
+
+	
 </style>

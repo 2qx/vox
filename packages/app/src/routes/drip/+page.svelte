@@ -1,18 +1,16 @@
 <script lang="ts">
-	import {
-		encodeTransactionBCH,
-		binToHex,
-		swapEndianness,
-		hash256
-	} from '@bitauth/libauth';
+	import { onMount, onDestroy } from 'svelte';
+	import { page } from '$app/state';
+
+	import { encodeTransactionBCH, binToHex, swapEndianness, hash256 } from '@bitauth/libauth';
 	import Readme from './README.md';
 
 	import { blo } from 'blo';
 	// Import library features.
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 	import { Drip } from '@unspent/drip';
-	import { onMount, onDestroy } from 'svelte';
 
+	import dripIcon from '$lib/images/drip.svg';
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 	import BitauthLink from '$lib/BitauthLink.svelte';
@@ -26,6 +24,9 @@
 	let spent = new Set();
 
 	let timer: any;
+
+	let prefix = page.url.hostname == 'vox.cash' ? 'bitcoincash' : 'bchtest';
+	let server = page.url.hostname == 'vox.cash' ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 
 	const debounceClearSpent = () => {
 		clearTimeout(timer);
@@ -46,16 +47,6 @@
 		}
 	};
 
-	// const guessState = function (unspent: any) {
-	// 	let unspentString = unspent
-	// 		.map((i: any) => {
-	// 			return `${i.tx_hash}:${i.height}:`;
-	// 		})
-	// 		.join('');
-	// 	console.log('serialized unspents: ', unspentString);
-	// 	return binToHex(sha256.hash(utf8ToBin(unspentString)));
-	// };
-
 	const broadcast = async function (raw_tx: string) {
 		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
 		if (response instanceof Error) {
@@ -68,7 +59,7 @@
 	const processOutput = async function (utxo: any, index: number) {
 		let txn = Drip.processOutpoint(utxo);
 		spent.add(`${utxo.tx_hash}":"${utxo.tx_pos}`);
-		debounceClearSpent()
+		debounceClearSpent();
 		let raw_tx = binToHex(encodeTransactionBCH(txn));
 		let new_id = swapEndianness(binToHex(hash256(encodeTransactionBCH(txn))));
 
@@ -107,8 +98,10 @@
 	};
 
 	onMount(async () => {
+		
 		// Initialize an electrum client.
-		electrumClient = new ElectrumClient('unspent/drip', '1.4.1', 'bch.imaginary.cash');
+		electrumClient = new ElectrumClient('unspent/drip', '1.4.1', server);
+
 		// Wait for the client to connect.
 		await electrumClient.connect();
 		// Set up a callback function to handle new blocks.
@@ -117,13 +110,12 @@
 		electrumClient.on('notification', handleNotifications);
 
 		// Set up a subscription for new block headers.
-		//await electrumClient.subscribe('blockchain.scripthash.transactions.subscribe',[scripthash]);
 		await electrumClient.subscribe('blockchain.scripthash.subscribe', scripthash);
 		updateUnspent();
 	});
 
 	onDestroy(async () => {
-		const electrumClient = new ElectrumClient('unspent/drip', '1.4.1', 'bch.imaginary.cash');
+		const electrumClient = new ElectrumClient('unspent/drip', '1.4.1', server);
 		await electrumClient.disconnect();
 	});
 </script>
@@ -176,7 +168,23 @@
 			<p>No pending transactions</p>
 		{/if}
 	</div>
+
 	<Readme />
+	<qr-code
+		id="qr1"
+		contents={Drip.getAddress(prefix)}
+		module-color="#000"
+		position-ring-color="#0052ef"
+		position-center-color="#b7ffff"
+		mask-x-to-y-ratio="1.2"
+		style="width: 150px;
+									height: 150px;
+									margin: 0.5em auto;
+									background-color: #fff;"
+	>
+		<img src={dripIcon} slot="icon" />
+	</qr-code>
+	<p>{Drip.getAddress(prefix)}</p>
 </section>
 
 <style>

@@ -49,13 +49,13 @@ export default class Drip {
     return getScriptHash(this.getLockingBytecode(), reversed)
   }
 
-  static getAddress(prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
-    return getAddress(this.getLockingBytecode(), prefix)
+  static getAddress(prefix = "bitcoincash"): string {
+    return getAddress(this.getLockingBytecode(), prefix as CashAddressNetworkPrefix)
   }
 
   static getOutput(utxo: UtxoI): OutputTemplate<CompilerBCH> {
 
-    let fee = (utxo.value * DECAY_NUMERATOR) / DECAY_DENOMINATOR
+    let fee = Math.round((utxo.value * DECAY_NUMERATOR) / DECAY_DENOMINATOR)
     fee = fee < MIN_PAYOUT ? MIN_PAYOUT : fee
     let outputValue = utxo.value - fee
 

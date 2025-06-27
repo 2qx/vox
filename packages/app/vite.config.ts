@@ -15,7 +15,11 @@ export default defineConfig({
 		commonjsOptions: {
 			transformMixedEsModules: true,
 			// linked modules in a monorepo must be explicitly included
-			include: [/@unspent\/drip/, /node_modules/]
+			include: [
+				/@fbch\/lib/, 
+				/@unspent\/drip/, 
+				/node_modules/
+			]
 		},
 		
 		sourcemap: true,

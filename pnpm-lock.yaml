@@ -43,6 +43,12 @@ importers:
       '@electrum-cash/network':
         specifier: ^4.1.1
         version: 4.1.1(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)
+      '@electrum-cash/web-socket':
+        specifier: 1.0.0
+        version: 1.0.0
+      '@fbch/lib':
+        specifier: workspace:*
+        version: link:../future
       '@mainnet-cash/indexeddb-storage':
         specifier: 2.6.7
         version: 2.6.7
