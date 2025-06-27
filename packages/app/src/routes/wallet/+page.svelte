@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import walletIcon from '$lib/images/hot.svg';
 	import FbchSeriesIcon from '$lib/FbchSeriesIcon.svelte';
+	import hot from '$lib/images/hot.svg';
 	import bch from '$lib/images/BCH.svg';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
@@ -42,13 +43,32 @@
 
 <section>
 	<div class="status">
-		{#if wallet}
-			{balance}
+		<div class="scanable">
+			{#if wallet}
+				<qr-code
+					id="qr1"
+					contents={wallet.getDepositAddress()}
+					module-color="#000"
+					position-ring-color="#8dc351"
+					position-center-color="#ff00ec"
+					mask-x-to-y-ratio="1.2"
+					style="width: 150px;
+                height: 150px;
+                margin: 0.5em auto;
+                background-color: #fff;"
+				>
+					<img src={hot} width="30px" slot="icon" />
+				</qr-code>
+				<p>This is your wallet address.</p>
+				<pre id="deposit">{wallet.getDepositAddress()}</pre>
+			{/if}
+		</div>
 
-			{wallet.getDepositAddress()}
+		{#if balance >= 0}
+			Balance: {balance} BCH
 		{/if}
-
 		{#if unspent}
+			<h3>unspent outputs (coins)</h3>
 			{#if unspent.length > 0}
 				<div class="walletHead">
 					<!-- <img width="15" src={walletIcon} alt="hotWallet" /> -->
@@ -121,23 +141,23 @@
 		{/if}
 
 		{#if history}
-			<h3>ledger</h3>
+			<h3>history</h3>
 			{#if history.length > 0}
 				{#each history as c, i (c.txid + ':' + c.vout)}
-					<pre>{new Date(c.timestamp * 1000).toISOString()} - {c.hash}  </pre>
-					<pre># {c.blockHeight}■</pre>
+					<pre>{new Date(c.timestamp * 1000).toISOString()}</pre>
+					<pre># {c.blockHeight}■ {c.hash} </pre>
 					<pre>  assets:cash    {c.valueChange.toLocaleString().padStart(14)} sat</pre>
 					<pre>  expenses:fees  {c.fee.toLocaleString().padStart(14)} sat # {c.size} bytes</pre>
 					{#if c.tokenAmountChanges.length}
 						<pre>  assets:tokens  {c.tokenAmountChanges}</pre>
 					{/if}
-                    <pre> </pre>
+					<pre></pre>
 				{/each}
 			{:else}
-				<p>no wallet utxos available</p>
+				<p>no history</p>
 			{/if}
 		{:else}
-			<p>loading wallet...</p>
+			<p>loading history...</p>
 		{/if}
 	</div>
 </section>
@@ -154,6 +174,10 @@
 		font-weight: 500;
 	}
 
+	.scanable {
+		background-color: #fff;
+		padding: 50px;
+	}
 	pre {
 		margin-block: 0px;
 		padding: 0px;

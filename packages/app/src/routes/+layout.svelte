@@ -46,13 +46,13 @@
 	</footer>
 
 	{#if page.url.hostname.includes('127.0.0.1') || page.url.hostname.includes('localhost')}
-		<div class="uc-image">
+		<div class="uc-local">
 			<img src="{assets}/dev/localhost.png" alt="local" />
 		</div>
 	{/if}
 
 	{#if page.url.hostname.includes('unspent.dev')}
-		<div class="uc-local">
+		<div class="uc-image">
 			<img src="{assets}/dev/under_construction.gif" alt="Whao!" />
 		</div>
 	{/if}
@@ -85,11 +85,7 @@
 	}
 
 	.uc-image {
-		position: fixed;
-		top: 5em;
-		z-index: 1;
-		width: 100%;
-		pointer-events: none;
+		align-self: center;
 	}
 	.uc-local {
 		position: fixed;
