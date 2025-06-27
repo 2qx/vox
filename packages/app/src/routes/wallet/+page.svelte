@@ -124,13 +124,14 @@
 			<h3>ledger</h3>
 			{#if history.length > 0}
 				{#each history as c, i (c.txid + ':' + c.vout)}
-					<pre># {c.blockHeight}■ {new Date(c.timestamp * 1000).toISOString()}</pre>
-					<pre># {c.hash}</pre>
-					<pre>  assets:cash    {c.valueChange.toLocaleString().padStart(16)} sat</pre>
-					<pre>  expenses:fees  {c.fee.toLocaleString().padStart(16)} sat</pre>
+					<pre>{new Date(c.timestamp * 1000).toISOString()} - {c.hash}  </pre>
+					<pre># {c.blockHeight}■</pre>
+					<pre>  assets:cash    {c.valueChange.toLocaleString().padStart(14)} sat</pre>
+					<pre>  expenses:fees  {c.fee.toLocaleString().padStart(14)} sat # {c.size} bytes</pre>
 					{#if c.tokenAmountChanges.length}
 						<pre>  assets:tokens  {c.tokenAmountChanges}</pre>
 					{/if}
+                    <pre> </pre>
 				{/each}
 			{:else}
 				<p>no wallet utxos available</p>

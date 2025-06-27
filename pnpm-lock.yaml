@@ -54,7 +54,7 @@ importers:
         version: 2.6.7
       '@unspent/drip':
         specifier: workspace:*
-        version: link:../drip-mine
+        version: link:../drip
       blo:
         specifier: 2.0.0
         version: 2.0.0
@@ -133,7 +133,7 @@ importers:
         specifier: ^20.14.10
         version: 20.17.24
 
-  packages/drip-mine:
+  packages/drip:
     dependencies:
       '@bitauth/libauth':
         specifier: ^3.0.0
@@ -151,7 +151,7 @@ importers:
         specifier: workspace:*
         version: link:../common
 
-  packages/wrapped:
+  packages/wrap:
     dependencies:
       '@bitauth/libauth':
         specifier: ^3.0.0

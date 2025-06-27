@@ -147,7 +147,7 @@
 	}
 
 	.app-button button:disabled {
-		filter: grayscale(95%) opacity(30%) blur(5px);
+		filter: grayscale(95%) opacity(50%) blur(2px);
 		font-weight: 100;
 	}
 </style>

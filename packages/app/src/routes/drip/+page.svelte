@@ -98,7 +98,7 @@
 	};
 
 	onMount(async () => {
-		
+
 		// Initialize an electrum client.
 		electrumClient = new ElectrumClient('unspent/drip', '1.4.1', server);
 
@@ -184,7 +184,7 @@
 	>
 		<img src={dripIcon} slot="icon" />
 	</qr-code>
-	<p>{Drip.getAddress(prefix)}</p>
+	<pre id="deposit">{Drip.getAddress(prefix)}</pre>
 </section>
 
 <style>
