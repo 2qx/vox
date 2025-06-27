@@ -85,8 +85,13 @@
 	}
 
 	.uc-image {
+		position: fixed;
 		align-self: center;
-		width: 60%;
+		bottom: 2em;
+	}
+	
+	.uc-image img {
+		width: 100%;
 	}
 	.uc-local {
 		position: fixed;
