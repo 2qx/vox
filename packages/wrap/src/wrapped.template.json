@@ -8,7 +8,9 @@
             "name": "Wrapped BCH Vault",
             "scripts": [
                 "unlock"
-            ],
+            ]
+        },
+        "wallet":{
             "variables": {
                 "key": {
                     "description": "The private key that controls this wallet.",

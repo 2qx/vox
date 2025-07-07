@@ -144,7 +144,7 @@
 			{#each unspent.filter((i: any) => i.height > 0) as item, index}
 				<div class="row">
 					<button onclick={() => processOutput(item, index)}>
-						<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
+						<img src={blo(`0x${item.tx_hash}`)} alt={item.tx_hash} />
 						<p>{Number(item.value).toLocaleString()}</p>
 					</button>
 				</div>
@@ -159,7 +159,7 @@
 			{#each unspent.filter((i: any) => i.height <= 0) as item, index}
 				<div class="row">
 					<button disabled>
-						<img src={blo('0x' + item.tx_hash)} alt={item.tx_hash} />
+						<img src={blo(`0x${item.tx_hash}`)} alt={item.tx_hash} />
 						<p>{Number(item.value).toLocaleString()}</p>
 					</button>
 				</div>

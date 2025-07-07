@@ -66,7 +66,8 @@
 			name: 'WBCH',
 			description: 'Wrapped Bitcoin Cash CashToken.',
 			image: '/WBCH.svg',
-			disabled: true
+			link: '/wrap',
+			disabled: false
 		},
 		{
 			name: 'Trust',

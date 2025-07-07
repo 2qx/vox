@@ -38,6 +38,6 @@
     "@types/node": "^20.14.10"
   },
   "dependencies": {
-    "@bitauth/libauth": "^3.0.0"
+    "@bitauth/libauth": "3.0.0"
   }
 }

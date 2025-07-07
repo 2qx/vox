@@ -1,5 +1,5 @@
 {
-  "name": "@vox/wrap",
+  "name": "@unspent/wrap",
   "version": "1.0.0",
   "description": "Swap WBCH and BCH",
   "type": "module",

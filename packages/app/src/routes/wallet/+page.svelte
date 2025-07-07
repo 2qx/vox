@@ -6,6 +6,8 @@
 	import hot from '$lib/images/hot.svg';
 	import bch from '$lib/images/BCH.svg';
 
+	import { blo } from 'blo';
+
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
@@ -32,8 +34,8 @@
 			wallet = isTestnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
 			balance = await wallet.getBalance('sat');
 			history = await wallet.getHistory('sat', 0, 20, true);
-			console.log(history);
 			unspent = await wallet.getUtxos();
+			console.log(unspent);
 		} catch (e) {
 			walletError = true;
 			throw e;
@@ -80,10 +82,14 @@
 				<table class="wallet">
 					<thead>
 						<tr class="header">
-							<td>BCH </td>
-							<td>CashToken</td>
-							<td>Series</td>
-							<td>action</td>
+							<td
+								>Sats
+								<img width="15" src={bch} alt="bchLogo" />
+							</td>
+							<td></td>
+							<td>Category</td>
+							<td>Fungible</td>
+							<td>NFT</td>
 						</tr>
 					</thead>
 
@@ -91,43 +97,40 @@
 						{#each unspent as c, i (c.txid + ':' + c.vout)}
 							<tr>
 								<td class="r">
-									{#if Number(c.satoshis) > 800}
-										{(Number(c.satoshis) / 1e8).toLocaleString(undefined, {
-											minimumFractionDigits: 3
-										})}
-										<img width="15" src={bch} alt="bchLogo" />
-									{/if}
+									{Number(c.satoshis).toLocaleString(undefined, {})}
 								</td>
 								<td class="r">
 									<i>
 										{#if c.token}
-											{(Number(c.token.amount) / 1e8).toLocaleString(undefined, {
-												minimumFractionDigits: 3
-											})}
-											<FbchSeriesIcon time={CATEGORY_MAP.get(c.token?.category)} size="15" />
+											<img
+												height="20px"
+												src={blo('0x' + c.token?.tokenId)}
+												alt={c.token?.tokenId}
+											/>
 										{/if}
 									</i>
 								</td>
 								<td class="r">
-									{#if c.token}
-										{#if CATEGORY_MAP.has(c.token.category)}
-											<a href="/v?block={CATEGORY_MAP.get(c.token?.category)}">
-												{String(CATEGORY_MAP.get(c.token?.category)).padStart(7, '0')}
-											</a>
+									<i>
+										{#if c.token}
+											{c.token?.tokenId}
 										{/if}
-									{/if}
+									</i>
+								</td>
+								<td class="r">
+									<i>
+										{#if c.token}
+											{c.token.amount}
+										{/if}
+									</i>
 								</td>
 
-								<td style="width:30px; text-align:center;">
-									{#if c.token}
-										{#if CATEGORY_MAP.get(c.token?.category) <= Number(heightValue)}
-											<button class="action">redeem </button>
-										{:else}
-											<button class="action" disabled>
-												T{Number(heightValue) - CATEGORY_MAP.get(c.token?.category)}<sub>■</sub>
-											</button>
+								<td class="r">
+									<i>
+										{#if c.token}
+											{c.token.commitment}
 										{/if}
-									{/if}
+									</i>
 								</td>
 							</tr>
 						{/each}
@@ -143,8 +146,12 @@
 		{#if history}
 			<h3>history</h3>
 			{#if history.length > 0}
-				{#each history as c, i (c.txid + ':' + c.vout)}
-					<pre>{new Date(c.timestamp * 1000).toISOString()}</pre>
+				{#each history as c, i (c.hash)}
+					{#if c.timestamp>0}
+						<pre>{new Date(c.timestamp * 1000).toISOString()}</pre>
+					{:else}
+						<pre>{new Date().toISOString()}</pre>
+					{/if}
 					<pre># {c.blockHeight}■ {c.hash} </pre>
 					<pre>  assets:cash    {c.valueChange.toLocaleString().padStart(14)} sat</pre>
 					<pre>  expenses:fees  {c.fee.toLocaleString().padStart(14)} sat # {c.size} bytes</pre>
@@ -163,73 +170,15 @@
 </section>
 
 <style>
-	ul {
-		list-style: none;
-	}
-	textarea {
-		width: 90%;
-		border-radius: 10px;
-		background: #f4ffee;
-		border-width: 5px;
-		font-weight: 500;
-	}
 
-	.scanable {
-		background-color: #fff;
-		padding: 50px;
-	}
 	pre {
 		margin-block: 0px;
 		padding: 0px;
 		overflow: hidden;
+		white-space: nowrap;
 	}
 
-	.action {
-		display: inline-block;
-		border-radius: 10px;
-		background-color: #fa1ad5;
-		color: #fff;
-		margin: 1px;
-		padding: 1px;
-		font-weight: 900;
-		font-size: small;
-	}
-
-	.action:disabled {
-		display: inline-block;
-		border-radius: 10px;
-		background-color: #80748069;
-		color: #ffffff;
-		margin: 1px;
-		padding: 1px;
-		font-weight: 900;
-		font-size: small;
-	}
-
-	.styled {
-		border-color: #000;
-		font-size: 1rem;
-		line-break: anywhere;
-		text-align: center;
-		color: #000;
-		border-radius: 10px;
-		background-color: #ffe2ff;
-		font-weight: 700;
-		padding: 5px;
-		box-shadow:
-			inset 2px 2px 3px rgba(255, 255, 255, 0.6),
-			inset -2px -2px 3px rgba(0, 0, 0, 0.6);
-	}
-
-	.styled:hover {
-		background-color: rgb(238, 54, 255);
-	}
-
-	.styled:active {
-		box-shadow:
-			inset -2px -2px 3px rgba(255, 255, 255, 0.6),
-			inset 2px 2px 3px rgba(0, 0, 0, 0.6);
-	}
+	
 	thead tr {
 		text-align: center;
 		font-weight: 900;
@@ -240,8 +189,14 @@
 	tbody tr:nth-child(even) {
 		background-color: #e495e41a;
 	}
+
 	.r {
 		text-align: right;
 		vertical-align: middle;
+
+		max-width: 90px;
+		text-overflow: ellipsis;
+		overflow: hidden;
+		white-space: nowrap;
 	}
 </style>

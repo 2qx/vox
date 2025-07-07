@@ -1,0 +1,10 @@
+diff --git a/src/rate/ExchangeRate.ts b/src/rate/ExchangeRate.ts
+index 52199fba7447fcee053c513ea85cf905e80eba61..67e137999959b391ec54a5685405fa627207eb93 100644
+--- a/src/rate/ExchangeRate.ts
++++ b/src/rate/ExchangeRate.ts
+@@ -130,4 +130,4 @@ export async function getRateFromExchange(symbol: string): Promise<number> {
+   throw Error(`Currency '${symbol}' is not supported.`);
+ }
+ 
+-await ExchangeRate.get("usd");
++//await ExchangeRate.get("usd");

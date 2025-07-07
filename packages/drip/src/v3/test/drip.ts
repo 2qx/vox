@@ -2,7 +2,7 @@ import test from 'ava';
 
 import {
   binToHex,
-  encodeTransaction
+  encodeTransactionBCH
 } from "@bitauth/libauth";
 
 import { SAMPLE_UTXO_TXHASH, TERMINAL_UTXO_TXHASH, TXN_VALID } from './fixtures/index.js';
@@ -15,7 +15,7 @@ test('Should drip a minimum transaction', (t) => {
 
   const utxo = SAMPLE_UTXO_TXHASH as UtxoI
   const result = DripV3.processOutpoint(utxo);
-  const tx = encodeTransaction(result)
+  const tx = encodeTransactionBCH(result)
   const txHex = binToHex(tx)
   t.assert(txHex == TXN_VALID, "transaction hex should match")
   

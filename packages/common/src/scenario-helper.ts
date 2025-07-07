@@ -1,6 +1,11 @@
 import { CompilerConfiguration } from "@bitauth/libauth";
 
-export function generateSerializedSenario(compilerConfiguration: CompilerConfiguration) {
+
+// TODO 
+// 
+// Generate lists of scenarios for testing from templates
+// 
+export function generateSerializedScenario(compilerConfiguration: CompilerConfiguration) {
     
     let tests : any[] = []
     for(var script in compilerConfiguration.scripts){

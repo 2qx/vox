@@ -1,0 +1,1 @@
+docker-compose -f harness/regtest-docker-compose.yml down -v
