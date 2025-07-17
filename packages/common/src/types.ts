@@ -1,6 +1,8 @@
 import {
-    Transaction,
-	Output
+	Transaction,
+	Input,
+	Output,
+	CompilationData
 } from '@bitauth/libauth';
 
 /* Named aliases for basic types */
@@ -24,18 +26,24 @@ export type TokenCapabilities = 'none' | 'mutable' | 'minting';
 const literal = <L extends string>(l: L): L => l;
 
 export const NFTCapability = {
-  none: literal("none"),
-  mutable: literal("mutable"),
-  minting: literal("minting"),
+	none: literal("none"),
+	mutable: literal("mutable"),
+	minting: literal("minting"),
 };
+
+export type SourceOutput = Input & Output;
 
 export type NFTCapability = typeof NFTCapability[keyof typeof NFTCapability];
 
-
+export type CashAddressNetworkPrefix = "bitcoincash" | "bchtest" | "bchreg"
 
 export type TransactionHash = string;
 
 export type TransactionMerklePosition = number;
+
+
+
+export interface TransactionRequest { transaction: string, sourceOutputs: SourceOutput[] }
 
 export enum SignatureAlgorithm {
 	ECDSA = 0x00,
@@ -80,15 +88,16 @@ export interface UtxoI extends TokenData {
 	tx_pos: TransactionMerklePosition;
 	tx_hash: TransactionHash;
 	height: BlockHeight;
-	value: Satoshis; 
+	value: Satoshis;
 }
+
 
 
 export interface GenerateUnlockingBytecodeOptions {
 	transaction: Transaction;
 	sourceOutputs: Output[];
 	inputIndex: number;
-  }
+}
 
 export interface Unlocker {
 	generateLockingBytecode: () => Uint8Array;

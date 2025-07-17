@@ -1,17 +1,33 @@
 {
   "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
-  "description": "Block Point: A coinage reward token",
+  "description": "BlockPoints: A coin age reward token",
   "name": "BlockPoints",
   "entities": {
     "covenant": {
       "description": "Emit tokens as reward to holders.",
-      "name": "BlockPoints Vault",
-      "scripts": ["block_point_covenant", "unlock_tokens"],
+      "name": "BlockPoint Vault",
+      "scripts": [
+        "lock",
+        "unlock"
+      ],
       "variables": {
         "age": {
           "description": "The input age (as a number of blocks) claimed to withdraw tokens. The maximum age that can be used to claim tokens is the lessor of covenant thread age or user coins age being used to release tokens.",
           "name": "Age",
           "type": "WalletData"
+        }
+      }
+    },
+    "wallet": {
+      "scripts": [
+        "wallet_unlock",
+        "wallet_lock"
+      ],
+      "variables": {
+        "key": {
+          "description": "The private key that controls this wallet.",
+          "name": "Key",
+          "type": "HdKey"
         }
       }
     }
@@ -30,7 +46,9 @@
           {
             "outpointTransactionHash": "0e09765ada34fa0bd94ef9df8497173e8aefc560f3eb7c9e0e88b345c4cccb36",
             "outpointIndex": 0,
-            "unlockingBytecode": ["slot"],
+            "unlockingBytecode": [
+              "slot"
+            ],
             "sequenceNumber": 1
           }
         ]
@@ -48,14 +66,16 @@
       "transaction": {
         "inputs": [
           {
-            "unlockingBytecode": ["slot"],
+            "unlockingBytecode": [
+              "slot"
+            ],
             "sequenceNumber": 10
           }
         ],
         "outputs": [
           {
             "lockingBytecode": {
-              "script": "block_point_covenant"
+              "script": "lock"
             },
             "valueSatoshis": 800
           }
@@ -65,25 +85,42 @@
       },
       "sourceOutputs": [
         {
-          "lockingBytecode": ["slot"],
+          "lockingBytecode": [
+            "slot"
+          ],
           "valueSatoshis": 800
         }
       ]
     }
   },
   "scripts": {
-    "unlock_tokens": {
-      "passes": ["release"],
+    "unlock": {
+      "passes": [
+        "release"
+      ],
       "name": "Unlock Tokens",
       "script": "<age> // ",
-      "unlocks": "block_point_covenant"
+      "unlocks": "lock"
     },
-    "block_point_covenant": {
+    "lock": {
       "lockingType": "p2sh32",
-      "name": "Block Points Covenant",
+      "name": "BlockPoint Covenant",
       "script": "// Force a block based relative timelock\n   <500000000> OP_OVER OP_GREATERTHANOREQUAL OP_VERIFY\n// require(500000000 >= age);\n        \n// Ensure the first input exceeds the age claimed\n   OP_0 OP_INPUTSEQUENCENUMBER OP_OVER OP_GREATERTHANOREQUAL OP_VERIFY\n// require(tx.inputs[0].sequenceNumber >= age);\n        \n// Require the token vault thread to exceed the age claimed\n   OP_DUP OP_CHECKSEQUENCEVERIFY OP_DROP\n// require(this.age >= age);\n\n// Allow anyone to withdraw a token amount proportional to the value of their aged utxo.\n// Note: to convert block satoshis to coindays: 144 * 100_000_000 \n// \n   OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT \n   OP_INPUTINDEX OP_UTXOTOKENAMOUNT \n   OP_ROT OP_0 OP_UTXOVALUE OP_MUL <100000000> OP_DIV OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY\n//  require(\n//      tx.outputs[this.activeInputIndex].tokenAmount >= \n//      tx.inputs[this.activeInputIndex].tokenAmount - \n//      (age * tx.inputs[0].value/100000000)\n//  );\n\n// This thread must be in the last input position\n// to prevent users building transactions with multiple airdrop threads. \n//\n   OP_INPUTINDEX OP_1ADD OP_TXINPUTCOUNT OP_NUMEQUAL\n// require(this.activeInputIndex+1 == tx.inputs.length);\n"
+    },
+    "wallet_unlock": {
+      "name": "Wallet Unlock",
+      "script": "<key.schnorr_signature.all_outputs> <key.public_key>",
+      "unlocks": "wallet_lock"
+    },
+    "wallet_lock": {
+      "lockingType": "standard",
+      "name": "Wallet Lock",
+      "script": "OP_DUP OP_HASH160 <$(<key.public_key> OP_HASH160)> OP_EQUALVERIFY OP_CHECKSIG"
     }
   },
-  "supported": ["BCH_2023_05", "BCH_2024_05", "BCH_2025_05", "BCH_SPEC"],
+  "supported": [
+    "BCH_2023_05",
+    "BCH_SPEC"
+  ],
   "version": 0
 }

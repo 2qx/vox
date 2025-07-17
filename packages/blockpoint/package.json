@@ -1,7 +1,7 @@
 {
-  "name": "@unspent/wrap",
+  "name": "@unspent/blockpoint",
   "version": "1.0.0",
-  "description": "Swap WBCH and BCH",
+  "description": "Block Point: A coin age reward token",
   "type": "module",
   "exports": {
     ".": {
@@ -17,7 +17,7 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/2qx/vox.git",
-    "directory": "packages/wrap"
+    "directory": "packages/blockpoint"
   },
   "keywords": [
     "BCH",

@@ -1,5 +1,6 @@
 import { RegTestWallet } from "mainnet-js";
 export default async function getAnAliceWallet(amount) {
+    //@ts-ignore
     const alice = await RegTestWallet.fromId(process.env["ALICE_ID"]);
     const height = await alice.provider.getBlockHeight();
     let utxos = await alice.getUtxos();

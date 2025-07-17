@@ -11,6 +11,7 @@
             ]
         },
         "wallet":{
+            "scripts": ["wallet_unlock", "wallet_lock"],
             "variables": {
                 "key": {
                     "description": "The private key that controls this wallet.",
@@ -126,13 +127,13 @@
         },
         "wallet_unlock": {
             "name": "Wallet Unlock",
-            "script": "<key.schnorr_signature.all_outputs>\n<key.public_key>",
+            "script": "<key.schnorr_signature.all_outputs> <key.public_key>",
             "unlocks": "wallet_lock"
         },
         "wallet_lock": {
             "lockingType": "standard",
             "name": "Wallet Lock",
-            "script": "OP_DUP\nOP_HASH160 <$(<key.public_key> OP_HASH160\n)> OP_EQUALVERIFY\nOP_CHECKSIG"
+            "script": "OP_DUP OP_HASH160 <$(<key.public_key> OP_HASH160)> OP_EQUALVERIFY OP_CHECKSIG"
         }
     },
     "supported": [

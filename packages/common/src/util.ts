@@ -1,6 +1,7 @@
 import {
   binToHex,
   CashAddressType,
+  // CashAddressNetworkPrefix,
   cashAddressTypeBitsToType,
   decodeCashAddressFormat,
   decodeCashAddressFormatWithoutPrefix,
@@ -11,14 +12,16 @@ import {
   // generateTransaction,
   // InputTemplate,
   lockingBytecodeToCashAddress,
-  CashAddressNetworkPrefix,
   // OutputTemplate,
   sha256,
   swapEndianness,
   Transaction,
 } from '@bitauth/libauth';
 
-import { UtxoI } from './types.js';
+import { 
+  UtxoI, 
+  type CashAddressNetworkPrefix 
+} from './types.js';
 
 export function getScriptHash(lockingBytecode: Uint8Array, reversed = true): string {
   let hashHex = binToHex(sha256.hash(lockingBytecode))
@@ -27,9 +30,8 @@ export function getScriptHash(lockingBytecode: Uint8Array, reversed = true): str
 }
 
 
-export function getAddress(lockingBytecode: Uint8Array, prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
-  const bytecode = lockingBytecode
-  const result = lockingBytecodeToCashAddress({ prefix: prefix, bytecode: bytecode, tokenSupport: false })
+export function getAddress(lockingBytecode: Uint8Array, prefix = "bitcoincash" as CashAddressNetworkPrefix, tokenSupport=false): string {
+  const result = lockingBytecodeToCashAddress({ prefix: prefix, bytecode: lockingBytecode, tokenSupport: tokenSupport })
   if (typeof result === 'string') throw (result)
   return result.address
 }
@@ -105,8 +107,11 @@ export function getTransactionFees(tx: Transaction, rate = 1): bigint {
   return BigInt(encodeTransactionBCH(tx).length * rate)
 }
 
-export function adjustTransactionFees(tx: Transaction, outputIdx: number, rate = 1) {
-  const estimatedFee = getTransactionFees(tx, rate);
-  tx.outputs[outputIdx]!.valueSatoshis = tx.outputs[outputIdx]!.valueSatoshis - estimatedFee
-  return tx
+
+export function checkForEmptySeed(seed: Uint8Array) {
+  let blankSeed =
+    "4ed8d4b17698ddeaa1f1559f152f87b5d472f725ca86d341bd0276f1b61197e21dd5a391f9f5ed7340ff4d4513aab9cce44f9497a5e7ed85fd818876b6eb402e";
+  let seedBin = new Uint8Array(seed);
+  if (blankSeed == binToHex(seedBin))
+    throw Error("Seed was generated using empty mnemonic");
 }

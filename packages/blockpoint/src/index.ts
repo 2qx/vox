@@ -1,18 +1,20 @@
 import template from './template.json' with { type: "json" };
 
 import {
+    bigIntToVmNumber,
     binToHex,
     CompilerBCH,
     createVirtualMachineBCH,
     deriveHdPublicKey,
+    encodeTransactionBCH,
     generateTransaction,
     hdPrivateKeyToP2pkhLockingBytecode,
     hexToBin,
     InputTemplate,
     OutputTemplate,
-    verifyTransactionTokens,
     Output,
-    encodeTransactionBCH
+    stringify,
+    verifyTransactionTokens
 } from '@bitauth/libauth';
 
 import {
@@ -22,15 +24,13 @@ import {
     getLibauthCompiler,
     getScriptHash,
     UtxoI,
-    sumUtxoValue,
     sumTokenAmounts,
-    SourceOutput
 } from '@unspent/tau';
 
-const WBCH = hexToBin('ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3')
+const BPT = hexToBin('7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c')
 
 
-export default class Wrap {
+export default class BlockPoint {
 
     static tokenAware = true;
 
@@ -81,27 +81,37 @@ export default class Wrap {
 
     }
 
-
-    static getInput(utxo: UtxoI): InputTemplate<CompilerBCH> {
+    static getInput(utxo: UtxoI, age: number): InputTemplate<CompilerBCH> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
-            sequenceNumber: 0,
+            sequenceNumber: age,
             unlockingBytecode: {
+                data: {
+                    "bytecode": {
+                        "age": bigIntToVmNumber(BigInt(age))
+                    }
+                },
                 compiler: this.compiler,
-                script: 'unlock'
+                script: 'unlock',
+                valueSatoshis: BigInt(utxo.value),
             },
         } as InputTemplate<CompilerBCH>
     }
 
-    static getOutput(utxo: UtxoI, amount: number): OutputTemplate<CompilerBCH> {
+    static getOutput(utxo: UtxoI, amount: number, age: number): OutputTemplate<CompilerBCH> {
 
         return {
             lockingBytecode: {
+                data: {
+                    "bytecode": {
+                        "age": bigIntToVmNumber(BigInt(age))
+                    }
+                },
                 compiler: this.compiler,
                 script: 'lock'
             },
-            valueSatoshis: BigInt(utxo.value + amount),
+            valueSatoshis: BigInt(utxo.value),
             token: {
                 category: hexToBin(utxo.token_data!.category!),
                 amount: BigInt(utxo.token_data?.amount!) - BigInt(amount)
@@ -130,7 +140,7 @@ export default class Wrap {
     }
 
 
-    static getWalletInput(utxo: UtxoI, privateKey?: string, addressIndex = 0): InputTemplate<CompilerBCH> {
+    static getWalletInput(utxo: UtxoI, age: number, privateKey?: string, addressIndex = 0): InputTemplate<CompilerBCH> {
         const unlockingData = privateKey ? {
             compiler: this.compiler,
             data: {
@@ -142,22 +152,22 @@ export default class Wrap {
                 }
             },
             script: 'wallet_unlock',
-            valueSatoshis: BigInt(utxo.value),
+            valueSatoshis: BigInt(utxo.value)
         } : Uint8Array.from(Array())
 
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
-            sequenceNumber: 0,
+            sequenceNumber: age,
             unlockingBytecode: unlockingData,
         } as InputTemplate<CompilerBCH>
     }
 
-    static getChangeOutput(utxos: UtxoI[], amount: number, privateKey?: any, addressIndex = 0, category = WBCH): OutputTemplate<CompilerBCH> {
+    static getChangeOutput(utxo: UtxoI, amount: number, privateKey?: any, addressIndex = 0, category = BPT): OutputTemplate<CompilerBCH> {
 
-        const sats = sumUtxoValue(utxos)
-        const wsats = sumTokenAmounts(utxos, binToHex(category))
 
+        const btps = sumTokenAmounts([utxo], binToHex(category))
+        
         const lockingBytecode = privateKey ? {
             compiler: this.compiler,
             data: {
@@ -173,10 +183,10 @@ export default class Wrap {
 
         return {
             lockingBytecode: lockingBytecode,
-            valueSatoshis: BigInt(sats - amount),
+            valueSatoshis: BigInt(utxo.value),
             token: {
                 category: category,
-                amount: BigInt(wsats) + BigInt(amount)
+                amount: BigInt(btps) + BigInt(amount)
             }
         }
 
@@ -186,7 +196,7 @@ export default class Wrap {
      * Get source outputs, transform contract & wallet outpoints for spending verification.
      *
      * @param contractUtxo - contract outputs to use as input.
-     * @param walletUtxos - wallet outputs to use as input.
+     * @param walletUtxo - wallet outputs to use as input.
      * @param key - private key to sign transaction wallet inputs.
      *
      * @returns a transaction template.
@@ -194,32 +204,32 @@ export default class Wrap {
 
     static getSourceOutputs(
         contractUtxo: UtxoI,
-        walletUtxos: UtxoI[],
+        walletUtxo: UtxoI,
         key?: string
     ): Output[] {
         const sourceOutputs: Output[] = [];
+        sourceOutputs.push(this.getWalletSourceOutput(walletUtxo, key));
         sourceOutputs.push(this.getSourceOutput(contractUtxo));
-        sourceOutputs.push(...walletUtxos.map(u => { return this.getWalletSourceOutput(u, key) }));
         return sourceOutputs
     }
 
     /**
-     * Wrap (+) or Unwrap (-) some amount of WBCH.
+     * Claim some blockpoints.
      *
-     * @param amount     - amount to wrap (satoshis), negative to unwrap.
+     * @param age - The current bitcoin timestamp (expressed in blocks).
      * @param contractUtxo - contract outputs to use as input.
      * @param walletUtxos - wallet outputs to use as input.
      * @param key - private key to sign transaction wallet inputs.
-     * @param fee - transaction fee to pay (per byte).
+     * @param fee - transaction fee to pay (per byte); default 1 sat/byte.
      *
      * @throws {Error} if transaction generation fails.
      * @returns a transaction template.
      */
 
-    static swap(
-        amount: number,
+    static claim(
+        age: number,
         contractUtxo: UtxoI,
-        walletUtxos: UtxoI[],
+        walletUtxo: UtxoI,
         key?: string,
         category?: string,
         fee = 1
@@ -228,45 +238,41 @@ export default class Wrap {
         const inputs: InputTemplate<CompilerBCH>[] = [];
         const outputs: OutputTemplate<CompilerBCH>[] = [];
 
-        let wbchCat = category ? hexToBin(category) : WBCH
+        let bptCat = category ? hexToBin(category) : BPT
+
+        const amount = Math.floor(age * walletUtxo.value / 100000000)
 
         let config = {
+
             locktime: 0,
             version: 2,
             inputs,
             outputs
         }
+        config.inputs.push(this.getWalletInput(walletUtxo, age, key));
+        config.inputs.push(this.getInput(contractUtxo, age));
 
-        config.inputs.push(this.getInput(contractUtxo));
-        config.inputs.push(...walletUtxos.map(u => { return this.getWalletInput(u, key) }));
-
-        config.outputs.push(this.getOutput(contractUtxo, amount));
-        config.outputs.push(this.getChangeOutput(walletUtxos, amount, key, 0, wbchCat));
+        config.outputs.push(this.getChangeOutput(walletUtxo, amount, key, 0, bptCat));
+        config.outputs.push(this.getOutput(contractUtxo, amount, age));
 
         let result = generateTransaction(config);
-
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
         const estimatedFee = getTransactionFees(result.transaction, fee)
-        config.outputs[1]!.valueSatoshis = config.outputs[1]!.valueSatoshis - estimatedFee
+        config.outputs[0]!.valueSatoshis = config.outputs[0]!.valueSatoshis - estimatedFee
 
         result = generateTransaction(config);
-
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
-
 
         const transaction = result.transaction
 
-        const sourceOutputs = this.getSourceOutputs(contractUtxo, walletUtxos, key)
+        const sourceOutputs = this.getSourceOutputs(contractUtxo, walletUtxo, key);
+
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
             sourceOutputs
         );
-
-        if (tokenValidationResult !== true && fee > 0) {
-            throw tokenValidationResult;
-        }
-
+        if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
 
         let verify = this.vm.verify({
             sourceOutputs: sourceOutputs,

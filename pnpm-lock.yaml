@@ -38,8 +38,8 @@ importers:
         specifier: ^2.0.10
         version: 2.0.10
       mainnet-js:
-        specifier: ^2.3.11
-        version: 2.6.7(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)
+        specifier: ^2.7.9
+        version: 2.7.9(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)
       typedoc:
         specifier: ^0.28.1
         version: 0.28.1(typescript@5.8.2)
@@ -62,8 +62,8 @@ importers:
         specifier: workspace:*
         version: link:../future
       '@mainnet-cash/indexeddb-storage':
-        specifier: 2.6.7
-        version: 2.6.7
+        specifier: 2.7.8
+        version: 2.7.8
       '@unspent/drip':
         specifier: workspace:*
         version: link:../drip
@@ -74,8 +74,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0
       mainnet-js:
-        specifier: 2.6.7
-        version: 2.6.7(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)
+        specifier: 2.7.8
+        version: 2.7.8(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)
       pako:
         specifier: 2.1.0
         version: 2.1.0
@@ -138,6 +138,19 @@ importers:
         specifier: ^6.2.6
         version: 6.3.5(@types/node@20.17.24)(yaml@2.7.0)
 
+  packages/blockpoint:
+    dependencies:
+      '@bitauth/libauth':
+        specifier: ^3.0.0
+        version: 3.0.0
+      '@unspent/tau':
+        specifier: workspace:*
+        version: link:../common
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.24
+        version: 20.17.24
+
   packages/common:
     dependencies:
       '@bitauth/libauth':
@@ -174,6 +187,10 @@ importers:
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.24
+        version: 20.17.24
 
 packages:
 
@@ -185,6 +202,16 @@ packages:
     resolution: {integrity: sha512-2twsQz2fUd95QK1MtKuEnjkiN47SKHZfi/vWj040EN6Eo2ZW3SNcAwncJqXXoMTYZTWtBRXYp3Fg8z+JkFI9aQ==}
     engines: {node: ^18.18 || ^20.8 || ^21 || ^22}
 
+  '@bch-wc2/interfaces@0.0.4':
+    resolution: {integrity: sha512-ROQjPxRBAYPvy7z0qiATWjI7Jwf4Zhag1/r68i9PJ5Wp0Uaq75krh0a5/UF+bnJ+AUm0aKwNR4zT5D7a1mZkzA==}
+    peerDependencies:
+      '@bitauth/libauth': ^3.1.0-next.2
+
+  '@bch-wc2/interfaces@0.0.6':
+    resolution: {integrity: sha512-9Jg3IZX3rNM1SU4sb4eg/M2oO1l0txvT3Ju7mcGLASWe5jNncQ2xr253DI2ZJLcrelpTQmwZEH4erBm73aq34w==}
+    peerDependencies:
+      '@bitauth/libauth': ^3.1.0-next.2
+
   '@bcoe/v8-coverage@1.0.2':
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
@@ -193,11 +220,21 @@ packages:
     resolution: {integrity: sha512-3yoL31XpnhAnf5nDVMFk4xPqebxDwXrgYAwpa31ARJnV5A/eXWlpNYvCd6FTZPFM4VvKfjCBi+jRCrw1hOZ0Jg==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
+  '@bitauth/libauth@3.1.0-next.7':
+    resolution: {integrity: sha512-lJ+ZwDr5zIyO44XbHphdp/eEmIbd1D8gD6zbN8P2HLDDGSAE9rqUwXInWFGwaPKVR8cUbKK/MKSzbPCK+4hxDw==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
+
   '@electrum-cash/debug-logs@1.0.0':
     resolution: {integrity: sha512-GU/CvRR9lZ0d8gy9CXGW7f//OHCIydBavv9q+JcxjGj8Xr7HwlGqHx+Wzhx9y3YmJrXfExpgClcd++gTjdEmzA==}
 
   '@electrum-cash/network@4.1.1':
     resolution: {integrity: sha512-v5abF2qGRTnBoi9tcS/iz7j82D8HYsK9iY0NM5v8/Qu8SnlMGGNz8UDFl+YzRPFXb4SUL3K0uf3Oydy82DB3oA==}
+
+  '@electrum-cash/network@4.1.1-development.10647307155':
+    resolution: {integrity: sha512-IGvB1lHgY0ozgt2dvWD19Mx0aNrDd+wGh4WvQVDd1ax/GXLFhd7XmLxhHgXNAEm0IpwCTJD5mkiEBNdkvngYcQ==}
+
+  '@electrum-cash/network@4.1.3':
+    resolution: {integrity: sha512-amMvdcEfHhquoUkhN7x/H04KPYfqd5LilOGcg6O1OdUks1Mcrcah8WfHICHW/qyZ3Rgoos9o7Wx8gKz8qcSNzg==}
 
   '@electrum-cash/web-socket@1.0.0':
     resolution: {integrity: sha512-+VQ6aPE7nUysyDn9SB7/uqKuVJmjrhvr0LRK2ANTeR1DfmXBnv5z29e/0zK5A7ZoAz0gdZZuLDzN46r8S5Cxig==}
@@ -455,8 +492,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
 
-  '@mainnet-cash/indexeddb-storage@2.6.7':
-    resolution: {integrity: sha512-ko304tPJc2+4n5we7kj5IVbkck8PxRVcYmU7MmkGEYQddIjjLYHd0fJQZ9AHRVzh86+kZ2PdZdyv1W8lCyBCWA==}
+  '@mainnet-cash/indexeddb-storage@2.7.8':
+    resolution: {integrity: sha512-GVh9oNqoFS3cWVFHdaFwOun1P0yZEBnly7JOadHikBrxSU1SAqc2vLQNMx4UwNLltsLf5oOUjzAWe8PlxSJBqg==}
 
   '@mapbox/node-pre-gyp@2.0.0':
     resolution: {integrity: sha512-llMXd39jtP0HpQLVI37Bf1m2ADlEb35GYSh1SDSLsBhR+5iCxiNGlT31yqbNtVHygHAtMy6dWFERpU2JgufhPg==}
@@ -1025,10 +1062,6 @@ packages:
   devalue@5.1.1:
     resolution: {integrity: sha512-maua5KUiapvEwiEAe+XnlZ3Rh0GD+qI1J/nb9vrJc3muPXvcF/8gXYTWF76+5DAqHyDUtOIImEuo0YKE9mshVw==}
 
-  dexie@3.2.7:
-    resolution: {integrity: sha512-2a+BXvVhY5op+smDRLxeBAivE7YcYaneXJ1la3HOkUfX9zKkE/AJ8CNgjiXbtXepFyFmJNGSbmjOwqbT749r/w==}
-    engines: {node: '>=6.0'}
-
   dotenv@10.0.0:
     resolution: {integrity: sha512-rlBi9d8jpv9Sf1klPjNfFAuWDjKLwTIJJ/VxtoTwIR6hnZxcEOQCZg2oIL3MWBYw5GpUDKOEnND7LXTbIpQ03Q==}
     engines: {node: '>=10'}
@@ -1152,14 +1185,6 @@ packages:
 
   eventemitter3@5.0.1:
     resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
-
-  events@3.3.0:
-    resolution: {integrity: sha512-mQw+2fkQbALzQ7V0MY0IqdnXNOeTtP4r0lN9z7AAawCXgqea7bDii20AYrIBrFd/Hx0M2Ocz6S111CaFkUcb0Q==}
-    engines: {node: '>=0.8.x'}
-
-  eventsource@1.1.2:
-    resolution: {integrity: sha512-xAH3zWhgO2/3KIniEKYPr8plNSzlGINOUqYj0m0u7AB81iRw8b/3E73W6AuU+6klLbaSFmZnaETQ2lXPfAydrA==}
-    engines: {node: '>=0.12.0'}
 
   execa@8.0.1:
     resolution: {integrity: sha512-VyhnebXciFV2DESc+p6B+y0LjSm0krU4OgJN44qFAhBY0TJ+1V61tYD2+wHusZ6F9n5K+vl8k0sTy7PEfV4qpg==}
@@ -1465,8 +1490,11 @@ packages:
   magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
 
-  mainnet-js@2.6.7:
-    resolution: {integrity: sha512-65cl3qay9087cMKo8uceZAna6jHOM055CiV6VtesE6/QLm/1PuKEYgJrUS7T5vowYrwUtNn/vHiuZX3UqqgJLQ==}
+  mainnet-js@2.7.8:
+    resolution: {integrity: sha512-iWf5v+r/CKgOoasWoWBJUPQMQQ5foIoG1SvmjNqTXb+pvvrAgpn7gryMI96Qpt3R2/Q/4tPvfpVl0kKLIzMehg==}
+
+  mainnet-js@2.7.9:
+    resolution: {integrity: sha512-MJX144/RlF24KK9jd4ZbRyI1yAT+oqK2yODOOs/SPDl6NArRKf9A7uRh0CTEHEzD93pIk6eAvlcA/DCBD5PB8Q==}
 
   make-dir@4.0.0:
     resolution: {integrity: sha512-hXdUTZYIVOt1Ex//jAQi+wTZZpUpwBj/0QsOzqegb3rGMMeJiSEu5xLHnYfBrRV4RH2+OCSOO95Is/7x1WJ4bw==}
@@ -1726,16 +1754,8 @@ packages:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
 
-  qrcode-svg@1.1.0:
-    resolution: {integrity: sha512-XyQCIXux1zEIA3NPb0AeR8UMYvXZzWEhgdBgBjH9gO7M48H9uoHzviNz8pXw3UzrAcxRRRn9gxHewAVK7bn9qw==}
-    hasBin: true
-
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
-
-  readable-stream@3.6.2:
-    resolution: {integrity: sha512-9u/sniCrY3D5WdsERHzHE4G2YCXqoG5FTHUiCC4SIbr6XcLZBY05ya9EKjYek9O5xOAwjGq+1JdGBAS7Q9ScoA==}
-    engines: {node: '>= 6'}
 
   readdirp@4.1.2:
     resolution: {integrity: sha512-GDhwkLfywWL2s6vEjyhri+eXmfH6j1L7JE27WhqLeYzoh/A3DBaYGEj2H/HFZCn/kMfim73FXxEJTw06WtxQwg==}
@@ -1776,9 +1796,6 @@ packages:
   sade@1.8.1:
     resolution: {integrity: sha512-xal3CZX1Xlo/k4ApwCFrHVACi9fBqJ7V+mwhBsuf/1IOKbBy098Fex+Wa/5QMubw09pSZ/u8EY8PWgevJsXp1A==}
     engines: {node: '>=6'}
-
-  safe-buffer@5.2.1:
-    resolution: {integrity: sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==}
 
   semver@7.7.1:
     resolution: {integrity: sha512-hlq8tAfn0m/61p4BVRcPzIGr6LKiMwo4VM6dGi6pt4qcRkmNzTcWq6eCEjEh+qXjkMDvPlOFFSGwQjoEa6gyMA==}
@@ -1827,9 +1844,6 @@ packages:
     resolution: {integrity: sha512-XlkWvfIm6RmsWtNJx+uqtKLS8eqFbxUg0ZzLXqY0caEy9l7hruX8IpiDnjsLavoBgqCCR71TqWO8MaXYheJ3RQ==}
     engines: {node: '>=10'}
 
-  stream-browserify@3.0.0:
-    resolution: {integrity: sha512-H73RAHsVBapbim0tU2JwwOiXUj+fikfiaoYAKHF3VJfA0pe2BCzkhAHBlLG6REzE+2WNZcxOXjK7lkso+9euLA==}
-
   string-width@4.2.3:
     resolution: {integrity: sha512-wKyQRQpjJ0sIp62ErSZdGsjMJWsap5oRNihHhu6G7JVO/9jIB6UyevL+tXuOqrng8j/cxKTWyWUwvSTriiZz/g==}
     engines: {node: '>=8'}
@@ -1841,9 +1855,6 @@ packages:
   string-width@7.2.0:
     resolution: {integrity: sha512-tsaTIkKW9b4N+AEj+SVA+WhJzV7/zMhcSu78mLKWSk7cXMOSHsBKFWUs0fWwq8QyK3MgJBQRX6Gbi4kYbdvGkQ==}
     engines: {node: '>=18'}
-
-  string_decoder@1.3.0:
-    resolution: {integrity: sha512-hkRX8U1WjJFd8LsDJ2yQ/wWWxaopEsABU1XfkM8A+j0+85JAGppt16cr1Whg6KIbb4okU6Mql6BOj+uup/wKeA==}
 
   strip-ansi@6.0.1:
     resolution: {integrity: sha512-Y38VPSHcqkFrCpFnQ9vuSXmquuv5oXOKpGeT6aGrr3o3Gc9AlVa6JBfUSOCnbxGGZF+/0ooI7KrPuUSztUdU5A==}
@@ -2142,9 +2153,19 @@ snapshots:
       escape-string-regexp: 5.0.0
       execa: 8.0.1
 
+  '@bch-wc2/interfaces@0.0.4(@bitauth/libauth@3.1.0-next.7)':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.7
+
+  '@bch-wc2/interfaces@0.0.6(@bitauth/libauth@3.1.0-next.7)':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.7
+
   '@bcoe/v8-coverage@1.0.2': {}
 
   '@bitauth/libauth@3.0.0': {}
+
+  '@bitauth/libauth@3.1.0-next.7': {}
 
   '@electrum-cash/debug-logs@1.0.0':
     dependencies:
@@ -2153,6 +2174,32 @@ snapshots:
       - supports-color
 
   '@electrum-cash/network@4.1.1(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)':
+    dependencies:
+      '@electrum-cash/debug-logs': 1.0.0
+      '@electrum-cash/web-socket': 1.0.0
+      async-mutex: 0.5.0
+      debug: 4.4.1
+      eventemitter3: 5.0.1
+      lossless-json: 4.1.0
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  '@electrum-cash/network@4.1.1-development.10647307155(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)':
+    dependencies:
+      '@electrum-cash/debug-logs': 1.0.0
+      '@electrum-cash/web-socket': 1.0.0
+      async-mutex: 0.5.0
+      debug: 4.4.1
+      eventemitter3: 5.0.1
+      lossless-json: 4.1.0
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  '@electrum-cash/network@4.1.3(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)':
     dependencies:
       '@electrum-cash/debug-logs': 1.0.0
       '@electrum-cash/web-socket': 1.0.0
@@ -2355,10 +2402,9 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@mainnet-cash/indexeddb-storage@2.6.7':
+  '@mainnet-cash/indexeddb-storage@2.7.8':
     dependencies:
-      dexie: 3.2.7
-      mainnet-js: 2.6.7(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)
+      mainnet-js: 2.7.8(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -2947,8 +2993,6 @@ snapshots:
 
   devalue@5.1.1: {}
 
-  dexie@3.2.7: {}
-
   dotenv@10.0.0:
     optional: true
 
@@ -3112,10 +3156,6 @@ snapshots:
   esutils@2.0.3: {}
 
   eventemitter3@5.0.1: {}
-
-  events@3.3.0: {}
-
-  eventsource@1.1.2: {}
 
   execa@8.0.1:
     dependencies:
@@ -3386,18 +3426,29 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  mainnet-js@2.6.7(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523):
+  mainnet-js@2.7.8(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523):
     dependencies:
-      '@bitauth/libauth': 3.0.0
+      '@bch-wc2/interfaces': 0.0.4(@bitauth/libauth@3.1.0-next.7)
+      '@bitauth/libauth': 3.1.0-next.7
+      '@electrum-cash/network': 4.1.1-development.10647307155(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)
       '@scure/bip39': 1.6.0
       buffer: 6.0.3
-      electrum-cash: 2.0.10
-      events: 3.3.0
-      eventsource: 1.1.2
-      qrcode-svg: 1.1.0
     optionalDependencies:
       dotenv: 10.0.0
-      stream-browserify: 3.0.0
+    transitivePeerDependencies:
+      - bufferutil
+      - supports-color
+      - utf-8-validate
+
+  mainnet-js@2.7.9(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523):
+    dependencies:
+      '@bch-wc2/interfaces': 0.0.6(@bitauth/libauth@3.1.0-next.7)
+      '@bitauth/libauth': 3.1.0-next.7
+      '@electrum-cash/network': 4.1.3(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)
+      '@scure/bip39': 1.6.0
+      buffer: 6.0.3
+    optionalDependencies:
+      dotenv: 10.0.0
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -3610,16 +3661,7 @@ snapshots:
 
   punycode@2.3.1: {}
 
-  qrcode-svg@1.1.0: {}
-
   queue-microtask@1.2.3: {}
-
-  readable-stream@3.6.2:
-    dependencies:
-      inherits: 2.0.4
-      string_decoder: 1.3.0
-      util-deprecate: 1.0.2
-    optional: true
 
   readdirp@4.1.2: {}
 
@@ -3673,9 +3715,6 @@ snapshots:
     dependencies:
       mri: 1.2.0
 
-  safe-buffer@5.2.1:
-    optional: true
-
   semver@7.7.1: {}
 
   serialize-error@7.0.1:
@@ -3713,12 +3752,6 @@ snapshots:
     dependencies:
       escape-string-regexp: 2.0.0
 
-  stream-browserify@3.0.0:
-    dependencies:
-      inherits: 2.0.4
-      readable-stream: 3.6.2
-    optional: true
-
   string-width@4.2.3:
     dependencies:
       emoji-regex: 8.0.0
@@ -3736,11 +3769,6 @@ snapshots:
       emoji-regex: 10.4.0
       get-east-asian-width: 1.3.0
       strip-ansi: 7.1.0
-
-  string_decoder@1.3.0:
-    dependencies:
-      safe-buffer: 5.2.1
-    optional: true
 
   strip-ansi@6.0.1:
     dependencies:

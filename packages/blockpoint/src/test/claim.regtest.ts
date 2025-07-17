@@ -2,42 +2,22 @@ import test from 'ava';
 import { getHdPrivateKey, TransactionRequest } from "@unspent/tau";
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
-import { RegTestWallet } from "mainnet-js";
+import { RegTestWallet, mine } from "mainnet-js";
 
-import Wrap from "../index.js";
-import {
-  binToHex,
-  cashAddressToLockingBytecode,
-  encodeTransactionBCH,
-  swapEndianness
-} from '@bitauth/libauth';
-
-// Async arrow function
-test('test wrap covenant address', async t => {
-  const alice = await getAnAliceWallet(500_000)
-  //alice.provider = regTest
-  const aliceBalance = await alice.getBalance('sats') as number
-  t.is(aliceBalance, 500000);
-
-  t.is(Wrap.getAddress(), "bitcoincash:r0ujgnc9jnyurzv99678fgac3fdrq8x3py9rlrg6dlnz96qxrdl02t6jek3sw")
-  t.not(Wrap.getAddress("bchreg"), "bchreg:r0ujgnc9jnyurzv99678fgac3fdrq8x3py9rlrg6dlnz96qxrdl02t6jek3sw")
-  t.is(Wrap.getAddress("bchreg"), "bchreg:r0ujgnc9jnyurzv99678fgac3fdrq8x3py9rlrg6dlnz96qxrdl02ah3df4j5")
-  t.is(Wrap.getAddress("bchtest"), "bchtest:r0ujgnc9jnyurzv99678fgac3fdrq8x3py9rlrg6dlnz96qxrdl02gar8wz9u")
+import BlockPoint from "../index.js";
 
 
-});
+test('test claim function with key', async t => {
 
-test('test wrap function with key', async t => {
+  const alice = await getAnAliceWallet(100_003_000)
 
-  const alice = await getAnAliceWallet(500_000)
-
-  let wrap_contract = Wrap.getAddress("bchreg")
+  let contract = BlockPoint.getAddress("bchreg")
   const genesisResponse = await alice.tokenGenesis({
-    cashaddr: wrap_contract,      // token UTXO recipient, if not specified will default to sender's address
+    cashaddr: contract,      // token UTXO recipient, if not specified will default to sender's address
     amount: BigInt(21e14),   // fungible token amount
     value: 1000,                    // Satoshi value
   });
-  const tWBCH = genesisResponse.tokenIds![0]!;
+  const tokenId = genesisResponse.tokenIds![0]!;
 
   const bob = await RegTestWallet.newRandom();
   await alice.sendMax(bob.getDepositAddress())
@@ -45,18 +25,18 @@ test('test wrap function with key', async t => {
   let key = getHdPrivateKey(bob.mnemonic!, bob.derivationPath.slice(0, -2), bob.isTestnet)
 
   const bobBalance = await bob.getBalance('sats') as number
-  t.assert(bobBalance >= 498000);
+  t.assert(bobBalance >= 100_000_000);
 
   let provider = bob.provider!
 
   // @ts-ignore
   let contractUtxos = await provider.performRequest(
     "blockchain.address.listunspent",
-    wrap_contract,
+    contract,
     "include_tokens"
   )
 
-  contractUtxos = contractUtxos.filter((u: any) => u.token_data!.category == tWBCH)
+  contractUtxos = contractUtxos.filter((u: any) => u.token_data!.category == tokenId)
 
   // @ts-ignore
   let walletUtxos = await provider.performRequest(
@@ -65,18 +45,23 @@ test('test wrap function with key', async t => {
     "include_tokens"
   )
 
-  let tx = Wrap.swap(
-    20000,
+  await mine({
+    /* cspell:disable-next-line */
+    cashaddr: "bchreg:ppt0dzpt8xmt9h2apv9r60cydmy9k0jkfg4atpnp2f",
+    blocks: 10,
+  });
+
+
+  let tx = BlockPoint.claim(
+    10,
     contractUtxos[0],
-    [walletUtxos[0]],
+    walletUtxos[0],
     key,
-    tWBCH
+    tokenId
   )
   await provider.sendRawTransaction(tx)
 });
 
-
-// test('test wrap function unsigned', async t => {
 
 //   const alice = await getAnAliceWallet(500_000)
 

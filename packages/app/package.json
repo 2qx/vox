@@ -38,11 +38,11 @@
 		"@bitauth/libauth": "3.0.0",
 		"@electrum-cash/network": "^4.1.1",
 		"@electrum-cash/web-socket": "1.0.0",
-		"@mainnet-cash/indexeddb-storage": "2.6.7",
+		"@mainnet-cash/indexeddb-storage": "2.7.8",
 		"@fbch/lib": "workspace:*",
 		"@unspent/drip": "workspace:*",
 		"@unspent/wrap": "workspace:*",
-		"mainnet-js": "2.6.7",
+		"mainnet-js": "2.7.8",
 		"blo": "2.0.0",
 		"pako": "2.1.0"
 	}

@@ -8,8 +8,9 @@ import Wrap from '../index.js';
 
 test('Should build a wrapped transaction', (t) => {
     
+    //@ts-ignore
     let privateKey = process.env["PRIVATE_KEY"]!
-    const result = Wrap.swap(5000, CONTRACT_UTXO, WALLET_UTXO, privateKey);
-        t.assert(binToHex(encodeTransaction(result)).length > 0, "transaction hex have a non-zero length")
+    const tx = Wrap.swap(10000, CONTRACT_UTXO, WALLET_UTXO, privateKey);
+        t.assert(tx.length > 0, "transaction hex have a non-zero length")
 
 });
