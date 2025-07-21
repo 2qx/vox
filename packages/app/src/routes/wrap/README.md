@@ -2,15 +2,15 @@
 
 Wrapped Bitcoin Cash (WBCH) are fungible CashTokens redeemable 1:1 for Bitcoin Cash. 
 
-Wrapped BCH (WBCH) [[wrapped.cash]](https://wrapped.cash) was created by Dagur Valberg Johannsson in [November 2023](https://bitcoincashresearch.org/t/wbch-bch-wrapped-as-cash-token/1196). 
+[Wrapped BCH (WBCH)](https://wrapped.cash) was created by Dagur Valberg Johannsson in [November 2023](https://bitcoincashresearch.org/t/wbch-bch-wrapped-as-cash-token/1196). 
 
 All 21M WBCH minted were sent to an immutable vault contract as 21 outputs, each with 1M WBCH. 
 
 The Wrapped BCH contract enforces three conditions:
 
  1. The token id MUST not change.
- 1. An output being spent from the contract MUST return to the contract.
- 1. The sum of tokens and sats *in* MUST equal the sum of tokens and satoshis *out*.
+ 2. An output being spent from the contract MUST return to the contract.
+ 3. The sum of tokens and sats *in* MUST equal the sum of tokens and satoshis *out*.
 
 These three rules ensure that when tokens are spent from the contract, each must swap an equal amount of Bitcoin Cash in a corresponding output.
 
