@@ -1,4 +1,4 @@
-import template from './template.json' with { type: "json" };
+import template from './template.v1.json' with { type: "json" };
 
 import {
     binToHex,
@@ -23,8 +23,7 @@ import {
     getScriptHash,
     UtxoI,
     sumUtxoValue,
-    sumTokenAmounts,
-    SourceOutput
+    sumTokenAmounts
 } from '@unspent/tau';
 
 const WBCH = hexToBin('ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3')
@@ -187,7 +186,7 @@ export default class Wrap {
      *
      * @param contractUtxo - contract outputs to use as input.
      * @param walletUtxos - wallet outputs to use as input.
-     * @param key - private key to sign transaction wallet inputs.
+     * @param privateKey - private key to sign transaction wallet inputs.
      *
      * @returns a transaction template.
      */
@@ -195,11 +194,11 @@ export default class Wrap {
     static getSourceOutputs(
         contractUtxo: UtxoI,
         walletUtxos: UtxoI[],
-        key?: string
+        privateKey?: string
     ): Output[] {
         const sourceOutputs: Output[] = [];
         sourceOutputs.push(this.getSourceOutput(contractUtxo));
-        sourceOutputs.push(...walletUtxos.map(u => { return this.getWalletSourceOutput(u, key) }));
+        sourceOutputs.push(...walletUtxos.map(u => { return this.getWalletSourceOutput(u, privateKey) }));
         return sourceOutputs
     }
 
@@ -209,7 +208,7 @@ export default class Wrap {
      * @param amount     - amount to wrap (satoshis), negative to unwrap.
      * @param contractUtxo - contract outputs to use as input.
      * @param walletUtxos - wallet outputs to use as input.
-     * @param key - private key to sign transaction wallet inputs.
+     * @param privateKey - private key to sign transaction wallet inputs.
      * @param fee - transaction fee to pay (per byte).
      *
      * @throws {Error} if transaction generation fails.
@@ -220,7 +219,7 @@ export default class Wrap {
         amount: number,
         contractUtxo: UtxoI,
         walletUtxos: UtxoI[],
-        key?: string,
+        privateKey?: string,
         category?: string,
         fee = 1
     ): string {
@@ -238,35 +237,29 @@ export default class Wrap {
         }
 
         config.inputs.push(this.getInput(contractUtxo));
-        config.inputs.push(...walletUtxos.map(u => { return this.getWalletInput(u, key) }));
+        config.inputs.push(...walletUtxos.map(u => { return this.getWalletInput(u, privateKey) }));
 
         config.outputs.push(this.getOutput(contractUtxo, amount));
-        config.outputs.push(this.getChangeOutput(walletUtxos, amount, key, 0, wbchCat));
+        config.outputs.push(this.getChangeOutput(walletUtxos, amount, privateKey, 0, wbchCat));
 
         let result = generateTransaction(config);
-
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
         const estimatedFee = getTransactionFees(result.transaction, fee)
         config.outputs[1]!.valueSatoshis = config.outputs[1]!.valueSatoshis - estimatedFee
 
         result = generateTransaction(config);
-
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
-
 
         const transaction = result.transaction
 
-        const sourceOutputs = this.getSourceOutputs(contractUtxo, walletUtxos, key)
+        const sourceOutputs = this.getSourceOutputs(contractUtxo, walletUtxos, privateKey)
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
             sourceOutputs
         );
 
-        if (tokenValidationResult !== true && fee > 0) {
-            throw tokenValidationResult;
-        }
-
+        if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
 
         let verify = this.vm.verify({
             sourceOutputs: sourceOutputs,

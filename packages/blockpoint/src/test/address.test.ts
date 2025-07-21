@@ -5,12 +5,7 @@ import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
 import { RegTestWallet } from "mainnet-js";
 
 import BlockPoint from "../index.js";
-import {
-  binToHex,
-  cashAddressToLockingBytecode,
-  encodeTransactionBCH,
-  swapEndianness
-} from '@bitauth/libauth';
+
 
 // Async arrow function
 test('test wrap covenant address', async t => {

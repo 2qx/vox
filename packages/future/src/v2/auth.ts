@@ -1,4 +1,4 @@
-import template_json from './future-v2.template.json' with { type: "json" };
+import template_json from './template.v2.json' with { type: "json" };
 
 import {
   type CompilerBCH,

@@ -1,4 +1,5 @@
 import {
+  bigIntToVmNumber,
   binToHex,
   CashAddressType,
   // CashAddressNetworkPrefix,
@@ -115,3 +116,9 @@ export function checkForEmptySeed(seed: Uint8Array) {
   if (blankSeed == binToHex(seedBin))
     throw Error("Seed was generated using empty mnemonic");
 }
+
+
+export const sleep = (ms:number) => new Promise(resolve => setTimeout(resolve, ms))
+
+
+export const numToVm = (n:number) =>  bigIntToVmNumber(BigInt(n))

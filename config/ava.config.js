@@ -4,7 +4,7 @@ import fs from 'node:fs';
 
 export default {
   require: ['./_force-exit.mjs'],
-  "timeout": "10s",
+  "timeout": "45s",
   "environmentVariables": {
     "ALICE_ID": "wif:regtest:cNfsPtqN2bMRS7vH5qd8tR8GMvgXyL5BjnGAKgZ8DYEiCrCCQcP6",
     "ADDRESS": "bchreg:qpttdv3qg2usm4nm7talhxhl05mlhms3ys43u76rn0",

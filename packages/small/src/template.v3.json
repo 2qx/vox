@@ -7,7 +7,7 @@
       "description": "Store data records in NFT commitments. \n\nEach \"key\" corresponds to a different contract address, where the token balance stores the values for that key. Each record exists in the data commitment of a non-fungible token of any category (currently 40 bytes in length). Each record pays a flat storage fee of one satoshi per block. Expired records can be burned by anyone to benefit the party mining the next block.\n\n The Small Index covenant defines a storage mechanism, but the schema for data within the records is left to application designers. Since anyone may write to any record, applications must verify all claims, or use an authorization scheme to validate data.",
       "name": "Small Index Covenant",
       "scripts": [
-        "drop_record_spending_path"
+        "unlock"
       ],
       "variables": {
         "key": {
@@ -42,7 +42,7 @@
         "outputs": [
           {
             "lockingBytecode": {
-              "script": "op_return_output"
+              "script": "op_return"
             }
           }
         ],
@@ -64,21 +64,21 @@
     }
   },
   "scripts": {
-    "drop_record_spending_path": {
+    "unlock": {
       "passes": [
         "drop"
       ],
       "name": "Drop Record",
       "script": "// Dropping a record is authorized \n// using only introspection from properties of \n// the expired record unspent output.",
       "timeLockType": "height",
-      "unlocks": "small_index_lock"
+      "unlocks": "lock"
     },
-    "op_return_output": {
+    "op_return": {
       "lockingType": "standard",
       "name": "Return Operation",
       "script": "OP_RETURN"
     },
-    "small_index_lock": {
+    "lock": {
       "lockingType": "p2sh32",
       "name": "Small Index Locking Script",
       "script": "// pragma cashscript 0.10.0;\n\n// Small Index \n// \n// A subscription based key-value index \n//\n\n// Including the key here creates a different covenant for each key-value\n<key> OP_DROP\n// contract SmallIndex(bytes key) {\n    \n    // Secure outputs with data in token commitments for a given key.\n    // \n    // All entries pay a fixed storage fee of 1 satoshi per block. \n    //\n    // If an entry has expired, miners may drop it.\n    //\n    // Miners can drop many expired entires at once.\n    //\n\n// function drop() {\n\n// Require each input age be higher than the utxo value\n    OP_INPUTINDEX OP_UTXOVALUE OP_CHECKSEQUENCEVERIFY OP_DROP\n// require(tx.age >= tx.inputs[this.activeInputIndex].value);\n\n// See TokenBurner - Dagur Valberg Johannsson\n//\n// Require a single output\n   OP_TXOUTPUTCOUNT OP_1 OP_NUMEQUALVERIFY \n// require(tx.outputs.length == 1);\n\n// Without BCH\n   OP_0 OP_OUTPUTVALUE OP_0 OP_NUMEQUALVERIFY\n// require(tx.outputs[0].value == 0);\n\n// Without tokens\n   OP_0 OP_OUTPUTTOKENCATEGORY OP_0 OP_EQUALVERIFY\n// require(tx.outputs[0].tokenCategory == 0x);\n\n// As an empty OP_RETURN\n   OP_0 OP_OUTPUTBYTECODE <0x6a> OP_EQUAL\n// require(tx.outputs[0].lockingBytecode == 0x6a);\n\n//    }\n// }"
@@ -86,8 +86,6 @@
   },
   "supported": [
     "BCH_2023_05",
-    "BCH_2024_05",
-    "BCH_2025_05",
     "BCH_SPEC"
   ],
   "version": 0

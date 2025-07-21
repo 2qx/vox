@@ -8,7 +8,7 @@
 	import { blo } from 'blo';
 	// Import library features.
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
-	import { Drip } from '@unspent/drip';
+	import  Drip  from '@unspent/drip';
 
 	import dripIcon from '$lib/images/drip.svg';
 	import CONNECTED from '$lib/images/connected.svg';

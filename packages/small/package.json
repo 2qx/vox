@@ -1,0 +1,44 @@
+{
+  "name": "@unspent/small",
+  "version": "1.0.0",
+  "description": "Small Index: A distributed key-value database system.",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./out/index.d.ts",
+      "import": "./out/index.js"
+    },
+    "./*.js": {
+      "types": "./out/*.d.ts",
+      "import": "./out/*.js"
+    },
+    "./*.json": "./out/*.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/2qx/vox.git",
+    "directory": "packages/small"
+  },
+  "keywords": [
+    "BCH",
+    "defi"
+  ],
+  "author": "2qx",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/2qx/vox/issues"
+  },
+  "homepage": "https://github.com/2qx/vox#readme",
+  "scripts": {
+    "prepare": "pnpm run build",
+    "build": "tsc -p tsconfig.json",
+    "typedoc": "typedoc src/index.ts --out out/docs --options ../../config/typedoc.json"
+  },
+  "dependencies": {
+    "@bitauth/libauth": "^3.0.0",
+    "@unspent/tau": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.24"
+  }
+}

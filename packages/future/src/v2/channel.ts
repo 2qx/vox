@@ -1,13 +1,15 @@
 import {
     bigIntToVmNumber,
+    binToHex,
     CompilerBCH,
+    deriveHdPublicKey,
+    encodeTransaction,
     generateTransaction,
     hexToBin,
     InputTemplate,
     lockingBytecodeToCashAddress,
     OutputTemplate,
     Output,
-    Transaction,
     verifyTransactionTokens
 } from "@bitauth/libauth"
 
@@ -48,6 +50,7 @@ export class Channel {
         if (typeof result === 'string') throw (result)
         return result.address
     }
+
 
     static getInputs(channel: string, utxos: UtxoI[]): InputTemplate<CompilerBCH>[] {
         return utxos.map(u => this.getInput(channel, u))
@@ -129,46 +132,87 @@ export class Channel {
         return lockingBytecodeResult.bytecode
     }
 
-    static processOutpoints(channel: string, utxos: UtxoI[], locktime: number): Transaction {
+    static getWalletInput(utxo: UtxoI, privateKey?: string, addressIndex = 0): InputTemplate<CompilerBCH> {
+        const unlockingData = privateKey ? {
+            compiler: this.compiler,
+            data: {
+                hdKeys: {
+                    addressIndex: addressIndex,
+                    hdPrivateKeys: {
+                        'wallet': privateKey
+                    },
+                }
+            },
+            script: 'wallet_unlock',
+            valueSatoshis: BigInt(utxo.value),
+        } : Uint8Array.from(Array())
+
+        return {
+            outpointIndex: utxo.tx_pos,
+            outpointTransactionHash: hexToBin(utxo.tx_hash),
+            sequenceNumber: 0,
+            unlockingBytecode: unlockingData,
+        } as InputTemplate<CompilerBCH>
+    }
+
+    static getChangeOutput(utxo: UtxoI, privateKey?: any, addressIndex = 0): OutputTemplate<CompilerBCH> {
+
+        const lockingBytecode = privateKey ? {
+            compiler: this.compiler,
+            data: {
+                hdKeys: {
+                    addressIndex: addressIndex,
+                    hdPublicKeys: {
+                        'wallet': deriveHdPublicKey(privateKey).hdPublicKey
+                    },
+                },
+            },
+            script: 'wallet_lock'
+        } : Uint8Array.from(Array(33))
+
+        return {
+            lockingBytecode: lockingBytecode,
+            valueSatoshis: BigInt(utxo.value)
+        }
+
+    }
+
+
+    static clear(channel: string, utxos: UtxoI[]): string {
 
         const inputs: InputTemplate<CompilerBCH>[] = [];
-        const sourceOutputs: Output[] = [];
         const outputs: OutputTemplate<CompilerBCH>[] = [];
 
-
         inputs.push(... this.getInputs(channel, utxos));
-        sourceOutputs.push(... this.getSourceOutputs(channel, utxos));
         outputs.push(... this.getOutputs(utxos, false));
 
         const result = generateTransaction({
-            locktime: locktime,
+            locktime: 0,
             version: 2,
             inputs,
             outputs,
         });
 
-        if (!result.success) {
-            /* c8 ignore next */
-            throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
-        }
+        if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+
         const tokenValidationResult = verifyTransactionTokens(
             result.transaction,
-            sourceOutputs
+            this.getSourceOutputs(channel, utxos)
         );
-        if (tokenValidationResult !== true) {
-            throw tokenValidationResult;
-        }
+        if (tokenValidationResult !== true) throw tokenValidationResult;
 
-        return result.transaction
+        return binToHex(encodeTransaction(result.transaction))
 
     }
 
-    static censorMessage() { }
+    // static edit(channel: string, utxos: UtxoI[], auth: UtxoI, privateKey?: string): string {
 
-    static clearMessage() { }
+    // }
+    // static burn(): string {
+    //     privateKey
+    // }
 
-    // TODO 
-    // The last input must carry the author's NFT
-    // static editPost() { }
+
+
 
 }

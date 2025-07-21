@@ -1,4 +1,4 @@
-import template from './template.json' with { type: "json" };
+import template from './template.v3.json' with { type: "json" };
 
 import {
     bigIntToVmNumber,
