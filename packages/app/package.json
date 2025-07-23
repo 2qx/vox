@@ -41,6 +41,7 @@
 		"@mainnet-cash/indexeddb-storage": "2.7.8",
 		"@fbch/lib": "workspace:*",
 		"@unspent/drip": "workspace:*",
+		"@unspent/tau": "workspace:*",
 		"@unspent/wrap": "workspace:*",
 		"mainnet-js": "2.7.8",
 		"blo": "2.0.0",

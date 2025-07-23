@@ -2,7 +2,13 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 
-	import { encodeTransactionBCH, binToHex, swapEndianness, hash256 } from '@bitauth/libauth';
+	import { 
+		decodeTransactionBCH, 
+		binToHex, 
+		hexToBin, 
+		swapEndianness, 
+		hash256 
+	} from '@bitauth/libauth';
 	import Readme from './README.md';
 
 	import { blo } from 'blo';
@@ -57,13 +63,15 @@
 	};
 
 	const processOutput = async function (utxo: any, index: number) {
-		let txn = Drip.processOutpoint(utxo);
+		let txn_hex = Drip.processOutpoint(utxo);
+		let transaction = decodeTransactionBCH(hexToBin(txn_hex))
+		if(typeof transaction === "string") throw transaction
 		spent.add(`${utxo.tx_hash}":"${utxo.tx_pos}`);
 		debounceClearSpent();
-		let raw_tx = binToHex(encodeTransactionBCH(txn));
-		let new_id = swapEndianness(binToHex(hash256(encodeTransactionBCH(txn))));
+		
+		let new_id = swapEndianness(binToHex(hash256(hexToBin(txn_hex))));
 
-		let outValue = Number(txn.outputs[0].valueSatoshis);
+		let outValue = Number(transaction.outputs[0].valueSatoshis);
 		unspent.splice(index, 1);
 
 		let insertIdx = unspent.filter((i) =>
@@ -81,7 +89,7 @@
 			value: outValue
 		});
 		unspent = unspent;
-		await broadcast(raw_tx);
+		await broadcast(txn_hex);
 	};
 
 	const updateUnspent = async function () {
@@ -118,6 +126,7 @@
 		const electrumClient = new ElectrumClient('unspent/drip', '1.4.1', server);
 		await electrumClient.disconnect();
 	});
+	
 </script>
 
 <svelte:head>

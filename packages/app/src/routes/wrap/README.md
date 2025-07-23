@@ -20,7 +20,7 @@ Anyone may send any fungible token to the contract, but that doesn't make it WBC
 
 To **verify** that WBCH is fair, we can lookup the pre-genesis transaction:
 
-[ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3](https://explorer.salemkode.com/tx/ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3)
+[WBCH pre-genesis transactoin](https://explorer.salemkode.com/tx/ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3)
 
 
 ... the first output was the coin used to mint all WBCH tokens. 
@@ -29,7 +29,8 @@ To **verify** that WBCH is fair, we can lookup the pre-genesis transaction:
 
 The minting transaction was in the next transaction:
 
-[110dc94c0aa1a4c60ff4738eeee7f931d8f11086190281f43cf3330419d918c8](https://explorer.salemkode.com/tx/110dc94c0aa1a4c60ff4738eeee7f931d8f11086190281f43cf3330419d918c8)
+[WBCH minting transaction](https://explorer.salemkode.com/tx/110dc94c0aa1a4c60ff4738eeee7f931d8f11086190281f43cf3330419d918c8)
+
 
 The minting transaction created one wrapped satoshi for every bitcoin (cash) satoshi. 
 

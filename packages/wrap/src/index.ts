@@ -12,7 +12,8 @@ import {
     OutputTemplate,
     verifyTransactionTokens,
     Output,
-    encodeTransactionBCH
+    encodeTransactionBCH,
+    stringify
 } from '@bitauth/libauth';
 
 import {
@@ -26,7 +27,8 @@ import {
     sumTokenAmounts
 } from '@unspent/tau';
 
-const WBCH = hexToBin('ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3')
+export const WBCH = hexToBin('ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3')
+export const tWBCH = hexToBin('bb61cd7a6c8a3a3742d965dc7ac73c1117382a5c8930b68338deb881f75c0214')
 
 
 export default class Wrap {
@@ -66,6 +68,7 @@ export default class Wrap {
     static getAddress(prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
         return getAddress(this.getLockingBytecode(), prefix, this.tokenAware)
     }
+
 
     static getSourceOutput(utxo: UtxoI): Output {
 
@@ -130,7 +133,8 @@ export default class Wrap {
 
 
     static getWalletInput(utxo: UtxoI, privateKey?: string, addressIndex = 0): InputTemplate<CompilerBCH> {
-        const unlockingData = privateKey ? {
+
+        let unlockingData = privateKey ? {
             compiler: this.compiler,
             data: {
                 hdKeys: {
@@ -142,8 +146,16 @@ export default class Wrap {
             },
             script: 'wallet_unlock',
             valueSatoshis: BigInt(utxo.value),
+
         } : Uint8Array.from(Array())
 
+        if (utxo.token_data) {
+                        // @ts-ignore
+            unlockingData.token  = {
+                amount: BigInt(utxo.token_data.amount),
+                category: hexToBin(utxo.token_data.category)
+            }
+        }
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -170,14 +182,17 @@ export default class Wrap {
             script: 'wallet_lock'
         } : Uint8Array.from(Array(33))
 
+
         return {
             lockingBytecode: lockingBytecode,
-            valueSatoshis: BigInt(sats - amount),
+            valueSatoshis: BigInt(sats - amount) > 663n ? BigInt(sats - amount) : 663n,
             token: {
                 category: category,
                 amount: BigInt(wsats) + BigInt(amount)
             }
         }
+
+
 
     }
 
@@ -240,12 +255,14 @@ export default class Wrap {
         config.inputs.push(...walletUtxos.map(u => { return this.getWalletInput(u, privateKey) }));
 
         config.outputs.push(this.getOutput(contractUtxo, amount));
+
         config.outputs.push(this.getChangeOutput(walletUtxos, amount, privateKey, 0, wbchCat));
 
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
         const estimatedFee = getTransactionFees(result.transaction, fee)
+        
         config.outputs[1]!.valueSatoshis = config.outputs[1]!.valueSatoshis - estimatedFee
 
         result = generateTransaction(config);
@@ -265,7 +282,7 @@ export default class Wrap {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
-
+        console.log(verify)
         if (typeof verify == "string") throw verify
         return binToHex(encodeTransactionBCH(transaction))
     }

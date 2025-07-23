@@ -67,6 +67,9 @@ importers:
       '@unspent/drip':
         specifier: workspace:*
         version: link:../drip
+      '@unspent/tau':
+        specifier: workspace:*
+        version: link:../common
       '@unspent/wrap':
         specifier: workspace:*
         version: link:../wrap

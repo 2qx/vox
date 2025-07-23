@@ -1,5 +1,5 @@
 import test from 'ava';
-import { getHdPrivateKey, TransactionRequest } from "@unspent/tau";
+import { getHdPrivateKey } from "@unspent/tau";
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
 import { RegTestWallet } from "mainnet-js";

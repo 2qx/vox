@@ -19,9 +19,9 @@ import {
   Transaction,
 } from '@bitauth/libauth';
 
-import { 
-  UtxoI, 
-  type CashAddressNetworkPrefix 
+import {
+  UtxoI,
+  type CashAddressNetworkPrefix
 } from './types.js';
 
 export function getScriptHash(lockingBytecode: Uint8Array, reversed = true): string {
@@ -31,7 +31,7 @@ export function getScriptHash(lockingBytecode: Uint8Array, reversed = true): str
 }
 
 
-export function getAddress(lockingBytecode: Uint8Array, prefix = "bitcoincash" as CashAddressNetworkPrefix, tokenSupport=false): string {
+export function getAddress(lockingBytecode: Uint8Array, prefix = "bitcoincash" as CashAddressNetworkPrefix, tokenSupport = false): string {
   const result = lockingBytecodeToCashAddress({ prefix: prefix, bytecode: lockingBytecode, tokenSupport: tokenSupport })
   if (typeof result === 'string') throw (result)
   return result.address
@@ -77,12 +77,12 @@ export function checkTokenaddr(cashaddr: string, enforce: boolean) {
 }
 
 
-export function sumUtxoValue(utxos: UtxoI[]) {
+export function sumUtxoValue(utxos: UtxoI[], subTokenDust = false) {
   if (utxos.length > 0) {
     const balanceArray: number[] = utxos.map((o: UtxoI) => {
       return o.value;
     });
-    const balance = balanceArray.reduce((a: number, b: number) => a + b, 0);
+    const balance = balanceArray.reduce((a: number, b: number) => a + b - (subTokenDust ? 800 : 0), 0);
     return balance;
   } else {
     return 0;
@@ -118,7 +118,7 @@ export function checkForEmptySeed(seed: Uint8Array) {
 }
 
 
-export const sleep = (ms:number) => new Promise(resolve => setTimeout(resolve, ms))
+export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
 
 
-export const numToVm = (n:number) =>  bigIntToVmNumber(BigInt(n))
+export const numToVm = (n: number) => bigIntToVmNumber(BigInt(n))
