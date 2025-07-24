@@ -67,12 +67,12 @@ test('test wrap function with key', async t => {
 
   let tx = Wrap.swap(
     20000,
-    contractUtxos[0],
-    [walletUtxos[0]],
+    contractUtxos,
+    walletUtxos,
     key,
     tWBCH
   )
-  await provider.sendRawTransaction(tx)
+  await provider.sendRawTransaction(binToHex(encodeTransactionBCH(tx.transaction)))
 });
 
 

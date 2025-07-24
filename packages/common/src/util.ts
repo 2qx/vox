@@ -14,6 +14,7 @@ import {
   // InputTemplate,
   lockingBytecodeToCashAddress,
   // OutputTemplate,
+  Output,
   sha256,
   swapEndianness,
   Transaction,
@@ -95,6 +96,32 @@ export function sumTokenAmounts(utxos: UtxoI[], tokenId: string): bigint {
       .filter((utxo) => utxo.token_data?.category === tokenId)
       .map((o: UtxoI) => {
         return o.token_data?.amount || 0n;
+      });
+    const balance = tokenArray.reduce((a: any, b: any) => BigInt(a) + BigInt(b), 0n);
+    return BigInt(balance);
+  } else {
+    return 0n;
+  }
+}
+
+export function sumSourceOutputValue(source: Output[], subTokenDust = false) {
+  if (source.length > 0) {
+    const balanceArray: bigint[] = source.map((o: Output) => {
+      return o.valueSatoshis;
+    });
+    const balance = balanceArray.reduce((a: bigint, b: bigint) => a + b - (subTokenDust ? 800n : 0n), 0n);
+    return balance;
+  } else {
+    return 0n;
+  }
+}
+
+export function sumSourceOutputTokenAmounts(source: Output[], tokenId?: string): bigint {
+  if (source.length > 0) {
+    const tokenArray: (string | bigint)[] = source
+      .filter((source) => source.token && binToHex(source.token?.category) === tokenId)
+      .map((o: Output) => {
+        return BigInt(o.token?.amount!) || 0n;
       });
     const balance = tokenArray.reduce((a: any, b: any) => BigInt(a) + BigInt(b), 0n);
     return BigInt(balance);

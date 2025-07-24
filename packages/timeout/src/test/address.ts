@@ -32,8 +32,6 @@ test('test cat serialized data address', t => {
 
     let unlockScript = binToHex(Timeout.getUnlockingBytecode(data))
     let record = binToHex(Timeout.dataToCommitmentRecord(data))
-    console.log(unlockScript)
-    console.log(record)
     t.assert(unlockScript.indexOf(record)>1)
 
 });

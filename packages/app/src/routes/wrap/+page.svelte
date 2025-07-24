@@ -2,7 +2,12 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 
-	import { binToHex, cashAddressToLockingBytecode, decodeTransactionBCH } from '@bitauth/libauth';
+	import {
+		binToHex,
+		cashAddressToLockingBytecode,
+		decodeTransactionBCH,
+		encodeTransactionBCH
+	} from '@bitauth/libauth';
 
 	import bch from '$lib/images/BCH.svg';
 	import tWBCH from '$lib/images/tWBCH.svg';
@@ -19,12 +24,14 @@
 
 	import Readme from './README.md';
 	import BitauthLink from '$lib/BitauthLink.svelte';
+	import Transaction from '$lib/Transaction.svelte';
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 	let connectionStatus = '';
 
 	let transaction_hex = '';
 	let transaction: any = undefined;
+	let sourceOutputs: any = undefined;
 
 	let unspent: any[] = [];
 	let walletUnspent: any[] = [];
@@ -82,10 +89,8 @@
 		if (walletUnspent.length == 0 || spent.intersection(walletUnspentIds).size == 0) {
 			walletUnspent = response;
 		}
-		walletUnspent = walletUnspent.filter((t) => !t.token_data || t.token_data.category == category);
 		sumWallet = sumUtxoValue(walletUnspent, true);
 		sumWalletWrapped = sumTokenAmounts(walletUnspent, category);
-		
 	};
 
 	const updateUnspent = async function () {
@@ -114,19 +119,18 @@
 	};
 
 	const updateSwap = function () {
-		let vaultUtxo =
-			amount > 0
-				? unspent.filter((u) => u.token_data.amount > amount)[0]
-				: unspent.filter((u) => u.value > -amount)[0];
-				console.log(walletUnspent)
 		try {
-			transaction_hex = Wrap.swap(amount, vaultUtxo, walletUnspent, key, category);
-			transactionError = '';
+			let result = Wrap.swap(amount, unspent, walletUnspent, key, category);
+			transaction = result.transaction;
+			sourceOutputs = result.sourceOutputs;
+			transaction_hex = binToHex(encodeTransactionBCH(transaction));
+			transactionError = result.verify;
 		} catch (error: any) {
+			transaction = undefined;
+			sourceOutputs = undefined;
+			transaction_hex = "";
 			transactionError = error;
 		}
-
-		transaction = decodeTransactionBCH(hexToBin(transaction_hex));
 	};
 
 	onMount(async () => {
@@ -139,7 +143,6 @@
 		walletScriptHash = getScriptHash(lockcodeResult.bytecode);
 		balance = await wallet.getBalance('sat');
 		history = await wallet.getHistory('sat', 0, 20, true);
-		
 
 		// Initialize an electrum client.
 		electrumClient = new ElectrumClient('unspent/wrap', '1.4.1', server);
@@ -161,7 +164,6 @@
 		const electrumClient = new ElectrumClient('unspent/wrap', '1.4.1', server);
 		await electrumClient.disconnect();
 	});
-
 </script>
 
 <section>
@@ -192,21 +194,24 @@
 		style="width:100%;"
 		type="range"
 		bind:value={amount}
+		step="1000"
 		onchange={() => updateSwap()}
 		min={Number(-sumWalletWrapped)}
-		max={sumWallet}
+		max={sumWallet - 2000}
 	/>
-	<button onclick={() => broadcast(transaction_hex)}>Submit </button>
+	<button onclick={() => broadcast(transaction_hex)}>Swap </button>
 
 	<div class="swap">
 		<div>
 			swap: {amount.toLocaleString()} sats
 		</div>
 	</div>
-	{transaction}
+	{#if transaction}
+		<Transaction {transaction} {sourceOutputs} />
+	{/if}
 	{transactionError}
 
-    <div class="grid">
+	<div class="grid">
 		{#if walletUnspent.length > 0}
 			<h4>Wallet Unspent Transaction Outputs (coins)</h4>
 			<table>
@@ -223,7 +228,7 @@
 
 				<tbody>
 					{#each walletUnspent as t}
-						{#if t.token_data && t.token_data.category == category}
+						{#if (t.token_data && t.token_data.category == category) || !t.token_data}
 							<tr>
 								<td class="sats">
 									{Number(t.value - 800).toLocaleString()}
@@ -231,8 +236,10 @@
 								</td>
 
 								<td class="sats">
-									{Number(t.token_data.amount).toLocaleString()}
-									<img width="15" src={icon} alt="wbchLogo" />
+									{#if t.token_data}
+										{Number(t.token_data.amount).toLocaleString()}
+										<img width="15" src={icon} alt="wbchLogo" />
+									{/if}
 								</td>
 							</tr>
 						{/if}
@@ -257,7 +264,7 @@
 	<div class="grid">
 		{#if unspent.length > 0}
 			<h4>{ticker} Vault Threads</h4>
-			
+
 			<table>
 				<thead>
 					<tr class="header">
@@ -302,7 +309,7 @@
 			<p>... getting wrapped vault threads.</p>
 		{/if}
 	</div>
-    
+
 	<Readme />
 </section>
 

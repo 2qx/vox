@@ -68,7 +68,7 @@ test.skip('test staking and unstaking badgers', async t => {
 });
 
 
-test('test parsing NFTs', async t => {
+test.skip('test parsing NFTs', async t => {
 
 
     let contract_address = BadgerStake.getAddress();

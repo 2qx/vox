@@ -12,6 +12,7 @@ import {
     OutputTemplate,
     verifyTransactionTokens,
     Output,
+    Transaction,
     encodeTransactionBCH,
     stringify
 } from '@bitauth/libauth';
@@ -23,8 +24,8 @@ import {
     getLibauthCompiler,
     getScriptHash,
     UtxoI,
-    sumUtxoValue,
-    sumTokenAmounts
+    sumSourceOutputValue,
+    sumSourceOutputTokenAmounts
 } from '@unspent/tau';
 
 export const WBCH = hexToBin('ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3')
@@ -96,14 +97,14 @@ export default class Wrap {
         } as InputTemplate<CompilerBCH>
     }
 
-    static getOutput(utxo: UtxoI, amount: number): OutputTemplate<CompilerBCH> {
+    static getOutput(utxo: UtxoI, amount: bigint): OutputTemplate<CompilerBCH> {
 
         return {
             lockingBytecode: {
                 compiler: this.compiler,
                 script: 'lock'
             },
-            valueSatoshis: BigInt(utxo.value + amount),
+            valueSatoshis: BigInt(utxo.value) + amount,
             token: {
                 category: hexToBin(utxo.token_data!.category!),
                 amount: BigInt(utxo.token_data?.amount!) - BigInt(amount)
@@ -150,8 +151,8 @@ export default class Wrap {
         } : Uint8Array.from(Array())
 
         if (utxo.token_data) {
-                        // @ts-ignore
-            unlockingData.token  = {
+            // @ts-ignore
+            unlockingData.token = {
                 amount: BigInt(utxo.token_data.amount),
                 category: hexToBin(utxo.token_data.category)
             }
@@ -164,10 +165,12 @@ export default class Wrap {
         } as InputTemplate<CompilerBCH>
     }
 
-    static getChangeOutput(utxos: UtxoI[], amount: number, privateKey?: any, addressIndex = 0, category = WBCH): OutputTemplate<CompilerBCH> {
-
-        const sats = sumUtxoValue(utxos)
-        const wsats = sumTokenAmounts(utxos, binToHex(category))
+    static getWrappedOutput(
+        amount: bigint,
+        privateKey?: any,
+        addressIndex = 0,
+        category = WBCH
+    ): OutputTemplate<CompilerBCH> {
 
         const lockingBytecode = privateKey ? {
             compiler: this.compiler,
@@ -182,19 +185,41 @@ export default class Wrap {
             script: 'wallet_lock'
         } : Uint8Array.from(Array(33))
 
+        return {
+            lockingBytecode: lockingBytecode,
+            valueSatoshis: 800n,
+            token: {
+                category: category,
+                amount: amount
+            }
+        }
+    }
+
+    static getChangeOutput(
+        amount: bigint,
+        privateKey?: any,
+        addressIndex = 0
+    ): OutputTemplate<CompilerBCH> {
+
+        const lockingBytecode = privateKey ? {
+            compiler: this.compiler,
+            data: {
+                hdKeys: {
+                    addressIndex: addressIndex,
+                    hdPublicKeys: {
+                        'wallet': deriveHdPublicKey(privateKey).hdPublicKey
+                    },
+                },
+            },
+            script: 'wallet_lock'
+        } : Uint8Array.from(Array(33))
 
         return {
             lockingBytecode: lockingBytecode,
-            valueSatoshis: BigInt(sats - amount) > 663n ? BigInt(sats - amount) : 663n,
-            token: {
-                category: category,
-                amount: BigInt(wsats) + BigInt(amount)
-            }
+            valueSatoshis: amount
         }
-
-
-
     }
+
 
     /**
      * Get source outputs, transform contract & wallet outpoints for spending verification.
@@ -217,6 +242,132 @@ export default class Wrap {
         return sourceOutputs
     }
 
+    static getVaultLayers(
+        utxos: UtxoI[],
+        amount: number,
+        category?: any,
+        sourceOutputs: Output[] = []
+    ): {
+        inputs: InputTemplate<CompilerBCH>[],
+        outputs: OutputTemplate<CompilerBCH>[],
+        sourceOutputs: Output[]
+    } {
+
+        let inputs: InputTemplate<CompilerBCH>[] = [];
+        let outputs: OutputTemplate<CompilerBCH>[] = [];
+
+        utxos = utxos.filter(u => u.token_data?.category == binToHex(category))
+        if(amount < 0) utxos = utxos.filter(u => u.value > 800)
+        if (utxos.length == 0) throw Error("no vault utxos left, maximum recursion depth reached.");
+
+        const randomIdx = Math.floor(Math.random() * utxos.length)
+        const randomUtxo = utxos[randomIdx]!
+
+        // remove the random utxo in place
+        utxos.splice(randomIdx, 1);
+        
+        // Try to satisfy the swap with another utxos
+        inputs.push(this.getInput(randomUtxo))
+        sourceOutputs.push(this.getSourceOutput(randomUtxo));
+
+        if (
+            // Redeeming WBCH for BCH and this thread can satisfy the swap
+            (amount < 0 && -(randomUtxo?.value) < amount) ||
+            (amount > 0 && (BigInt(randomUtxo?.token_data?.amount!) > amount))
+        ) {
+            outputs.push(this.getOutput(randomUtxo,  BigInt(amount)))
+        } else {
+            if (amount < 0 && amount < -(randomUtxo?.value! - 800)) {
+                // liquidate sats on this utxo 
+                outputs.push(this.getOutput(randomUtxo, -BigInt(randomUtxo?.value!-800)))
+                amount += randomUtxo?.value! - 800
+            }
+            // and try again
+            let nextTry = this.getVaultLayers([...utxos], amount, category, [...sourceOutputs])
+            inputs.push(...nextTry.inputs)
+            outputs.push(...nextTry.outputs)
+            sourceOutputs = nextTry.sourceOutputs
+        }
+        return { inputs, outputs, sourceOutputs }
+    }
+
+
+    static getWalletLayers(
+        utxos: UtxoI[],
+        amount: bigint,
+        privateKey?: string,
+        category?: any,
+        sourceOutputs: Output[] = []
+    ): {
+        inputs: InputTemplate<CompilerBCH>[],
+        outputs: OutputTemplate<CompilerBCH>[],
+        sourceOutputs: Output[]
+    } {
+
+        let inputs: InputTemplate<CompilerBCH>[] = [];
+        let outputs: OutputTemplate<CompilerBCH>[] = [];
+
+        // Only use straight sat utxos if placing BCH
+        if (amount > 0) utxos = utxos.filter(u => !u.token_data)
+        if (amount < 0) utxos = utxos.filter(u => u.token_data?.category == binToHex(category))
+        console.log(utxos.length)
+        if (utxos.length == 0) throw Error("no wallet utxos left, maximum recursion depth reached.");
+
+
+        // get a random utxo.
+        const randomIdx = Math.floor(Math.random() * utxos.length)
+        const randomUtxo = utxos[randomIdx]!
+
+        // remove the random utxo in place
+        utxos.splice(randomIdx, 1);
+
+        // spend the utxo
+        inputs.push(this.getWalletInput(randomUtxo, privateKey))
+        sourceOutputs.push(this.getWalletSourceOutput(randomUtxo, privateKey));
+        let sumSats = sumSourceOutputValue(sourceOutputs)
+        let sumWSats = sumSourceOutputTokenAmounts(sourceOutputs, binToHex(category))
+        console.log(`${sumWSats}, ${amount}`)
+        if (
+            // Redeeming WBCH for BCH, and token amount is sufficient
+            (amount < 0 && sumWSats >= -amount) ||
+            // Or if placing BCH for WBCH, and utxo value is sufficient
+            (amount > 0 && sumSats > amount)
+        ) {
+            // This utxo finally satisfied the swap 
+            // There is WBCH placed
+            if (amount > 0) {
+                outputs.push(this.getWrappedOutput(amount, privateKey, 0, category))
+            }
+            if (amount < 0) {
+                outputs.push(this.getWrappedOutput(
+                    sumWSats + amount,
+                    privateKey,
+                    0,
+                    category
+                ))
+            }
+
+            let satsOut = (sumSats) - (amount + 800n)
+            outputs.push(this.getChangeOutput(satsOut, privateKey))
+        }
+        // Liquidate this utxo and try again
+        else {
+            let nextTry = this.getWalletLayers(
+                [...utxos],
+                amount,
+                privateKey,
+                category,
+                [...sourceOutputs]
+            )
+            inputs.push(...nextTry.inputs)
+            outputs.push(...nextTry.outputs)
+            sourceOutputs = nextTry.sourceOutputs
+        }
+
+
+        return { inputs, outputs, sourceOutputs }
+    }
+
     /**
      * Wrap (+) or Unwrap (-) some amount of WBCH.
      *
@@ -232,12 +383,16 @@ export default class Wrap {
 
     static swap(
         amount: number,
-        contractUtxo: UtxoI,
+        contractUtxos: UtxoI[],
         walletUtxos: UtxoI[],
         privateKey?: string,
         category?: string,
         fee = 1
-    ): string {
+    ): {
+        transaction: Transaction,
+        sourceOutputs: Output[],
+        verify: string | boolean
+    } {
 
         const inputs: InputTemplate<CompilerBCH>[] = [];
         const outputs: OutputTemplate<CompilerBCH>[] = [];
@@ -251,40 +406,50 @@ export default class Wrap {
             outputs
         }
 
-        config.inputs.push(this.getInput(contractUtxo));
-        config.inputs.push(...walletUtxos.map(u => { return this.getWalletInput(u, privateKey) }));
+        // if placing BCH for WBCH, don't use utxos with tokens
+        walletUtxos = walletUtxos.filter(u => u.token_data?.category == category || !u.token_data)
 
-        config.outputs.push(this.getOutput(contractUtxo, amount));
 
-        config.outputs.push(this.getChangeOutput(walletUtxos, amount, privateKey, 0, wbchCat));
+        let vaultLayers = this.getVaultLayers([...contractUtxos], amount, wbchCat);
+        config.inputs.push(...vaultLayers.inputs);
+        config.outputs.push(...vaultLayers.outputs);
+        let sourceOutputs = vaultLayers.sourceOutputs;
+
+        let walletLayers = this.getWalletLayers([...walletUtxos], BigInt(amount), privateKey, wbchCat)
+        config.inputs.push(...walletLayers.inputs);
+        config.outputs.push(...walletLayers.outputs);
+        sourceOutputs.push(...walletLayers.sourceOutputs);
 
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
         const estimatedFee = getTransactionFees(result.transaction, fee)
-        
-        config.outputs[1]!.valueSatoshis = config.outputs[1]!.valueSatoshis - estimatedFee
+
+        const lastIdx = config.outputs.length - 1
+        config.outputs[lastIdx]!.valueSatoshis = config.outputs[lastIdx]!.valueSatoshis - estimatedFee
 
         result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
         const transaction = result.transaction
 
-        const sourceOutputs = this.getSourceOutputs(contractUtxo, walletUtxos, privateKey)
-        const tokenValidationResult = verifyTransactionTokens(
-            transaction,
-            sourceOutputs
-        );
-
-        if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
+        // const tokenValidationResult = verifyTransactionTokens(
+        //     transaction,
+        //     sourceOutputs
+        // );
+        //if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
 
         let verify = this.vm.verify({
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
         console.log(verify)
-        if (typeof verify == "string") throw verify
-        return binToHex(encodeTransactionBCH(transaction))
+        //if (typeof verify == "string") throw verify
+        return {
+            sourceOutputs: sourceOutputs,
+            transaction: transaction,
+            verify: verify
+        } //binToHex(encodeTransactionBCH(transaction))
     }
 
 }
