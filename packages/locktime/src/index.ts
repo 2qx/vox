@@ -1,4 +1,5 @@
 import template from './template.v3.json' with { type: "json" };
+import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
@@ -31,6 +32,8 @@ export interface LocktimeData {
 
 
 export default class Locktime {
+
+    static USER_AGENT = packageInfo.name;
 
     static tokenAware = true;
 

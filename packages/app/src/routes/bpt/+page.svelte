@@ -5,23 +5,31 @@
 	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBCH } from '@bitauth/libauth';
 
 	import bch from '$lib/images/BCH.svg';
-	import tWBCH from '$lib/images/tWBCH.svg';
-	import WBCH from '$lib/images/WBCH.svg';
+	import tBPT from '$lib/images/tBPT.svg';
+	import BPT from '$lib/images/BPT.svg';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 	import { BaseWallet, Wallet, TestNetWallet, hexToBin } from 'mainnet-js';
 
-	import { sumUtxoValue, sumTokenAmounts, getScriptHash, getHdPrivateKey } from '@unspent/tau';
-	import Wrap from '@unspent/wrap';
-	import { WBCH as wbchCat, tWBCH as twbchCat } from '@unspent/wrap';
+	import {
+		sumUtxoValue,
+		sumTokenAmounts,
+		getScriptHash,
+		getHdPrivateKey,
+		type UtxoI
+	} from '@unspent/tau';
+	import BlockPoint from '@unspent/blockpoint';
+	import { BPT as bptCat, tBPT as tbptCat } from '@unspent/blockpoint';
 
 	import Readme from './README.md';
 	import BitauthLink from '$lib/BitauthLink.svelte';
 	import Transaction from '$lib/Transaction.svelte';
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
+
+	let now = 0;
 	let connectionStatus = '';
 
 	let transaction_hex = '';
@@ -35,20 +43,20 @@
 	let electrumClient: any;
 	let scripthash = '';
 	let walletScriptHash = '';
-	let sumVaultWrapped = 0n;
+
+	let sumWalletBlockPoint = 0n;
+	let sumWallet = 0;
+	let sumVaultBlockPoint = 0n;
 	let sumVault = 0;
 
-	let sumWalletWrapped = 0n;
-	let sumWallet = 0;
-
-	scripthash = Wrap.getScriptHash();
+	scripthash = BlockPoint.getScriptHash();
 	let contractState = '';
 
 	const isMainnet = page.url.hostname == 'vox.cash';
-	let icon = isMainnet ? WBCH : tWBCH;
-	let category = isMainnet ? binToHex(wbchCat) : binToHex(twbchCat);
+	let icon = isMainnet ? BPT : tBPT;
+	let category = isMainnet ? binToHex(bptCat) : binToHex(tbptCat);
 	let baseTicker = isMainnet ? 'BCH' : 'tBCH';
-	let ticker = isMainnet ? 'WBCH' : 'tWBCH';
+	let ticker = isMainnet ? 'BPT' : 'tBPT';
 	let prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 
 	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
@@ -60,7 +68,10 @@
 	let transactionError: string | boolean = '';
 
 	const handleNotifications = function (data: any) {
-		if (data.method === 'blockchain.scripthash.subscribe') {
+		if (data.method === 'blockchain.headers.subscribe') {
+			let d = data.params[0];
+			now = d.height;
+		} else if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
 				connectionStatus = ConnectionStatus[electrumClient.status];
@@ -84,8 +95,10 @@
 		if (walletUnspent.length == 0 || spent.intersection(walletUnspentIds).size == 0) {
 			walletUnspent = response;
 		}
+
 		sumWallet = sumUtxoValue(walletUnspent, true);
-		sumWalletWrapped = sumTokenAmounts(walletUnspent, category);
+		sumWalletBlockPoint = sumTokenAmounts(walletUnspent, category);
+		walletUnspent = walletUnspent.filter((t) => t.height > 0);
 	};
 
 	const updateUnspent = async function () {
@@ -99,9 +112,11 @@
 		if (unspent.length == 0 || spent.intersection(unspentIds).size == 0) {
 			unspent = response;
 		}
+		unspent = unspent.filter((t) => t.height > 0);
 		unspent = unspent.filter((t) => t.token_data && t.token_data.category == category);
+		unspent.sort((a, b) => a.height - b.height);
 		sumVault = sumUtxoValue(unspent, true);
-		sumVaultWrapped = sumTokenAmounts(unspent, category);
+		sumVaultBlockPoint = sumTokenAmounts(unspent, category);
 	};
 
 	const broadcast = async function (raw_tx: string) {
@@ -113,12 +128,24 @@
 		response as any[];
 	};
 
-	const updateSwap = function () {
+	const claimAll = function () {
+		walletUnspent.map((walletUtxo, i) => {
+			claimReward(now, unspent[i], walletUtxo, key, category);
+		});
+	};
+	const claimReward = function (
+		now: number,
+		unspent: UtxoI,
+		wallet: UtxoI,
+		key: string,
+		category: any
+	) {
 		try {
-			let result = Wrap.swap(amount, unspent, walletUnspent, key, category);
+			let result = BlockPoint.claim(now, unspent, wallet, key, category);
 			transaction = result.transaction;
 			sourceOutputs = result.sourceOutputs;
 			transaction_hex = binToHex(encodeTransactionBCH(transaction));
+			broadcast(transaction_hex);
 			transactionValid = result.verify === true ? true : false;
 			if (result.verify === true) transactionError = '';
 		} catch (error: any) {
@@ -140,7 +167,7 @@
 		walletScriptHash = getScriptHash(lockcodeResult.bytecode);
 
 		// Initialize an electrum client.
-		electrumClient = new ElectrumClient('unspent/wrap', '1.4.1', server);
+		electrumClient = new ElectrumClient(BlockPoint.USER_AGENT, '1.4.1', server);
 
 		// Wait for the client to connect.
 		await electrumClient.connect();
@@ -151,12 +178,13 @@
 
 		// Set up a subscription for new block headers.
 		await electrumClient.subscribe('blockchain.scripthash.subscribe', scripthash);
+		await electrumClient.subscribe('blockchain.headers.subscribe');
 		updateUnspent();
 		updateWallet();
 	});
 
 	onDestroy(async () => {
-		const electrumClient = new ElectrumClient(Wrap.USER_AGENT, '1.4.1', server);
+		const electrumClient = new ElectrumClient(BlockPoint.USER_AGENT, '1.4.1', server);
 		await electrumClient.disconnect();
 	});
 </script>
@@ -168,9 +196,9 @@
 		{:else}
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
-		<BitauthLink template={Wrap.template} />
+		<BitauthLink template={BlockPoint.template} />
 	</div>
-	<h2>Wrap Bitcoin Cash as a CashToken</h2>
+	<h2>Claim Block Point Rewards</h2>
 
 	<div class="swap">
 		<div>
@@ -182,22 +210,10 @@
 		<div>
 			<img width="50" src={icon} alt={ticker} />
 			<br />
-			{sumWalletWrapped.toLocaleString()} <b>{ticker}</b>
+			{sumWalletBlockPoint.toLocaleString()} <b>{ticker}</b>
 		</div>
 	</div>
-	<div class="swap">
-		<input
-			style="width:100%;"
-			type="range"
-			bind:value={amount}
-			step="1000"
-			onchange={() => updateSwap()}
-			min={Number(-sumWalletWrapped)}
-			max={sumWallet - 2000}
-		/>
-		<button onclick={() => broadcast(transaction_hex)}>Broadcast</button>
-	</div>
-
+	<button onclick={() => claimAll()}>Claim All Rewards</button>
 	{#if transaction && transactionValid}
 		<div class="swap">
 			<div>
@@ -210,106 +226,31 @@
 		</div>
 	{/if}
 	{#if transaction}
-		<Transaction {transaction} {sourceOutputs} />
+		<Transaction {transaction} {sourceOutputs} {category} />
 	{/if}
 	{transactionError}
 
 	<div class="grid">
 		{#if walletUnspent.length > 0}
 			<h4>Wallet Unspent Transaction Outputs (coins)</h4>
-			<table>
-				<thead>
-					<tr class="header">
-						<td>BCH</td>
-						<td>WBCH</td>
-					</tr>
-					<tr class="units">
-						<td class="r">sats </td>
-						<td class="r">sats </td>
-					</tr>
-				</thead>
 
-				<tbody>
-					{#each walletUnspent as t}
-						{#if (t.token_data && t.token_data.category == category) || !t.token_data}
-							<tr>
-								<td class="sats">
-									{Number(t.value - 800).toLocaleString()}
-									<img width="15" src={bch} alt="bchLogo" />
-								</td>
-
-								<td class="sats">
-									{#if t.token_data}
-										{Number(t.token_data.amount).toLocaleString()}
-										<img width="15" src={icon} alt="wbchLogo" />
-									{/if}
-								</td>
-							</tr>
+			{#each walletUnspent as t, i}
+				{#if !t.token_data && unspent[i]}
+					<div class="row">
+						{#if Math.floor(((now - t.height) * t.value) / 100000000) > 1}
+							<button class="action" onclick={() => claimReward(now, unspent[i], t, key, category)}>
+								{t.height < unspent[i].height
+									? Math.floor(((now - t.height) * t.value) / 100000000)
+									: Math.floor(((now - unspent[i].height) * t.value) / 100000000)} Block Points
+								<img width="100" src={icon} alt="bptLogo" /><br />
+								claim
+							</button>
 						{/if}
-					{/each}
-					<tr style="border-top: solid thin;">
-						<td class="r">
-							<b>{sumWallet.toLocaleString()} </b>
-							<img width="15" src={bch} alt="bchLogo" />
-						</td>
-						<td class="r">
-							<b>{Number(sumWalletWrapped).toLocaleString()} </b>
-							<img width="15" src={icon} alt="wbchLogo" />
-						</td>
-					</tr>
-				</tbody>
-			</table>
+					</div>
+				{/if}
+			{/each}
 		{:else}
 			<p>Wallet has no coins or wrapped coins to swap?</p>
-		{/if}
-	</div>
-
-	<div class="grid">
-		{#if unspent.length > 0}
-			<h4>{ticker} Vault Threads</h4>
-
-			<table>
-				<thead>
-					<tr class="header">
-						<td>BCH</td>
-						<td>WBCH</td>
-					</tr>
-					<tr class="units">
-						<td class="r">sats </td>
-						<td class="r">sats </td>
-					</tr>
-				</thead>
-
-				<tbody>
-					{#each unspent as t}
-						{#if t.token_data && t.token_data.category == category}
-							<tr>
-								<td class="sats">
-									{Number(t.value - 800).toLocaleString()}
-									<img width="15" src={bch} alt="bchLogo" />
-								</td>
-
-								<td class="sats">
-									{Number(t.token_data.amount).toLocaleString()}
-									<img width="15" src={icon} alt="wbchLogo" />
-								</td>
-							</tr>
-						{/if}
-					{/each}
-					<tr style="border-top: solid thin;">
-						<td class="r">
-							<b>{sumVault.toLocaleString()} </b>
-							<img width="15" src={bch} alt="bchLogo" />
-						</td>
-						<td class="r">
-							<b>{Number(sumVaultWrapped).toLocaleString()} </b>
-							<img width="15" src={icon} alt="wbchLogo" />
-						</td>
-					</tr>
-				</tbody>
-			</table>
-		{:else}
-			<p>... getting wrapped vault threads.</p>
 		{/if}
 	</div>
 
@@ -366,6 +307,28 @@
 
 	.swap input {
 		background-color: #ddd;
+	}
+
+	.action {
+		display: inline-block;
+		border-radius: 10px;
+		background-color: rgba(200, 229, 238, 0.514);
+		color: #000000;
+		margin: 5px;
+		padding: 10px;
+		font-weight: 900;
+		font-size: small;
+	}
+
+	.action:disabled {
+		display: inline-block;
+		border-radius: 10px;
+		background-color: #80748069;
+		color: #ffffff;
+		margin: 1px;
+		padding: 0 5px 0 5px;
+		font-weight: 900;
+		font-size: small;
 	}
 
 	.swap button {

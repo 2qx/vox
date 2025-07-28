@@ -108,7 +108,7 @@
 	onMount(async () => {
 
 		// Initialize an electrum client.
-		electrumClient = new ElectrumClient('unspent/drip', '1.4.1', server);
+		electrumClient = new ElectrumClient(Drip.USER_AGENT, '1.4.1', server);
 
 		// Wait for the client to connect.
 		await electrumClient.connect();
@@ -126,7 +126,7 @@
 		const electrumClient = new ElectrumClient('unspent/drip', '1.4.1', server);
 		await electrumClient.disconnect();
 	});
-	
+
 </script>
 
 <svelte:head>

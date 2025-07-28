@@ -12,7 +12,7 @@
 			description: 'A zero-timelock savings reward token.',
 			image: '/BPT.svg',
 			link: '/bpt',
-			disabled: true
+			disabled: false
 		},
 		{
 			name: 'CatDex',

@@ -1,4 +1,5 @@
 import template from './template.v1.json' with { type: "json" };
+import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
@@ -28,6 +29,8 @@ const BADGER = hexToBin('242f6ecedb404c743477e35b09733a56cacae34f3109d5cee1cbc1d
 
 
 export default class BadgerStake {
+
+    static USER_AGENT = packageInfo.name;
 
     static tokenAware = true;
 

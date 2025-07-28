@@ -1,4 +1,5 @@
 import template from './template.v3.json' with { type: "json" };
+import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
@@ -23,6 +24,11 @@ import {
 
 
 export default class SmallIndex {
+
+    static USER_AGENT = packageInfo.name;
+    
+    static VERSION = "1.0.0";
+
 
     static tokenAware = true;
 

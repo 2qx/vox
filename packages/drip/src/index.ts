@@ -1,4 +1,5 @@
 import templateV3 from './template.v3.json' with { type: "json" };
+import packageInfo from '../package.json' with { type: "json" };
 
 import {
   binToHex,
@@ -30,6 +31,8 @@ const DECAY_DENOMINATOR = 1333036486;
 
 export default class Drip {
 
+  static USER_AGENT = packageInfo.name;
+  
   static template = templateV3
 
   static compiler: CompilerBCH = getLibauthCompiler(this.template)

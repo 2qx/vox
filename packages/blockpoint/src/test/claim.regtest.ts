@@ -1,4 +1,5 @@
 import test from 'ava';
+import { encodeTransactionBCH, binToHex } from '@bitauth/libauth';
 import { getHdPrivateKey, TransactionRequest } from "@unspent/tau";
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
@@ -29,6 +30,14 @@ test('test claim function with key', async t => {
 
   let provider = bob.provider!
 
+
+  await mine({
+    /* cspell:disable-next-line */
+    cashaddr: "bchreg:ppt0dzpt8xmt9h2apv9r60cydmy9k0jkfg4atpnp2f",
+    blocks: 50,
+  });
+
+
   // @ts-ignore
   let contractUtxos = await provider.performRequest(
     "blockchain.address.listunspent",
@@ -45,21 +54,18 @@ test('test claim function with key', async t => {
     "include_tokens"
   )
 
-  await mine({
-    /* cspell:disable-next-line */
-    cashaddr: "bchreg:ppt0dzpt8xmt9h2apv9r60cydmy9k0jkfg4atpnp2f",
-    blocks: 10,
-  });
-
+  let now = await provider.getBlockHeight();
 
   let tx = BlockPoint.claim(
-    10,
+    now,
     contractUtxos[0],
     walletUtxos[0],
     key,
     tokenId
   )
-  await provider.sendRawTransaction(tx)
+  
+  let tx_raw = binToHex(encodeTransactionBCH(tx.transaction))
+  await provider.sendRawTransaction(tx_raw)
 });
 
 

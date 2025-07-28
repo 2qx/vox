@@ -1,4 +1,5 @@
 import template from './template.v3.json' with { type: "json" };
+import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
@@ -35,9 +36,9 @@ export interface TimeoutData {
 
 export default class Timeout {
 
-    static tokenAware = true;
+    static USER_AGENT = packageInfo.name;
 
-    static identifier = "UT3";
+    static tokenAware = true;
 
     static template = template;
 

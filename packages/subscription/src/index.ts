@@ -1,4 +1,5 @@
 import template from './template.v3.json' with { type: "json" };
+import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
@@ -35,6 +36,8 @@ export interface SubscriptionData {
 
 
 export default class Subscription {
+    
+    static USER_AGENT = packageInfo.name;
 
     static tokenAware = true;
 

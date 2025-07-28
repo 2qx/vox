@@ -1,4 +1,5 @@
 import template from './template.v1.json' with { type: "json" };
+import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
@@ -33,6 +34,8 @@ export const tWBCH = hexToBin('bb61cd7a6c8a3a3742d965dc7ac73c1117382a5c8930b6833
 
 
 export default class Wrap {
+
+    static USER_AGENT = packageInfo.name;
 
     static tokenAware = true;
 
@@ -257,7 +260,7 @@ export default class Wrap {
         let outputs: OutputTemplate<CompilerBCH>[] = [];
 
         utxos = utxos.filter(u => u.token_data?.category == binToHex(category))
-        if(amount < 0) utxos = utxos.filter(u => u.value > 800)
+        if (amount < 0) utxos = utxos.filter(u => u.value > 800)
         if (utxos.length == 0) throw Error("no vault utxos left, maximum recursion depth reached.");
 
         const randomIdx = Math.floor(Math.random() * utxos.length)
@@ -265,7 +268,7 @@ export default class Wrap {
 
         // remove the random utxo in place
         utxos.splice(randomIdx, 1);
-        
+
         // Try to satisfy the swap with another utxos
         inputs.push(this.getInput(randomUtxo))
         sourceOutputs.push(this.getSourceOutput(randomUtxo));
@@ -275,11 +278,11 @@ export default class Wrap {
             (amount < 0 && -(randomUtxo?.value) < amount) ||
             (amount > 0 && (BigInt(randomUtxo?.token_data?.amount!) > amount))
         ) {
-            outputs.push(this.getOutput(randomUtxo,  BigInt(amount)))
+            outputs.push(this.getOutput(randomUtxo, BigInt(amount)))
         } else {
             if (amount < 0 && amount < -(randomUtxo?.value! - 800)) {
                 // liquidate sats on this utxo 
-                outputs.push(this.getOutput(randomUtxo, -BigInt(randomUtxo?.value!-800)))
+                outputs.push(this.getOutput(randomUtxo, -BigInt(randomUtxo?.value! - 800)))
                 amount += randomUtxo?.value! - 800
             }
             // and try again
@@ -310,7 +313,6 @@ export default class Wrap {
         // Only use straight sat utxos if placing BCH
         if (amount > 0) utxos = utxos.filter(u => !u.token_data)
         if (amount < 0) utxos = utxos.filter(u => u.token_data?.category == binToHex(category))
-        console.log(utxos.length)
         if (utxos.length == 0) throw Error("no wallet utxos left, maximum recursion depth reached.");
 
 
@@ -326,7 +328,6 @@ export default class Wrap {
         sourceOutputs.push(this.getWalletSourceOutput(randomUtxo, privateKey));
         let sumSats = sumSourceOutputValue(sourceOutputs)
         let sumWSats = sumSourceOutputTokenAmounts(sourceOutputs, binToHex(category))
-        console.log(`${sumWSats}, ${amount}`)
         if (
             // Redeeming WBCH for BCH, and token amount is sufficient
             (amount < 0 && sumWSats >= -amount) ||
@@ -363,8 +364,6 @@ export default class Wrap {
             outputs.push(...nextTry.outputs)
             sourceOutputs = nextTry.sourceOutputs
         }
-
-
         return { inputs, outputs, sourceOutputs }
     }
 
@@ -433,23 +432,31 @@ export default class Wrap {
 
         const transaction = result.transaction
 
-        // const tokenValidationResult = verifyTransactionTokens(
-        //     transaction,
-        //     sourceOutputs
-        // );
-        //if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
+        const tokenValidationResult = verifyTransactionTokens(
+            transaction,
+            sourceOutputs
+        );
+        if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
 
         let verify = this.vm.verify({
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
-        console.log(verify)
-        //if (typeof verify == "string") throw verify
+
+        let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
+        if (feeEstimate > 5000) verify = `Excessive fees ${feeEstimate}`
+        if (sumSourceOutputTokenAmounts(sourceOutputs, category) == 0n) verify = `Error checking token input`
+        let tokenDiff = sumSourceOutputTokenAmounts(sourceOutputs, category) -
+            sumSourceOutputTokenAmounts(
+                transaction.outputs,
+                category
+            )
+        if (tokenDiff !== 0n) verify = `Swapping should not create destroy tokens, token difference: ${tokenDiff}`
         return {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
             verify: verify
-        } //binToHex(encodeTransactionBCH(transaction))
+        }
     }
 
 }

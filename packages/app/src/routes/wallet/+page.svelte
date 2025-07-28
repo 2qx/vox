@@ -2,40 +2,72 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import walletIcon from '$lib/images/hot.svg';
-	import FbchSeriesIcon from '$lib/FbchSeriesIcon.svelte';
 	import hot from '$lib/images/hot.svg';
 	import bch from '$lib/images/BCH.svg';
 
+	import { stringify, swapEndianness } from '@bitauth/libauth';
 	import { blo } from 'blo';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet } from 'mainnet-js';
-
-	import { CATEGORY_MAP } from '@fbch/lib';
+	import { BaseWallet, Wallet, TestNetWallet, TokenSendRequest } from 'mainnet-js';
 
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 
 	let data;
 	let wallet: any;
+	let walletState = '';
 	let walletError = false;
 	let balance: number;
 	let history: any[];
 	let unspent: any[];
 
-	let heightValue;
+	async function consolidateFungibleTokens() {
+		const cashaddr = wallet.getTokenDepositAddress();
+		let utxos = (await wallet.getUtxos())
+			.filter((u: any) => u.token)
+			.filter((u: any) => !u.token.capability);
+		console.log(utxos);
+		// Get a list of
+		const categories = [
+			...new Set(
+				utxos.map((u: any) => {
+					return u.token.tokenId;
+				})
+			)
+		];
+
+		let sendRequests = categories.map((tokenId: any) => {
+			const sumTokens = utxos
+				.filter((u: any) => u.token.tokenId == tokenId && u.token.amount > 0n)
+				.map((u: any) => u.token.amount || 0n)
+				.reduce((a: any, b: any) => a + b, 0n);
+			return new TokenSendRequest({
+				cashaddr: cashaddr,
+				value: 800,
+				amount: sumTokens,
+				tokenId: tokenId
+			});
+		});
+
+		return await wallet.send(sendRequests);
+	}
+
+	async function consolidateSats() {
+		return await wallet.sendMax(wallet.getDepositAddress());
+	}
 
 	onMount(async () => {
 		try {
 			const isTestnet = page.url.hostname !== 'vox.cash';
 			BaseWallet.StorageProvider = IndexedDBProvider;
 			wallet = isTestnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
+			console.log(wallet.toDbString());
 			balance = await wallet.getBalance('sat');
 			history = await wallet.getHistory('sat', 0, 20, true);
 			unspent = await wallet.getUtxos();
-			console.log(unspent);
 		} catch (e) {
 			walletError = true;
 			throw e;
@@ -61,35 +93,43 @@
 				>
 					<img src={hot} width="30px" slot="icon" />
 				</qr-code>
-				<p>This is your wallet address.</p>
 				<pre id="deposit">{wallet.getDepositAddress()}</pre>
+			{/if}
+			{#if balance >= 0}
+				<div>
+					<br />
+					<b>
+						{balance.toLocaleString()} satoshis
+					</b>
+				</div>
 			{/if}
 		</div>
 
-		{#if balance >= 0}
-			Balance: {balance} BCH
-		{/if}
 		{#if unspent}
-			<h3>unspent outputs (coins)</h3>
 			{#if unspent.length > 0}
 				<div class="walletHead">
-					<!-- <img width="15" src={walletIcon} alt="hotWallet" /> -->
+					<!-- <div>
+						<img width="32" src={walletIcon} alt="hotWallet" />
+					</div> -->
+					<button onclick={() => consolidateFungibleTokens()}> Consolidate Tokens</button>
+					<button onclick={() => consolidateSats()}> Consolidate Sats</button>
+
 					<!-- <button on:click={() => shapeWallet()}> Shape</button>
 					<button on:click={() => sendMaxTokens()}> Sweep FBCH</button>
 					<button on:click={() => sendMax()}> Sweep BCH</button> -->
 				</div>
-
+				<h3>Unspent Outputs (coins)</h3>
 				<table class="wallet">
 					<thead>
 						<tr class="header">
+							<td></td>
+							<td>Token</td>
+							<td>Fungible</td>
+							<td>NFT</td>
 							<td
 								>Sats
 								<img width="15" src={bch} alt="bchLogo" />
 							</td>
-							<td></td>
-							<td>Category</td>
-							<td>Fungible</td>
-							<td>NFT</td>
 						</tr>
 					</thead>
 
@@ -97,16 +137,11 @@
 						{#each unspent as c, i (c.txid + ':' + c.vout)}
 							<tr>
 								<td class="r">
-									{Number(c.satoshis).toLocaleString(undefined, {})}
-								</td>
-								<td class="r">
 									<i>
 										{#if c.token}
-											<img
-												height="20px"
-												src={blo('0x' + c.token?.tokenId)}
-												alt={c.token?.tokenId}
-											/>
+											<img height="32px" src={blo(c.token?.tokenId, 512)} alt={c.token?.tokenId} />
+										{:else}
+											<img width="32px" src={bch} alt="bchLogo" />
 										{/if}
 									</i>
 								</td>
@@ -124,13 +159,15 @@
 										{/if}
 									</i>
 								</td>
-
 								<td class="r">
 									<i>
 										{#if c.token}
 											{c.token.commitment}
 										{/if}
 									</i>
+								</td>
+								<td class="r">
+									{Number(c.satoshis).toLocaleString(undefined, {})}
 								</td>
 							</tr>
 						{/each}
@@ -144,10 +181,10 @@
 		{/if}
 
 		{#if history}
-			<h3>history</h3>
+			<h3>History</h3>
 			{#if history.length > 0}
 				{#each history as c, i (c.hash)}
-					{#if c.timestamp>0}
+					{#if c.timestamp > 0}
 						<pre>{new Date(c.timestamp * 1000).toISOString()}</pre>
 					{:else}
 						<pre>{new Date().toISOString()}</pre>
@@ -155,10 +192,12 @@
 					<pre># {c.blockHeight}■ {c.hash} </pre>
 					<pre>  assets:cash    {c.valueChange.toLocaleString().padStart(14)} sat</pre>
 					<pre>  expenses:fees  {c.fee.toLocaleString().padStart(14)} sat # {c.size} bytes</pre>
-					{#if c.tokenAmountChanges.length}
-						<pre>  assets:tokens  {c.tokenAmountChanges}</pre>
-					{/if}
-					<pre></pre>
+					{#each c.tokenAmountChanges as tokenChange}
+						{#if tokenChange.amount != 0n}
+							<pre>  assets:cash:tokens  {tokenChange.amount.toLocaleString()} {tokenChange.tokenId} </pre>
+						{/if}
+					{/each}
+					<pre>   &nbsp;</pre>
 				{/each}
 			{:else}
 				<p>no history</p>
@@ -170,7 +209,6 @@
 </section>
 
 <style>
-
 	pre {
 		margin-block: 0px;
 		padding: 0px;
@@ -178,16 +216,51 @@
 		white-space: nowrap;
 	}
 
-	
+	table {
+		width: 100%;
+		border-collapse: separate;
+	}
 	thead tr {
 		text-align: center;
 		font-weight: 900;
 	}
+
 	tbody tr:nth-child(odd) {
-		background-color: #ff33cc1f;
+		background-color: #fd70da2a;
 	}
 	tbody tr:nth-child(even) {
-		background-color: #e495e41a;
+		background-color: #e495e42c;
+	}
+	tbody tr {
+		border-radius: 10px;
+	}
+	tbody tr td {
+		padding: 4px;
+	}
+
+	.scanable {
+		padding: 60px;
+		background-color: white;
+	}
+	.scanable div {
+		text-align: center;
+	}
+
+	.walletHead button {
+		background-color: #a45eb6; /* Green */
+		border: none;
+		color: white;
+		padding: 15px 32px;
+		border-radius: 20px;
+		text-align: center;
+		text-decoration: none;
+		display: inline-block;
+		font-size: 16px;
+	}
+
+	.walletHead {
+		padding: 15px 32px;
+		display: flex;
 	}
 
 	.r {

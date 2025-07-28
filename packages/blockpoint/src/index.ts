@@ -1,4 +1,5 @@
 import template from './template.v3.json' with { type: "json" };
+import packageInfo from '../package.json' with { type: "json" };
 
 import {
     bigIntToVmNumber,
@@ -14,6 +15,7 @@ import {
     OutputTemplate,
     Output,
     stringify,
+    Transaction,
     verifyTransactionTokens
 } from '@bitauth/libauth';
 
@@ -25,12 +27,17 @@ import {
     getScriptHash,
     UtxoI,
     sumTokenAmounts,
+    sumSourceOutputValue,
+    sumSourceOutputTokenAmounts
 } from '@unspent/tau';
 
-const BPT = hexToBin('7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c')
+export const BPT = hexToBin('7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c')
+export const tBPT = hexToBin('ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271')
 
 
 export default class BlockPoint {
+
+    static USER_AGENT = packageInfo.name;
 
     static tokenAware = true;
 
@@ -167,7 +174,7 @@ export default class BlockPoint {
 
 
         const btps = sumTokenAmounts([utxo], binToHex(category))
-        
+
         const lockingBytecode = privateKey ? {
             compiler: this.compiler,
             data: {
@@ -214,9 +221,9 @@ export default class BlockPoint {
     }
 
     /**
-     * Claim some blockpoints.
+     * Claim some Block Points.
      *
-     * @param age - The current bitcoin timestamp (expressed in blocks).
+     * @param now - The current bitcoin block height timestamp (expressed in blocks).
      * @param contractUtxo - contract outputs to use as input.
      * @param walletUtxos - wallet outputs to use as input.
      * @param key - private key to sign transaction wallet inputs.
@@ -227,32 +234,39 @@ export default class BlockPoint {
      */
 
     static claim(
-        age: number,
+        now: number,
         contractUtxo: UtxoI,
         walletUtxo: UtxoI,
         key?: string,
         category?: string,
         fee = 1
-    ): string {
+    ): {
+        transaction: Transaction,
+        sourceOutputs: Output[],
+        verify: string | boolean
+    } {
 
         const inputs: InputTemplate<CompilerBCH>[] = [];
         const outputs: OutputTemplate<CompilerBCH>[] = [];
 
         let bptCat = category ? hexToBin(category) : BPT
 
+        const youngerUtxo = walletUtxo.height > contractUtxo.height ? walletUtxo.height : contractUtxo.height
+
+        const age = now - youngerUtxo;
         const amount = Math.floor(age * walletUtxo.value / 100000000)
 
         let config = {
-
             locktime: 0,
             version: 2,
             inputs,
             outputs
         }
-        config.inputs.push(this.getWalletInput(walletUtxo, age, key));
-        config.inputs.push(this.getInput(contractUtxo, age));
 
+        config.inputs.push(this.getWalletInput(walletUtxo, age, key));
         config.outputs.push(this.getChangeOutput(walletUtxo, amount, key, 0, bptCat));
+
+        config.inputs.push(this.getInput(contractUtxo, age));
         config.outputs.push(this.getOutput(contractUtxo, amount, age));
 
         let result = generateTransaction(config);
@@ -264,9 +278,9 @@ export default class BlockPoint {
         result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
-        const transaction = result.transaction
-
         const sourceOutputs = this.getSourceOutputs(contractUtxo, walletUtxo, key);
+
+        const transaction = result.transaction
 
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
@@ -279,8 +293,18 @@ export default class BlockPoint {
             transaction: transaction,
         })
 
-        if (typeof verify == "string") throw verify
-        return binToHex(encodeTransactionBCH(transaction))
+        let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
+        if (feeEstimate > 5000) verify = `Excessive fees ${feeEstimate}`
+        if (sumSourceOutputTokenAmounts(sourceOutputs, category) == 0n) verify = `Error checking token input`
+        let tokenDiff = sumSourceOutputTokenAmounts(sourceOutputs, category) -
+            sumSourceOutputTokenAmounts(transaction.outputs, category)
+        if (tokenDiff !== 0n) verify = `Swapping should not create destroy tokens, token difference: ${tokenDiff}`
+        return {
+            sourceOutputs: sourceOutputs,
+            transaction: transaction,
+            verify: verify
+        }
+
     }
 
 }
