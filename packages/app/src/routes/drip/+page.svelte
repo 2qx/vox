@@ -62,6 +62,12 @@
 		response as any[];
 	};
 
+	const processAllOutpus = function(){
+		unspent.filter((i: any) => i.height > 0).map((u, i)=>{
+			processOutput(u,i)
+		})
+	}
+
 	const processOutput = async function (utxo: any, index: number) {
 		let txn_hex = Drip.processOutpoint(utxo);
 		let transaction = decodeTransactionBCH(hexToBin(txn_hex))
@@ -146,7 +152,10 @@
 		{/if}
 		<BitauthLink template={Drip.template} />
 	</div>
-	<p>Release miner extractable value (MEV) on Bitcoin Cash (BCH) from your browser!</p>
+	<h1>Release miner extractable value (MEV) on Bitcoin Cash (BCH) from your browser!</h1>
+	<div class="header">
+		<button onclick={() => processAllOutpus()}>Release all Miner Extractable Value (MEV)</button>
+	</div>
 	<h3>Unspent Transaction Outputs (utxos)</h3>
 	<div class="grid">
 		{#if unspent.filter((i: any) => i.height > 0).length > 0}
@@ -230,4 +239,22 @@
 	button:disabled {
 		filter: grayscale(100%);
 	}
+
+	.header button {
+		background-color: #a45eb6; /* Green */
+		border: none;
+		color: white;
+		padding: 15px 32px;
+		border-radius: 20px;
+		text-align: center;
+		text-decoration: none;
+		display: inline-block;
+		font-size: 16px;
+	}
+
+	.header {
+		padding: 15px 32px;
+		display: flex;
+	}
+
 </style>

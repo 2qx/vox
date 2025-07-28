@@ -170,10 +170,7 @@ export default class BlockPoint {
         } as InputTemplate<CompilerBCH>
     }
 
-    static getChangeOutput(utxo: UtxoI, amount: number, privateKey?: any, addressIndex = 0, category = BPT): OutputTemplate<CompilerBCH> {
-
-
-        const btps = sumTokenAmounts([utxo], binToHex(category))
+    static getTokenOutput(amount: number, privateKey?: any, addressIndex = 0, category = BPT): OutputTemplate<CompilerBCH> {
 
         const lockingBytecode = privateKey ? {
             compiler: this.compiler,
@@ -190,11 +187,34 @@ export default class BlockPoint {
 
         return {
             lockingBytecode: lockingBytecode,
-            valueSatoshis: BigInt(utxo.value),
+            valueSatoshis: 800n,
             token: {
                 category: category,
-                amount: BigInt(btps) + BigInt(amount)
+                amount: BigInt(amount)
             }
+        }
+
+    }
+
+     static getChangeOutput(utxo: UtxoI, privateKey?: any, addressIndex = 0): OutputTemplate<CompilerBCH> {
+
+
+        const lockingBytecode = privateKey ? {
+            compiler: this.compiler,
+            data: {
+                hdKeys: {
+                    addressIndex: addressIndex,
+                    hdPublicKeys: {
+                        'wallet': deriveHdPublicKey(privateKey).hdPublicKey
+                    },
+                },
+            },
+            script: 'wallet_lock'
+        } : Uint8Array.from(Array(33))
+
+        return {
+            lockingBytecode: lockingBytecode,
+            valueSatoshis: BigInt(utxo.value)-800n
         }
 
     }
@@ -264,16 +284,20 @@ export default class BlockPoint {
         }
 
         config.inputs.push(this.getWalletInput(walletUtxo, age, key));
-        config.outputs.push(this.getChangeOutput(walletUtxo, amount, key, 0, bptCat));
+        config.outputs.push(this.getTokenOutput(amount, key, 0, bptCat));
 
         config.inputs.push(this.getInput(contractUtxo, age));
         config.outputs.push(this.getOutput(contractUtxo, amount, age));
+
+        config.outputs.push(this.getChangeOutput(walletUtxo, key, 0));
 
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
         const estimatedFee = getTransactionFees(result.transaction, fee)
-        config.outputs[0]!.valueSatoshis = config.outputs[0]!.valueSatoshis - estimatedFee
+
+        // subtract fees off the change output
+        config.outputs[2]!.valueSatoshis = config.outputs[2]!.valueSatoshis - estimatedFee
 
         result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));

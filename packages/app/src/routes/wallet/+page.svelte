@@ -66,7 +66,7 @@
 			wallet = isTestnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
 			console.log(wallet.toDbString());
 			balance = await wallet.getBalance('sat');
-			history = await wallet.getHistory('sat', 0, 20, true);
+
 			unspent = await wallet.getUtxos();
 		} catch (e) {
 			walletError = true;
@@ -180,31 +180,35 @@
 			<p>loading wallet...</p>
 		{/if}
 
-		{#if history}
-			<h3>History</h3>
-			{#if history.length > 0}
-				{#each history as c, i (c.hash)}
-					{#if c.timestamp > 0}
-						<pre>{new Date(c.timestamp * 1000).toISOString()}</pre>
-					{:else}
-						<pre>{new Date().toISOString()}</pre>
-					{/if}
-					<pre># {c.blockHeight}■ {c.hash} </pre>
-					<pre>  assets:cash    {c.valueChange.toLocaleString().padStart(14)} sat</pre>
-					<pre>  expenses:fees  {c.fee.toLocaleString().padStart(14)} sat # {c.size} bytes</pre>
-					{#each c.tokenAmountChanges as tokenChange}
-						{#if tokenChange.amount != 0n}
-							<pre>  assets:cash:tokens  {tokenChange.amount.toLocaleString()} {tokenChange.tokenId} </pre>
+		{#if wallet}
+			{#await wallet.getHistory('sat', 0, 10, true)}
+				<p>...getting history</p>
+			{:then history}
+				<h3>History</h3>
+				{#if history.length > 0}
+					{#each history as c, i (c.hash)}
+						{#if c.timestamp > 0}
+							<pre>{new Date(c.timestamp * 1000).toISOString()}</pre>
+						{:else}
+							<pre>{new Date().toISOString()}</pre>
 						{/if}
+						<pre># {c.blockHeight}■ {c.hash} </pre>
+						<pre>  assets:cash    {c.valueChange.toLocaleString().padStart(14)} sat</pre>
+						<pre>  expenses:fees  {c.fee.toLocaleString().padStart(14)} sat # {c.size} bytes</pre>
+						{#each c.tokenAmountChanges as tokenChange}
+							{#if tokenChange.amount != 0n}
+								<pre>  assets:cash:tokens  {tokenChange.amount.toLocaleString()} {tokenChange.tokenId} </pre>
+							{/if}
+						{/each}
+						<pre>   &nbsp;</pre>
 					{/each}
-					<pre>   &nbsp;</pre>
-				{/each}
-			{:else}
-				<p>no history</p>
-			{/if}
-		{:else}
-			<p>loading history...</p>
-		{/if}
+				{:else}
+					<p>no history</p>
+				{/if}
+			{:catch error}
+				<p style="color: red">{error.message}</p>
+			{/await}
+		{/if	}
 	</div>
 </section>
 

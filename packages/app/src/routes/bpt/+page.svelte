@@ -198,12 +198,11 @@
 		{/if}
 		<BitauthLink template={BlockPoint.template} />
 	</div>
-	<h2>Claim Block Point Rewards</h2>
+	<h1>Claim Block Point Rewards</h1>
 
 	<div class="swap">
 		<div>
 			<img width="50" src={bch} alt={baseTicker} />
-
 			<br />
 			{sumWallet.toLocaleString()} <b>{baseTicker}</b>
 		</div>
@@ -213,7 +212,11 @@
 			{sumWalletBlockPoint.toLocaleString()} <b>{ticker}</b>
 		</div>
 	</div>
-	<button onclick={() => claimAll()}>Claim All Rewards</button>
+
+	<div class="swap">
+		<button onclick={() => claimAll()}>Claim All Rewards</button>
+	</div>
+
 	{#if transaction && transactionValid}
 		<div class="swap">
 			<div>
@@ -230,29 +233,27 @@
 	{/if}
 	{transactionError}
 
-	<div class="grid">
-		{#if walletUnspent.length > 0}
-			<h4>Wallet Unspent Transaction Outputs (coins)</h4>
-
+	{#if walletUnspent.filter((u) => !u.token_data).filter((u) => u.height > 0).length > 0}
+		<h4>Wallet Unspent Transaction Outputs (coins)</h4>
+		<div class="grid">
 			{#each walletUnspent as t, i}
 				{#if !t.token_data && unspent[i]}
 					<div class="row">
 						{#if Math.floor(((now - t.height) * t.value) / 100000000) > 1}
 							<button class="action" onclick={() => claimReward(now, unspent[i], t, key, category)}>
-								{t.height < unspent[i].height
-									? Math.floor(((now - t.height) * t.value) / 100000000)
-									: Math.floor(((now - unspent[i].height) * t.value) / 100000000)} Block Points
 								<img width="100" src={icon} alt="bptLogo" /><br />
-								claim
+								Claim {t.height > unspent[i].height
+									? Math.floor(((now - t.height) * t.value) / 100000000)
+									: Math.floor(((now - unspent[i].height) * t.value) / 100000000)} BPT
 							</button>
 						{/if}
 					</div>
 				{/if}
 			{/each}
-		{:else}
-			<p>Wallet has no coins or wrapped coins to swap?</p>
-		{/if}
-	</div>
+		</div>
+	{:else}
+		<p>No confirmed coins to claim Block Points</p>
+	{/if}
 
 	<Readme />
 </section>
@@ -329,6 +330,21 @@
 		padding: 0 5px 0 5px;
 		font-weight: 900;
 		font-size: small;
+	}
+
+	.grid {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-items: flex-start;
+	}
+
+	.grid .row {
+		justify-content: center;
+		align-items: center;
+		text-align: center;
+		grid-gap: 0.2rem;
+		margin: 0 0 0.2rem 0;
 	}
 
 	.swap button {

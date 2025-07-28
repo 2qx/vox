@@ -195,7 +195,6 @@
 			min={Number(-sumWalletWrapped)}
 			max={sumWallet - 2000}
 		/>
-		<button onclick={() => broadcast(transaction_hex)}>Broadcast</button>
 	</div>
 
 	{#if transaction && transactionValid}
@@ -207,6 +206,9 @@
 					redeem: {(-amount).toLocaleString()} wrapped sats
 				{/if}
 			</div>
+		</div>
+		<div class="swap">
+			<button onclick={() => broadcast(transaction_hex)}>Broadcast</button>
 		</div>
 	{/if}
 	{#if transaction}

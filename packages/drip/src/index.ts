@@ -60,7 +60,7 @@ export default class Drip {
 
   static getOutput(utxo: UtxoI): OutputTemplate<CompilerBCH> {
 
-    let fee = Math.round((utxo.value * DECAY_NUMERATOR) / DECAY_DENOMINATOR)
+    let fee = Math.round((utxo.value * DECAY_NUMERATOR) / DECAY_DENOMINATOR) - 1
     fee = fee < MIN_PAYOUT ? MIN_PAYOUT : fee
     let outputValue = utxo.value - fee
 
