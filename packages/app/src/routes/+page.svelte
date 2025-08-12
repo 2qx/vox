@@ -12,7 +12,7 @@
 			description: 'A zero-timelock savings reward token.',
 			image: '/BPT.svg',
 			link: '/bpt',
-			disabled: true
+			disabled: false
 		},
 		{
 			name: 'CatDex',
@@ -66,7 +66,8 @@
 			name: 'WBCH',
 			description: 'Wrapped Bitcoin Cash CashToken.',
 			image: '/WBCH.svg',
-			disabled: true
+			link: '/wrap',
+			disabled: false
 		},
 		{
 			name: 'Trust',
@@ -76,8 +77,9 @@
 		},
 		{
 			name: 'Vox',
-			description: 'Text-chat.',
+			description: 'Chat app for the future.',
 			image: '/vox.svg',
+			link: '/pop',
 			disabled: true
 		}
 	];
@@ -92,19 +94,14 @@
 	<div class="welcome">
 		{#each protocols as item}
 			<div class="app-button">
-				{#if item.disabled}
-					<button disabled>
-						<img width="80px" src={item.image} alt={item.description} /><br />
-						{item.name}
-					</button>
-				{:else}
+				
 					<a href={item.link}>
-						<button>
+						<button disabled={item.disabled}>
 							<img width="80px" src={item.image} alt={item.description} /><br />
 							{item.name}
 						</button>
 					</a>
-				{/if}
+				
 			</div>
 		{/each}
 	</div>
@@ -147,7 +144,7 @@
 	}
 
 	.app-button button:disabled {
-		filter: grayscale(95%) opacity(30%) blur(5px);
+		filter: grayscale(95%) opacity(50%) blur(2px);
 		font-weight: 100;
 	}
 </style>

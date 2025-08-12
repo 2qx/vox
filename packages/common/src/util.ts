@@ -1,33 +1,41 @@
 import {
-    binToHex,
-    CashAddressType,
-    cashAddressTypeBitsToType,
-    decodeCashAddressFormat,
-    decodeCashAddressFormatWithoutPrefix,
-    decodeCashAddressVersionByte,
-    // hexToBin,
-    // CompilerBCH,
-    // generateTransaction,
-    // InputTemplate,
-    lockingBytecodeToCashAddress,
-    CashAddressNetworkPrefix,
-    // OutputTemplate,
-    sha256,
-    swapEndianness,
+  bigIntToVmNumber,
+  binToHex,
+  CashAddressType,
+  // CashAddressNetworkPrefix,
+  cashAddressTypeBitsToType,
+  decodeCashAddressFormat,
+  decodeCashAddressFormatWithoutPrefix,
+  decodeCashAddressVersionByte,
+  encodeTransactionBCH,
+  // hexToBin,
+  // CompilerBCH,
+  // generateTransaction,
+  // InputTemplate,
+  lockingBytecodeToCashAddress,
+  // OutputTemplate,
+  Output,
+  sha256,
+  swapEndianness,
+  Transaction,
 } from '@bitauth/libauth';
 
+import {
+  UtxoI,
+  type CashAddressNetworkPrefix
+} from './types.js';
+
 export function getScriptHash(lockingBytecode: Uint8Array, reversed = true): string {
-    let hashHex = binToHex(sha256.hash(lockingBytecode))
-    if (reversed) return swapEndianness(hashHex)
-    return hashHex
+  let hashHex = binToHex(sha256.hash(lockingBytecode))
+  if (reversed) return swapEndianness(hashHex)
+  return hashHex
 }
 
 
-export function getAddress(lockingBytecode: Uint8Array, prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
-    const bytecode = lockingBytecode
-    const result = lockingBytecodeToCashAddress({ prefix: prefix, bytecode: bytecode, tokenSupport: false })
-    if (typeof result === 'string') throw (result)
-    return result.address
+export function getAddress(lockingBytecode: Uint8Array, prefix = "bitcoincash" as CashAddressNetworkPrefix, tokenSupport = false): string {
+  const result = lockingBytecodeToCashAddress({ prefix: prefix, bytecode: lockingBytecode, tokenSupport: tokenSupport })
+  if (typeof result === 'string') throw (result)
+  return result.address
 }
 
 export function isTokenaddr(address: string): boolean {
@@ -68,3 +76,76 @@ export function checkTokenaddr(cashaddr: string, enforce: boolean) {
     throw new Error("Error trying to send to a non-tokenaware cash address");
   }
 }
+
+
+export function sumUtxoValue(utxos: UtxoI[], subTokenDust = false) {
+  if (utxos.length > 0) {
+    const balanceArray: number[] = utxos.map((o: UtxoI) => {
+      return o.value;
+    });
+    const balance = balanceArray.reduce((a: number, b: number) => a + b - (subTokenDust ? 800 : 0), 0);
+    return balance;
+  } else {
+    return 0;
+  }
+}
+
+export function sumTokenAmounts(utxos: UtxoI[], tokenId: string): bigint {
+  if (utxos.length > 0) {
+    const tokenArray: (string | bigint)[] = utxos
+      .filter((utxo) => utxo.token_data?.category === tokenId)
+      .map((o: UtxoI) => {
+        return o.token_data?.amount || 0n;
+      });
+    const balance = tokenArray.reduce((a: any, b: any) => BigInt(a) + BigInt(b), 0n);
+    return BigInt(balance);
+  } else {
+    return 0n;
+  }
+}
+
+export function sumSourceOutputValue(source: Output[], subTokenDust = false) {
+  if (source.length > 0) {
+    const balanceArray: bigint[] = source.map((o: Output) => {
+      return o.valueSatoshis;
+    });
+    const balance = balanceArray.reduce((a: bigint, b: bigint) => a + b - (subTokenDust ? 800n : 0n), 0n);
+    return balance;
+  } else {
+    return 0n;
+  }
+}
+
+export function sumSourceOutputTokenAmounts(source: Output[], tokenId?: string): bigint {
+  if (source.length > 0) {
+    const tokenArray: (string | bigint)[] = source
+      .filter((source) => source.token && binToHex(source.token?.category) === tokenId)
+      .map((o: Output) => {
+        return BigInt(o.token?.amount!) || 0n;
+      });
+    const balance = tokenArray.reduce((a: any, b: any) => BigInt(a) + BigInt(b), 0n);
+    return BigInt(balance);
+  } else {
+    return 0n;
+  }
+}
+
+
+export function getTransactionFees(tx: Transaction, rate = 1): bigint {
+  return BigInt(encodeTransactionBCH(tx).length * rate)
+}
+
+
+export function checkForEmptySeed(seed: Uint8Array) {
+  let blankSeed =
+    "4ed8d4b17698ddeaa1f1559f152f87b5d472f725ca86d341bd0276f1b61197e21dd5a391f9f5ed7340ff4d4513aab9cce44f9497a5e7ed85fd818876b6eb402e";
+  let seedBin = new Uint8Array(seed);
+  if (blankSeed == binToHex(seedBin))
+    throw Error("Seed was generated using empty mnemonic");
+}
+
+
+export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+
+
+export const numToVm = (n: number) => bigIntToVmNumber(BigInt(n))

@@ -1,0 +1,116 @@
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "Subscription: a CashToken contract for recurring automatic payments.",
+  "name": "Subscription",
+  "entities": {
+    "covenant": {
+      "description": "Hold asset in escrow for a subscription. \n\nRegular installments will be made automatically at regular intervals. The balance can be administered with authorizing NFT baton.",
+      "name": "Subscription Vault",
+      "scripts": [
+        "lock",
+        "step",
+        "administer"
+      ],
+      "variables": {
+        "auth": {
+          "description": "CashToken Category of the NFT series administering the subscription.",
+          "name": "Authentication Token Category",
+          "type": "WalletData"
+        },
+        "period": {
+          "description": "The time period between installment payments.",
+          "name": "Period",
+          "type": "WalletData"
+        },
+        "recipient": {
+          "description": "The entity the subscription will pay.",
+          "name": "Recipient",
+          "type": "WalletData"
+        },
+        "installment": {
+          "description": "The installment value, denominated in CashTokens.",
+          "name": "Installment",
+          "type": "WalletData"
+        }
+      }
+    }
+  },
+  "scenarios": {
+    "base": {
+      "data": {
+        "bytecode": {
+          "installment": "1000",
+          "auth": "0xbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef",
+          "period": "144",
+          "recipient": "0xa914e78564d75c446f8c00c757a2bd783d30c4f0819a87"
+        }
+      },
+      "description": "",
+      "name": "Base Scenario"
+    },
+    "release": {
+      "data": {
+        "bytecode": {
+          "locktime": "10",
+          "recipient": "0xa914e78564d75c446f8c00c757a2bd783d30c4f0819a87"
+        }
+      },
+      "description": "",
+      "extends": "base",
+      "name": "Release Assets",
+      "transaction": {
+        "inputs": [
+          {
+            "unlockingBytecode": [
+              "slot"
+            ],
+            "sequenceNumber": 10
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": "a914e78564d75c446f8c00c757a2bd783d30c4f0819a87",
+            "valueSatoshis": 800
+          }
+        ],
+        "locktime": 11,
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 800
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "step": {
+      "passes": [
+        "release"
+      ],
+      "name": "Process Installment",
+      "script": "OP_0",
+      "unlocks": "lock"
+    },
+    "administer": {
+      "passes": [
+        "release"
+      ],
+      "name": "Administer",
+      "script": "OP_1  // ",
+      "unlocks": "lock"
+    },
+    "lock": {
+      "lockingType": "p2sh32",
+      "name": "Subscription Covenant",
+      "script": "<installment>  <recipient> <period>  <auth>\n\n\nOP_4 OP_PICK OP_0 OP_NUMEQUAL OP_IF \n// function execute() {\n\n    // Require version 2 for BIP68 support\n       OP_TXVERSION OP_2 OP_NUMEQUALVERIFY \n    // require(tx.version == 2);\n\n    // Require a single utxo input\n       OP_TXINPUTCOUNT OP_1 OP_NUMEQUALVERIFY \n    // require(tx.inputs.length == 1);\n\n    // Require a rolling timelock is satisfied\n       OP_SWAP OP_CHECKSEQUENCEVERIFY OP_DROP \n    // require(tx.age >= period);\n\n    // Require payment in the same token\n       OP_0 OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY \n    // require(tx.outputs[0].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);\n\n    // Require that each output sends to the intended recipient\n       OP_0 OP_OUTPUTBYTECODE OP_ROT OP_EQUALVERIFY \n    // require(tx.outputs[0].lockingBytecode == recipientLockingBytecode);\n\n    // If not enough tokens remain to fulfill an installment,\n       OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_2 OP_PICK OP_LESSTHANOREQUAL OP_IF \n    // if(tx.inputs[this.activeInputIndex].tokenAmount <= installment){\n\n        // require token liquidation\n           OP_0 OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_NUMEQUALVERIFY \n        // require(tx.outputs[0].tokenAmount == tx.inputs[this.activeInputIndex].tokenAmount);\n\n        // utxo sats are unencumbered in the final installment\n\n    // } \n    OP_ELSE \n   // else {\n        \n        // Require minimum token dust  \n           OP_0 OP_OUTPUTVALUE <800> OP_NUMEQUALVERIFY \n        // require(tx.outputs[0].value == 800);\n\n        // Require that installment paid\n           OP_0 OP_OUTPUTTOKENAMOUNT OP_2 OP_PICK OP_NUMEQUALVERIFY \n        // require(tx.outputs[0].tokenAmount == installment);\n\n        // Require the executor fee is not excessive \n           OP_1 OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE <5000> OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY \n        // require(tx.outputs[1].value >= tx.inputs[this.activeInputIndex].value - 5000);\n            \n        // Require that the token remainder after installment is returned\n           OP_1 OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_3 OP_PICK OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY \n        // require(tx.outputs[1].tokenAmount >=  tx.inputs[this.activeInputIndex].tokenAmount - installment);\n \n        // Require the token category is identical\n           OP_1 OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY \n        // require(tx.outputs[1].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);\n\n        // Require the second output match the active bytecode\n           OP_1 OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY \n        // require(tx.outputs[1].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);\n\n    // } \n    OP_ENDIF\n\n  //} \n  OP_2DROP OP_DROP\n\n  // Withdraw or adjust balances.\n    OP_1 OP_ELSE OP_4 OP_ROLL OP_1 OP_NUMEQUALVERIFY \n//  function administer() {\n\n      // Transactions beginning with a minting auth baton are unrestricted\n         OP_0 OP_UTXOTOKENCATEGORY OP_SWAP OP_2 OP_CAT OP_EQUAL\n      // require(tx.inputs[0].tokenCategory == authCat + 0x02);\n\n// }\nOP_NIP OP_NIP OP_NIP \n  \n// } \nOP_ENDIF"
+    }
+  },
+  "supported": [
+    "BCH_2023_05",
+    "BCH_SPEC"
+  ]
+}

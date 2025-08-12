@@ -1,0 +1,88 @@
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "FlashCash: a market for flash liquidity.",
+  "name": "FashCash",
+  "entities": {
+    "covenant": {
+      "description": "Hold liquidity for flash loans on NFTs specifying flat loan use rates. Allow the thread owner to administer their threads via minting NFT",
+      "name": "FlashCash Vault",
+      "scripts": [
+        "flash_market_covenant",
+        "loan",
+        "administer"
+      ]
+    }
+  },
+  "scenarios": {
+    "base": {
+      "data": {
+        "bytecode": {}
+      },
+      "description": "",
+      "name": "Base Scenario"
+    },
+    "use_loan": {
+      "data": {
+        "bytecode": {}
+      },
+      "description": "",
+      "extends": "base",
+      "name": "Use Liquidity",
+      "transaction": {
+        "inputs": [
+          {
+            "unlockingBytecode": [
+              "slot"
+            ],
+            "sequenceNumber": 10
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": "a914e78564d75c446f8c00c757a2bd783d30c4f0819a87",
+            "valueSatoshis": 800
+          }
+        ],
+        "locktime": 11,
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 800
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "loan": {
+      "passes": [
+        "use_loan"
+      ],
+      "name": "Use liquidity",
+      "script": "",
+      "unlocks": "flash_market_covenant"
+    },
+    "administer": {
+      "passes": [
+        "use_loan"
+      ],
+      "name": "Administer",
+      "script": "//",
+      "unlocks": "flash_market_covenant"
+    },
+    "flash_market_covenant": {
+      "lockingType": "p2sh32",
+      "name": "Flash Liquidity Covenant",
+      "script": "// pragma cashscript 0.11.0;\n// contract FlashCash() {\n\n    // function loan() {\n\n      // Ensure transaction version is 2 for compatibility and future-proofing\n      OP_TXVERSION OP_2 OP_NUMEQUALVERIFY \n      //require(tx.version == 2);\n\n      // The minting NFT can withdraw (or rebalance) all threads with a matching token category.\n      OP_0 OP_UTXOTOKENCATEGORY \n      OP_INPUTINDEX OP_UTXOTOKENCATEGORY 20 OP_SPLIT OP_DROP OP_2 OP_CAT OP_EQUAL OP_IF\n      // if(tx.inputs[0].tokenCategory == \n      //    tx.inputs[this.activeInputIndex].tokenCategory.split(32)[0] + 0x02){\n         // threads are unencumbered if the minting baton is in the first input\n      // }\n      OP_ELSE\n      //  else {\n      // Verify that funds are set back to this contract.\n      OP_INPUTINDEX OP_UTXOBYTECODE OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY \n      // require(tx.inputs[this.activeInputIndex].lockingBytecode ==  tx.outputs[this.activeInputIndex].lockingBytecode);\n\n         // Ensure the token category remains unchanged\n         OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY \n         // require(tx.inputs[this.activeInputIndex].tokenCategory == tx.outputs[this.activeInputIndex].tokenCategory);\n\n         // The liquidity provider NFT carrying should be immutable through the contract.\n         OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_EQUALVERIFY\n         // require(tx.inputs[this.activeInputIndex].nftCommitment == tx.outputs[this.activeInputIndex].nftCommitment);\n\n         // Require the output have an additional flat fee\n         OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE OP_2 OP_PICK OP_ADD OP_NUMEQUALVERIFY \n         // require(tx.outputs[this.activeInputIndex].value == tx.inputs[this.activeInputIndex].value + int(tx.inputs[this.activeInputIndex].nftCommitment));\n    //  }\n    //} \n   OP_ENDIF OP_1   \n//}"
+    }
+  },
+  "supported": [
+    "BCH_2023_05",
+    "BCH_2024_05",
+    "BCH_2025_05",
+    "BCH_SPEC"
+  ]
+}

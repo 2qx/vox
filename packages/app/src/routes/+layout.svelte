@@ -1,5 +1,8 @@
 <script lang="ts">
 	//import { onMount } from 'svelte';
+
+	import { assets } from '$app/paths';
+	import { page } from '$app/state';
 	import Header from './Header.svelte';
 	import '../app.css';
 
@@ -38,9 +41,24 @@
 	</main>
 
 	<footer>
-		<p>More markets, more freedom, more power.</p>
+		<p>
+			<a href="/pop/p2p">bitcoin</a> ■ <a href="/pop/free">freedom</a>
+			■ <a href="/pop/biz">markets</a> ■ <a href="/pop/pow">mining</a>
+		</p>
 		<p><a href="https://github.com/2qx/vox" target="_blank">Open source</a></p>
 	</footer>
+
+	{#if page.url.hostname.includes('127.0.0.1') || page.url.hostname.includes('localhost')}
+		<div class="uc-local">
+			<img src="{assets}/dev/localhost.png" alt="local" />
+		</div>
+	{/if}
+
+	{#if page.url.hostname.includes('unspent.dev')}
+		<div class="uc-image">
+			<img src="{assets}/dev/under_construction.gif" alt="Whao!" />
+		</div>
+	{/if}
 </div>
 
 <style>
@@ -67,6 +85,21 @@
 		justify-content: center;
 		align-items: center;
 		padding: 12px;
+	}
+
+	.uc-image {
+		position: fixed;
+		align-self: center;
+		bottom: 2em;
+	}
+
+	.uc-image img {
+		width: 20px;
+	}
+	.uc-local {
+		top: 5em;
+		z-index: 1;
+		pointer-events: none;
 	}
 
 	@media (min-width: 480px) {

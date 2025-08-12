@@ -16,7 +16,10 @@ const config = {
 			pages: buildDir,
 			assets: buildDir,
 			fallback: '200.html'
-		})
+		}),
+		prerender:{
+			entries: ["*","/pop/btc"]
+		}
 	},
 	extensions: ['.svelte', '.svx', '.md']
 };

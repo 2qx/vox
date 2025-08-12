@@ -1,0 +1,147 @@
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "Wrapped BCH \n https://gitlab.com/dagurval/wrapped-cash",
+  "name": "Wrapped",
+  "entities": {
+    "covenant": {
+      "description": "Wrapped BCH (WBCH) represents an equal amount of Bitcoin Cash (BCH), transforming it into a CashToken format on the Bitcoin Cash blockchain. This enables BCH to be used as a CashToken in smart contracts and decentralized applications on the Bitcoin Cash blockchain.",
+      "name": "Wrapped BCH Vault",
+      "scripts": [
+        "unlock"
+      ]
+    },
+    "wallet": {
+      "description": "",
+      "name": "Unnamed Entity",
+      "scripts": [
+        "wallet_unlock",
+        "wallet_lock"
+      ],
+      "variables": {
+        "key": {
+          "description": "The private key that controls this wallet.",
+          "name": "Key",
+          "type": "HdKey"
+        }
+      }
+    }
+  },
+  "scenarios": {
+    "inline": {
+      "description": "",
+      "name": "Swap thread",
+      "transaction": {
+        "inputs": [
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            }
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ]
+        }
+      ]
+    },
+    "swap": {
+      "description": "",
+      "name": "Swap WBCH for BCH",
+      "transaction": {
+        "inputs": [
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          },
+          {
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 2000,
+            "token": {
+              "category": "ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3",
+              "amount": 98000
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "valueSatoshis": 1000,
+            "token": {
+              "category": "ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3",
+              "amount": 1000
+            }
+          }
+        ],
+        "locktime": 0,
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 1000,
+          "token": {
+            "category": "ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3",
+            "amount": 99000
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
+          "valueSatoshis": 2000
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "unlock": {
+      "passes": [
+        "swap"
+      ],
+      "name": "Swap Wrapped BCH",
+      "script": "// empty",
+      "unlocks": "lock"
+    },
+    "wallet_unlock": {
+      "name": "Wallet Unlock",
+      "script": "<key.schnorr_signature.all_outputs> <key.public_key>",
+      "unlocks": "wallet_lock"
+    },
+    "lock": {
+      "lockingType": "p2sh32",
+      "name": "Wrapped BCH Covenant",
+      "script": "// pragma cashscript ^0.9.0;\n\n// Wrap BCH as tokens\n//\n// Transaction form:\n//      Inputs: 00-covenant\n//      Outputs: 00-covenant\n//\n// Author: Dagur Valberg Johannsson <dagurval@pvv.ntnu.no>\n// License: MIT\n\n// contract WrapBCH() {\n\n//     function wrapOrUnwrap() {\n//         // Enforce that this contract lives on\n           OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY \n//         require(tx.outputs[this.activeInputIndex].lockingBytecode\n//              == tx.inputs[this.activeInputIndex].lockingBytecode);\n\n           // The token category must not change.\n           OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY \n//         require(tx.outputs[this.activeInputIndex].tokenCategory\n//              == tx.inputs[this.activeInputIndex].tokenCategory);\n\n           // The sum of tokens and sats in must equal the sum of tokena and sats out.\n           OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_INPUTINDEX OP_UTXOVALUE OP_ADD \n           OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_OUTPUTVALUE OP_ADD OP_NUMEQUAL\n//         require(tx.inputs[this.activeInputIndex].tokenAmount + tx.inputs[this.activeInputIndex].value\n//             == tx.outputs[this.activeInputIndex].tokenAmount + tx.outputs[this.activeInputIndex].value);\n//     }\n// }\n"
+    },
+    "wallet_lock": {
+      "lockingType": "standard",
+      "name": "Wallet Lock",
+      "script": "OP_DUP OP_HASH160 <$(<key.public_key> OP_HASH160)> OP_EQUALVERIFY OP_CHECKSIG"
+    }
+  },
+  "supported": [
+    "BCH_2023_05"
+  ]
+}

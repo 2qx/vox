@@ -1,0 +1,260 @@
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "",
+  "name": "Unspent",
+  "entities": {
+    "parameters": {
+      "description": "Contract creation and function parameters",
+      "name": "Perpetuity v2 parameters",
+      "scripts": [
+        "perpetuity_v2_lock"
+      ],
+      "variables": {
+        "period": {
+          "description": "\"period\" parameter of this contract",
+          "name": "period",
+          "type": "WalletData"
+        },
+        "recipient_locking_bytecode": {
+          "description": "\"recipientLockingBytecode\" parameter of this contract",
+          "name": "recipientLockingBytecode",
+          "type": "WalletData"
+        },
+        "decay": {
+          "description": "\"decay\" parameter of this contract",
+          "name": "decay",
+          "type": "WalletData"
+        }
+      }
+    }
+  },
+  "scenarios": {
+    "perpetuity_v2_execute": {
+      "data": {
+        "bytecode": {
+          "period": "0x78",
+          "recipient_locking_bytecode": "0x76a91403713cbcd9a006abf492fa6cbd5321aa748d7e3988ac",
+          "decay": "0x01"
+        },
+        "currentBlockHeight": 2,
+        "currentBlockTime": 1687451278,
+        "keys": {
+          "privateKeys": {}
+        }
+      },
+      "description": "An example evaluation where this script execution passes.",
+      "name": "Evaluate",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointIndex": 0,
+            "outpointTransactionHash": "e0a3f08cd040373886bb837ad87d1946488ee09a6e0dc5b8203284041374fea3",
+            "sequenceNumber": 1,
+            "unlockingBytecode": [
+              "slot"
+            ]
+          }
+        ],
+        "locktime": 348,
+        "outputs": [
+          {
+            "lockingBytecode": "76a91403713cbcd9a006abf492fa6cbd5321aa748d7e3988ac",
+            "valueSatoshis": 5666669
+          },
+          {
+            "lockingBytecode": "781976a91403713cbcd9a006abf492fa6cbd5321aa748d7e3988ac5102dc057cb275c3519dc0c676547a9600cd547a887602e803a06300cc78a2696e9453799451cd02aa20c1a87e01877e8851cc78a26975677853799400cc78a26975686d7551",
+            "valueSatoshis": 674331837
+          },
+          {
+            "lockingBytecode": "76a9145fdea61f2af32e4c72a5f7d0ebfbe3fb967fc61888ac",
+            "valueSatoshis": 700
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 680000000
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "annuity_v1_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " //",
+      "unlocks": "annuity_v1_lock"
+    },
+    "annuity_v2_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " //",
+      "unlocks": "annuity_v2_lock"
+    },
+    "divide2_v1_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " //",
+      "unlocks": "divide2_v1_lock"
+    },
+    "divide3_v1_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " //",
+      "unlocks": "divide3_v1_lock"
+    },
+    "divide4_v1_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " //",
+      "unlocks": "divide4_v1_lock"
+    },
+    "divide2_v2_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " //",
+      "unlocks": "divide2_v2_lock"
+    },
+    "divide3_v2_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " //",
+      "unlocks": "divide3_v2_lock"
+    },
+    "divide4_v2_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " //",
+      "unlocks": "divide4_v2_lock"
+    },
+    "faucet_v0_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " //",
+      "unlocks": "faucet_v0_lock"
+    },
+    "faucet_v1_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " //",
+      "unlocks": "faucet_v1_lock"
+    },
+    "faucet_v2_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " <index> <payout> <period>",
+      "unlocks": "faucet_v2_lock"
+    },
+    "mine_v1_unlock": {
+      "name": "Mine (v1) Unlock",
+      "script": "<nonce>//",
+      "unlocks": "mine_v1_lock"
+    },
+    "perpetuity_v0_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " //",
+      "unlocks": "perpetuity_v0_lock"
+    },
+    "perpetuity_v1_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " //",
+      "unlocks": "perpetuity_v1_lock"
+    },
+    "perpetuity_v2_unlock": {
+      "name": "Unnamed Unlock",
+      "script": " //",
+      "unlocks": "perpetuity_v2_lock"
+    },
+    "record_v1_unlock": {
+      "name": "Unnamed Unlock",
+      "script": "<data_hash> //",
+      "unlocks": "record_v1_lock"
+    },
+    "record_v2_unlock": {
+      "name": "Unnamed Unlock",
+      "script": "<data_hash> //",
+      "unlocks": "record_v2_lock"
+    },
+    "annuity_v1_lock": {
+      "lockingType": "p2sh20",
+      "name": "Annuity (v1)",
+      "script": ""
+    },
+    "annuity_v2_lock": {
+      "lockingType": "p2sh32",
+      "name": "Annuity (v2)",
+      "script": ""
+    },
+    "divide2_v1_lock": {
+      "lockingType": "p2sh20",
+      "name": "Divide2 (v1)",
+      "script": ""
+    },
+    "divide3_v1_lock": {
+      "lockingType": "p2sh20",
+      "name": "Divide3 (v1)",
+      "script": ""
+    },
+    "divide4_v1_lock": {
+      "lockingType": "p2sh20",
+      "name": "Divide4 (v1)",
+      "script": ""
+    },
+    "divide2_v2_lock": {
+      "lockingType": "p2sh32",
+      "name": "Divide2 (v2)",
+      "script": ""
+    },
+    "divide3_v2_lock": {
+      "lockingType": "p2sh32",
+      "name": "Divide3 (v2)",
+      "script": ""
+    },
+    "divide4_v2_lock": {
+      "lockingType": "p2sh32",
+      "name": "Divide4 (v2)",
+      "script": ""
+    },
+    "faucet_v0_lock": {
+      "lockingType": "p2sh20",
+      "name": "Faucet (v0)",
+      "script": ""
+    },
+    "faucet_v1_lock": {
+      "lockingType": "p2sh20",
+      "name": "Faucet (v1)",
+      "script": ""
+    },
+    "faucet_v2_lock": {
+      "lockingType": "p2sh32",
+      "name": "Faucet (v2)",
+      "script": "// pragma cashscript ^0.8.1;\n\n// Unspent Phi\n//\n// Faucet v2 \n//\n// Faucet: pay to anyone at intervals using rolling timelocks.\n// \n// [ ] Require a version 2 transaction.\n// [ ] The input must have aged for a predefined number of blocks (the period)\n// [ ] All utxos must be processed atomically. One input per tx, no merging.\n// If enough funds exist for future payout, \n//       [ ] calculate the value to be returned minus payout,\n//       [ ] send the remainder back to the faucet.\n// Otherwise, \n//       [ ] allow unrestricted liquidation\n// \n// Implementation notes: contract requires 32-byte locking bytecode style address.\n// \n// String & op_return serializations:\n//\n// F,2,<period>,<payout>,<index>,<contractBytecode>\n// \n// 6a 047574786f\n// 01 46\n// 01 02\n// ...\n\n// contract Faucet(\n\n  // interval for payouts, in blocks\n  // int period,\n\n  // amount to be paid by faucet allowance. \n  // int payout,\n\n  // random number input into contract to have more than one\n  // int index\n  \n// ) {\n//   function drip() {\n\n    // Force tx version 2 to force BIP68 support\n    OP_TXVERSION OP_2 OP_GREATERTHANOREQUAL OP_VERIFY \n    // require(tx.version >= 2);\n\n    // Check that time has passed and that time locks are enabled\n    OP_CHECKSEQUENCEVERIFY OP_DROP \n    // require(tx.age >= period);\n      \n    // Use the index to do nothing but\n    // avoid warnings from the compiler about unused variables.\n    OP_SWAP OP_0 OP_GREATERTHANOREQUAL OP_VERIFY \n    // require(index >= 0);\n\n    // Limit to a single utxo input\n    OP_TXINPUTCOUNT OP_1 OP_NUMEQUALVERIFY \n    // require(tx.inputs.length == 1);\n    \n    // Get the value of the input\n    OP_INPUTINDEX OP_UTXOVALUE \n    // int currentValue = tx.inputs[this.activeInputIndex].value;\n\n    // Calculate value returned to the contract\n    OP_2DUP OP_SWAP OP_SUB \n    // int returnedValue = currentValue - payout;\n\n    // If the value on the contract exceeds the payout amount\n    // then assert that the value must return to the contract\n    OP_SWAP OP_ROT OP_GREATERTHAN OP_IF \n    // if(currentValue > payout){\n\n      // return the balance to the contract\n      OP_0 OP_OUTPUTVALUE OP_OVER OP_GREATERTHANOREQUAL OP_VERIFY \n      //   require(tx.outputs[0].value >= returnedValue);\n      \n      // require the first output to match the active bytecode\n      OP_0 OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY \n      //   require(tx.outputs[0].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);\n\n    // } // otherwise output is unrestricted.\n    OP_ENDIF\n//   }\n OP_DROP OP_1\n// }"
+    },
+    "mine_v1_lock": {
+      "lockingType": "p2sh20",
+      "name": "Mine (v1)",
+      "script": ""
+    },
+    "perpetuity_v0_lock": {
+      "lockingType": "p2sh20",
+      "name": "Perpetuity (v0)",
+      "script": ""
+    },
+    "perpetuity_v1_lock": {
+      "lockingType": "p2sh20",
+      "name": "Perpetuity (v1)",
+      "script": ""
+    },
+    "perpetuity_v2_lock": {
+      "lockingType": "p2sh32",
+      "name": "Perpetuity (v2)",
+      "script": ""
+    },
+    "record_v1_lock": {
+      "lockingType": "p2sh20",
+      "name": "Record (v1)",
+      "script": ""
+    },
+    "record_v2_lock": {
+      "lockingType": "p2sh32",
+      "name": "Record (v2)",
+      "script": ""
+    }
+  },
+  "supported": [
+    "BCH_SPEC"
+  ]
+}

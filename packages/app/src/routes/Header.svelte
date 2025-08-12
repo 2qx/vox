@@ -5,27 +5,38 @@
 	import walletIcon from '$lib/images/hot.svg';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet } from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet } from 'mainnet-js';
 
+	let data;
 	let wallet: any;
 	let walletError = false;
 	let balance: number;
 
-	async function updateWallet() {
-		balance = await wallet.getBalance('bch');
-	}
-
 	onMount(async () => {
 		try {
+			const isTestnet = page.url.hostname !== 'vox.cash';
 			BaseWallet.StorageProvider = IndexedDBProvider;
-			wallet = await Wallet.named(`vox-mainnet`);
-			balance = await wallet.getBalance('bch');
+			wallet = isTestnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
+			balance = (await wallet.getBalance('bch')).toLocaleString({maximumSignificantDigits:2});
 		} catch (e) {
 			walletError = true;
 			throw e;
 		}
 	});
 </script>
+
+{#if page.url.hostname.includes('127.0.0.1') || page.url.hostname.includes('localhost')}
+	<div class="local">This is a local development instance.</div>
+{:else if page.url.hostname.includes('unspent.dev')}
+	<div class="dev">
+		This is an <b>unstable</b> development version running on <b>chipnet</b>. Please go to
+		<a href="https://vox.cash">vox.cash</a> instead.
+	</div>
+{:else}
+	<div class="dev">
+		This is an <b>unstable ALPHA</b> release. Assume ALL funds can be lost.
+	</div>
+{/if}
 
 <header>
 	<div class="corner">
@@ -39,8 +50,20 @@
 			<path d="M0,0 L1,2 C1.5,3 1.5,3 2,3 L2,0 Z" />
 		</svg>
 		<ul>
-			<li aria-current={page.url.pathname === '/about' ? 'page' : undefined}>
-				<a href="/about">Help</a>
+			<li aria-current={page.url.pathname === '/wallet' ? 'page' : undefined}>
+				{#if wallet}
+					{#if walletError}
+						⚠️
+					{/if}
+					<a href="/wallet">
+						{#if typeof balance !== 'undefined'}
+							{balance} BCH
+						{:else}
+							0 BCH
+						{/if}
+						<img width="30" src={walletIcon} alt="wallet" />
+					</a>
+				{/if}
 			</li>
 		</ul>
 		<svg viewBox="0 0 2 3" aria-hidden="true">
@@ -48,21 +71,6 @@
 		</svg>
 	</nav>
 	<div></div>
-	<div class="corner wallet">
-		{#if wallet}
-			{#if walletError}
-				⚠️
-			{/if}
-			<a href="/wallet">
-				<img width="30" src={walletIcon} alt="wallet" />
-				{#if typeof balance !== 'undefined'}
-					{balance} BCH
-				{:else}
-					0 BCH
-				{/if}
-			</a>
-		{/if}
-	</div>
 </header>
 
 <style>
@@ -71,28 +79,30 @@
 		justify-content: space-between;
 	}
 
-	.wallet {
-		filter: grayscale(95%) opacity(90%);
-		position: fixed;
-		right: 0px;
-		display: flex;
-		align-items: center;
-		justify-content: right;
+	.dev {
+		background-color: rgb(255, 225, 0);
+		font-weight: 900;
+		min-height: 50px;
+		color: rgb(0, 0, 0);
+		text-align: center;
+	}
+
+	.local {
+		width: 100%;
+		background-color: rgb(255, 0, 255);
+		font-weight: 900;
+		min-height: 50px;
+		color: white;
+		text-align: center;
+	}
+
+	
+
+	
+
+    li a img {
+		color: black;
 		padding: 10px;
-		background-color: #ffffff88;
-		border-radius: 15px;
-		-moz-border-radius: 15px;
-	}
-
-	.wallet a {
-		color: black;
-		display: flex;
-	}
-
-	.wallet a img {
-		color: black;
-		display: flex;
-		padding: 5px;
 	}
 
 	.corner {
