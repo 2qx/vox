@@ -247,6 +247,17 @@
 									? Math.floor(((now - t.height) * t.value) / 100000000)
 									: Math.floor(((now - unspent[i].height) * t.value) / 100000000)} BPT
 							</button>
+						{:else}
+							<button class="action" disabled>
+								<img width="100" src={icon} alt="bptLogo" /><br />
+								{t.height > unspent[i].height
+									? (((now - t.height) * t.value) / 100000000).toLocaleString(undefined, {
+											minimumFractionDigits: 3
+										})
+									: (((now - unspent[i].height) * t.value) / 100000000).toLocaleString(undefined, {
+											minimumFractionDigits: 3
+										})} BPT
+							</button>
 						{/if}
 					</div>
 				{/if}
@@ -296,8 +307,8 @@
 	.action:disabled {
 		display: inline-block;
 		border-radius: 10px;
-		background-color: #80748069;
-		color: #ffffff;
+		background-color: #55525569;
+		color: #a09999;
 		margin: 1px;
 		padding: 0 5px 0 5px;
 		font-weight: 900;
