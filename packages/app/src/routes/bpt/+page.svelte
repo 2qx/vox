@@ -240,7 +240,7 @@
 			{#each walletUnspent as t, i}
 				{#if !t.token_data && unspent[i]}
 					<div class="row">
-						{#if Math.floor(((now - t.height) * t.value) / 100000000) > 1}
+						{#if Math.floor(((now - t.height) * t.value) / 100000000) >= 1}
 							<button class="action" onclick={() => claimReward(now, unspent[i], t, key, category)}>
 								<img width="100" src={icon} alt="bptLogo" /><br />
 								Claim {t.height > unspent[i].height
