@@ -139,9 +139,9 @@
 								<td class="r">
 									<i>
 										{#if c.token}
-											<img height="32px" src={blo(c.token?.tokenId, 512)} alt={c.token?.tokenId} />
+											<img height="64px" src={blo(c.token?.tokenId, 16)} alt={c.token?.tokenId} />
 										{:else}
-											<img width="32px" src={bch} alt="bchLogo" />
+											<img width="64px" src={bch} alt="bchLogo" />
 										{/if}
 									</i>
 								</td>

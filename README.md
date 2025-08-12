@@ -27,7 +27,7 @@ A collection of small decentralized financial applications.
 | Subscription | <"U3S">    | 🔵   | Token-denominated revocable subscriptions |
 | Timeout      | <"U3T">    | 🔵   | A last-will style timeout                 |
 | Trust        | <"U3P">    |     | Irrevocable perpetuity                    |
-| Vox          | <"U3V">    | 🔵   | Chat                                      |
+| Vox          | <"U3V">    | 🔵   | Chat Channel                              |
 
 
 

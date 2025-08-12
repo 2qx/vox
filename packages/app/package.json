@@ -45,6 +45,7 @@
 		"@unspent/tau": "workspace:*",
 		"@unspent/wrap": "workspace:*",
 		"mainnet-js": "2.7.8",
+		"marked":"16.1.1",
 		"blo": "2.0.0",
 		"pako": "2.1.0"
 	}

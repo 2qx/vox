@@ -41,7 +41,10 @@
 	</main>
 
 	<footer>
-		<p>More markets, more freedom, more power.</p>
+		<p>
+			<a href="/pop/p2p">bitcoin</a> ■ <a href="/pop/free">freedom</a>
+			■ <a href="/pop/biz">markets</a> ■ <a href="/pop/pow">mining</a>
+		</p>
 		<p><a href="https://github.com/2qx/vox" target="_blank">Open source</a></p>
 	</footer>
 
@@ -89,15 +92,13 @@
 		align-self: center;
 		bottom: 2em;
 	}
-	
+
 	.uc-image img {
-		width: 100%;
+		width: 20px;
 	}
 	.uc-local {
-		position: fixed;
 		top: 5em;
 		z-index: 1;
-		width: 120px;
 		pointer-events: none;
 	}
 

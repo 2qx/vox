@@ -9,6 +9,10 @@ import {
 export type BlockHeight = number;
 export type Satoshis = number;
 
+export type TransactionHex = string;
+export type TransactionHash = string;
+export type TransactionMerklePosition = number;
+
 /** Number of tokens. */
 export type TokenAmount = string;
 
@@ -37,10 +41,30 @@ export type NFTCapability = typeof NFTCapability[keyof typeof NFTCapability];
 
 export type CashAddressNetworkPrefix = "bitcoincash" | "bchtest" | "bchreg"
 
-export type TransactionHash = string;
 
-export type TransactionMerklePosition = number;
 
+/**
+ * A list of confirmed transactions in blockchain order, with the output of blockchain.address.get_mempool() appended to the list.
+ *
+ * @property tx_hash {TransactionHash} - transaction hash used to identify a transaction.
+ * @property height {BlockHeight}      - block height for the block that the transaction has been included in, or 0 for unconfirmed, or -1 for unconfirmed if one or more parents are also unconfirmed.
+ * @property fee? {Satoshis}           - satoshis paid as fee for the transaction if it is currently in the mempool.
+ */
+export interface AddressGetHistoryEntry
+{
+	tx_hash: TransactionHash;
+	height: BlockHeight;
+	fee?: Satoshis;
+}
+
+
+/**
+ * blockchain.transaction.get
+ *
+ * @memberof Blockchain.Transaction
+ */
+export type TransactionGetVerboseResponse = any;
+export type TransactionGetResponse = TransactionHex | TransactionGetVerboseResponse;
 
 
 export interface TransactionRequest { transaction: string, sourceOutputs: SourceOutput[] }
@@ -78,11 +102,11 @@ export interface TokenData {
 
 /**
  * A list of unspent outputs in blockchain order. This function takes the mempool into account. Mempool transactions paying to the address are included at the end of the list in an undefined order. Any output that is spent in the mempool does not appear.
- * @property tx_pos {TransactionMerklePosition} - TODO: Document me.
- * @property tx_hash {TransactionHash}          - TODO: Document me.
- * @property height {BlockHeight}               - TODO: Document me.
- * @property value {Satoshis}                   - TODO: Document me.
- * @property token_data {TokenData}             - TODO: Document me.
+ * @property tx_pos {TransactionMerklePosition} - 
+ * @property tx_hash {TransactionHash}          - 
+ * @property height {BlockHeight}               - 
+ * @property value {Satoshis}                   - 
+ * @property token_data {TokenData}             - 
  */
 export interface UtxoI extends TokenData {
 	tx_pos: TransactionMerklePosition;
@@ -103,3 +127,4 @@ export interface Unlocker {
 	generateLockingBytecode: () => Uint8Array;
 	generateUnlockingBytecode: (options: GenerateUnlockingBytecodeOptions) => Uint8Array;
 }
+

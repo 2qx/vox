@@ -31,6 +31,7 @@
 
 	let now = 0;
 	let connectionStatus = '';
+	let contractState = '';
 
 	let transaction_hex = '';
 	let transaction: any = undefined;
@@ -50,7 +51,6 @@
 	let sumVault = 0;
 
 	scripthash = BlockPoint.getScriptHash();
-	let contractState = '';
 
 	const isMainnet = page.url.hostname == 'vox.cash';
 	let icon = isMainnet ? BPT : tBPT;
@@ -133,6 +133,7 @@
 			claimReward(now, unspent[i], walletUtxo, key, category);
 		});
 	};
+
 	const claimReward = function (
 		now: number,
 		unspent: UtxoI,
@@ -264,35 +265,6 @@
 	}
 	.status {
 		text-align: end;
-	}
-
-	thead tr td {
-		border: 2px ridge rgba(247, 202, 248, 0.6);
-		background-color: #ffffff5b;
-	}
-
-	thead tr:nth-child(odd) {
-		text-align: center;
-
-		font-weight: 900;
-	}
-	tbody tr:nth-child(odd) {
-		background-color: #ff33cc1f;
-	}
-	tbody tr:nth-child(even) {
-		background-color: #e495e41a;
-	}
-	.r {
-		text-align: right;
-	}
-	.sats {
-		text-align: right;
-		font-weight: 300;
-		font-style: italic;
-	}
-
-	tbody tr td {
-		border: 2px ridge rgba(247, 202, 248, 0.6);
 	}
 
 	.swap {

@@ -130,14 +130,18 @@
 		}
 	};
 
+	const reconnect = async function () {
+		await electrumClient.connect();
+	};
+
 	onMount(async () => {
 		const isMainnet = page.url.hostname !== 'vox.cash';
 		BaseWallet.StorageProvider = IndexedDBProvider;
 		wallet = isMainnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
-		let lockcodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
-		if (typeof lockcodeResult == 'string') throw lockcodeResult;
-		walletScriptHash = getScriptHash(lockcodeResult.bytecode);
+		let bytecodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
+		if (typeof bytecodeResult == 'string') throw bytecodeResult;
+		walletScriptHash = getScriptHash(bytecodeResult.bytecode);
 
 		// Initialize an electrum client.
 		electrumClient = new ElectrumClient('unspent/wrap', '1.4.1', server);
@@ -159,6 +163,7 @@
 		const electrumClient = new ElectrumClient(Wrap.USER_AGENT, '1.4.1', server);
 		await electrumClient.disconnect();
 	});
+	
 </script>
 
 <section>
@@ -170,7 +175,7 @@
 		{/if}
 		<BitauthLink template={Wrap.template} />
 	</div>
-	<h2>Wrap Bitcoin Cash as a CashToken</h2>
+	<h1>Wrap Bitcoin Cash as a CashToken</h1>
 
 	<div class="swap">
 		<div>
@@ -261,6 +266,12 @@
 					</tr>
 				</tbody>
 			</table>
+		{:else if connectionStatus != 'CONNECTED'}
+			<p>No connection ?</p>
+
+			<div class="swap">
+				<button onclick={() => reconnect()}>Reconnect</button>
+			</div>
 		{:else}
 			<p>Wallet has no coins or wrapped coins to swap?</p>
 		{/if}
