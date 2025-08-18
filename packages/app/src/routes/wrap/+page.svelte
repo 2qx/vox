@@ -182,12 +182,12 @@
 			<img width="50" src={bch} alt={baseTicker} />
 
 			<br />
-			{sumWallet.toLocaleString()} <b>{baseTicker}</b>
+			{sumWallet.toLocaleString()} sats {baseTicker}
 		</div>
 		<div>
 			<img width="50" src={icon} alt={ticker} />
 			<br />
-			{sumWalletWrapped.toLocaleString()} <b>{ticker}</b>
+			{sumWalletWrapped.toLocaleString()} sats {ticker}
 		</div>
 	</div>
 	<div class="swap">

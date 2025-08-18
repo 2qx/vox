@@ -31,8 +31,8 @@ import {
     sumSourceOutputTokenAmounts
 } from '@unspent/tau';
 
-export const BPT = hexToBin('7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c')
-export const tBPT = hexToBin('ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271')
+export const BPTS = hexToBin('7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c')
+export const tBPTS = hexToBin('ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271')
 
 
 export default class BlockPoint {
@@ -170,7 +170,7 @@ export default class BlockPoint {
         } as InputTemplate<CompilerBCH>
     }
 
-    static getTokenOutput(amount: number, privateKey?: any, addressIndex = 0, category = BPT): OutputTemplate<CompilerBCH> {
+    static getTokenOutput(amount: number, privateKey?: any, addressIndex = 0, category = BPTS): OutputTemplate<CompilerBCH> {
 
         const lockingBytecode = privateKey ? {
             compiler: this.compiler,
@@ -269,7 +269,7 @@ export default class BlockPoint {
         const inputs: InputTemplate<CompilerBCH>[] = [];
         const outputs: OutputTemplate<CompilerBCH>[] = [];
 
-        let bptCat = category ? hexToBin(category) : BPT
+        let bptCat = category ? hexToBin(category) : BPTS
 
         const youngerUtxo = walletUtxo.height > contractUtxo.height ? walletUtxo.height : contractUtxo.height
 

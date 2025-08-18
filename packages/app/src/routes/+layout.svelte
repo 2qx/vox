@@ -89,17 +89,21 @@
 
 	.uc-image {
 		position: fixed;
+		overflow: hidden;
 		align-self: center;
 		bottom: 2em;
 	}
 
 	.uc-image img {
-		width: 20px;
+		max-width: 20px;
 	}
 	.uc-local {
 		top: 5em;
 		z-index: 1;
-		pointer-events: none;
+		max-width: 50px;
+	}
+	.uc-local img{
+		max-width: 50px;
 	}
 
 	@media (min-width: 480px) {

@@ -5,8 +5,8 @@
 	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBCH } from '@bitauth/libauth';
 
 	import bch from '$lib/images/BCH.svg';
-	import tBPT from '$lib/images/tBPT.svg';
-	import BPT from '$lib/images/BPT.svg';
+	import tBPTS from '$lib/images/tBPTS.svg';
+	import BPTS from '$lib/images/BPTS.svg';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
@@ -21,7 +21,7 @@
 		type UtxoI
 	} from '@unspent/tau';
 	import BlockPoint from '@unspent/blockpoint';
-	import { BPT as bptCat, tBPT as tbptCat } from '@unspent/blockpoint';
+	import { BPTS as bptCat, tBPTS as tbptCat } from '@unspent/blockpoint';
 
 	import Readme from './README.md';
 	import BitauthLink from '$lib/BitauthLink.svelte';
@@ -53,10 +53,10 @@
 	scripthash = BlockPoint.getScriptHash();
 
 	const isMainnet = page.url.hostname == 'vox.cash';
-	let icon = isMainnet ? BPT : tBPT;
+	let icon = isMainnet ? BPTS : tBPTS;
 	let category = isMainnet ? binToHex(bptCat) : binToHex(tbptCat);
 	let baseTicker = isMainnet ? 'BCH' : 'tBCH';
-	let ticker = isMainnet ? 'BPT' : 'tBPT';
+	let ticker = isMainnet ? 'BPTS' : 'tBPTS';
 	let prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 
 	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
@@ -245,7 +245,7 @@
 								<img width="100" src={icon} alt="bptLogo" /><br />
 								Claim {t.height > unspent[i].height
 									? Math.floor(((now - t.height) * t.value) / 100000000)
-									: Math.floor(((now - unspent[i].height) * t.value) / 100000000)} BPT
+									: Math.floor(((now - unspent[i].height) * t.value) / 100000000)} {ticker}
 							</button>
 						{:else}
 							<button class="action" disabled>
@@ -256,7 +256,7 @@
 										})
 									: (((now - unspent[i].height) * t.value) / 100000000).toLocaleString(undefined, {
 											minimumFractionDigits: 3
-										})} BPT
+										})} {ticker}
 							</button>
 						{/if}
 					</div>

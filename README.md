@@ -10,8 +10,8 @@ A collection of small decentralized financial applications.
 | Protocol    | Identifier | Ticker(s)         |
 | ----------- | ---------- | ----------------- |
 | Badgers     | -          | BADGER            |
-| BlockPoints | -          | BPT               |
-| Future BCH  | <"FBCH">   | FBCH-`[locktime]` |
+| BlockPoints | -          | BPTS              |
+| Future BCH  | <"FBCH">   | FBCH-`<locktime>` |
 | Wrapped BCH | -          | WBCH              |
 
 ## Unspent v3 Protocols

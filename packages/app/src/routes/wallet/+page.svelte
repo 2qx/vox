@@ -23,6 +23,7 @@
 	let balance: number;
 	let history: any[];
 	let unspent: any[];
+	let showInfo = false;
 
 	async function consolidateFungibleTokens() {
 		const cashaddr = wallet.getTokenDepositAddress();
@@ -58,6 +59,10 @@
 	async function consolidateSats() {
 		return await wallet.sendMax(wallet.getDepositAddress());
 	}
+
+	const toggleSeed = () => {
+		showInfo = !showInfo;
+	};
 
 	onMount(async () => {
 		try {
@@ -113,11 +118,17 @@
 					</div> -->
 					<button onclick={() => consolidateFungibleTokens()}> Consolidate Tokens</button>
 					<button onclick={() => consolidateSats()}> Consolidate Sats</button>
+					<button onclick={toggleSeed}>Show/hide backup</button>
 
 					<!-- <button on:click={() => shapeWallet()}> Shape</button>
 					<button on:click={() => sendMaxTokens()}> Sweep FBCH</button>
 					<button on:click={() => sendMax()}> Sweep BCH</button> -->
 				</div>
+				{#if showInfo}
+					<p>
+						{wallet.toDbString()}
+					</p>
+				{/if}
 				<h3>Unspent Outputs (coins)</h3>
 				<table class="wallet">
 					<thead>
@@ -208,7 +219,7 @@
 			{:catch error}
 				<p style="color: red">{error.message}</p>
 			{/await}
-		{/if	}
+		{/if}
 	</div>
 </section>
 

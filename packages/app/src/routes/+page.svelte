@@ -8,9 +8,9 @@
 			disabled: true
 		},
 		{
-			name: 'BPT',
+			name: 'BPTS',
 			description: 'A zero-timelock savings reward token.',
-			image: '/BPT.svg',
+			image: '/BPTS.svg',
 			link: '/bpt',
 			disabled: false
 		},

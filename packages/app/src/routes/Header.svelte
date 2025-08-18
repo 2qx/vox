@@ -91,7 +91,7 @@
 		width: 100%;
 		background-color: rgb(255, 0, 255);
 		font-weight: 900;
-		min-height: 50px;
+		max-height: 50px;
 		color: white;
 		text-align: center;
 	}
