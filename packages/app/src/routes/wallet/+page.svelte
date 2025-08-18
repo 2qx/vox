@@ -98,7 +98,7 @@
 				>
 					<img src={hot} width="30px" slot="icon" />
 				</qr-code>
-				<pre id="deposit">{wallet.getDepositAddress()}</pre>
+				<p id="deposit">{wallet.getDepositAddress()}</p>
 			{/if}
 			{#if balance >= 0}
 				<div>
