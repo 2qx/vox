@@ -108,27 +108,22 @@
 					</b>
 				</div>
 			{/if}
+			<div class="walletHead">
+				<button onclick={toggleSeed}>Show/hide backup</button>
+			</div>
+			{#if showInfo}
+			<h3>DO NOT SHARE WITH ANYONE!</h3>
+				<p>
+					{wallet.toDbString()}
+				</p>
+				Note: vox.cash {new Date().toLocaleDateString()}
+			{/if}
 		</div>
 
 		{#if unspent}
 			{#if unspent.length > 0}
-				<div class="walletHead">
-					<!-- <div>
-						<img width="32" src={walletIcon} alt="hotWallet" />
-					</div> -->
-					<button onclick={() => consolidateFungibleTokens()}> Consolidate Tokens</button>
-					<button onclick={() => consolidateSats()}> Consolidate Sats</button>
-					<button onclick={toggleSeed}>Show/hide backup</button>
+				
 
-					<!-- <button on:click={() => shapeWallet()}> Shape</button>
-					<button on:click={() => sendMaxTokens()}> Sweep FBCH</button>
-					<button on:click={() => sendMax()}> Sweep BCH</button> -->
-				</div>
-				{#if showInfo}
-					<p>
-						{wallet.toDbString()}
-					</p>
-				{/if}
 				<h3>Unspent Outputs (coins)</h3>
 				<table class="wallet">
 					<thead>
@@ -184,6 +179,17 @@
 						{/each}
 					</tbody>
 				</table>
+
+				<div class="walletHead">
+					<!-- <div>
+						<img width="32" src={walletIcon} alt="hotWallet" />
+					</div> -->
+					<button onclick={() => consolidateFungibleTokens()}> Consolidate Tokens</button>
+					<button onclick={() => consolidateSats()}> Consolidate Sats</button>
+					<!-- <button on:click={() => shapeWallet()}> Shape</button>
+					<button on:click={() => sendMaxTokens()}> Sweep FBCH</button>
+					<button on:click={() => sendMax()}> Sweep BCH</button> -->
+				</div>
 			{:else}
 				<p>no wallet utxos available</p>
 			{/if}
