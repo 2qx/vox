@@ -174,7 +174,7 @@ export function buildChannel(
             return x.sequence! - y.sequence!;
         }
         else {
-            if (y.height! > 0) {
+            if (x.height! > 0) {
                 return x.height! - y.height!;
             } else {
                 return y.height! - x.height!;
