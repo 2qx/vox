@@ -101,7 +101,6 @@
 	};
 
 	const updateContract = async function () {
-
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
 			scripthash,
@@ -111,7 +110,7 @@
 		if (response instanceof Error) throw response;
 
 		let tx_hashes = Array.from(new Set(response.map((utxo: any) => utxo.tx_hash))) as string[];
-		
+
 		let historyResponse = await electrumClient.request(
 			'blockchain.scripthash.get_history',
 			scripthash,
@@ -235,13 +234,12 @@
 	<div id="chat" class="row content">
 		{#await transactions then build}
 			{#each posts as post}
+				<ChatPost {...post} />
 				<div class="deleteMe">
 					<button onclick={() => clearPost(post)}>
-						<img src={trash} />
+						<img height="24px" src={trash} />
 					</button>
 				</div>
-
-				<ChatPost {...post} />
 			{/each}
 		{:catch error}
 			<p style="color: red">{error.message}</p>
@@ -334,16 +332,13 @@
 		position: relative;
 		overflow: visible;
 		height: 0px;
-		left: 10px;
+		left: 40px;
+		top: -25px;
 	}
 	.deleteMe button {
-		background-color: #817585; /* Green */
-		border: none;
-		color: white;
+		background-color: #fff; /* Green */
 		padding: 1px;
-		height:5px
 		border-radius: 20px;
-		text-align: center;
 	}
 	.send {
 		align-content: center;
