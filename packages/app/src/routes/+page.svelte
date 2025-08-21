@@ -80,7 +80,7 @@
 			description: 'Chat app for the future.',
 			image: '/vox.svg',
 			link: '/pop',
-			disabled: true
+			disabled: false
 		}
 	];
 </script>

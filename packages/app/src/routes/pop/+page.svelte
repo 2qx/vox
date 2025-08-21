@@ -5,8 +5,6 @@
 
 	let { data }: PageProps = $props();
 </script>
-<h1>{data.topic}</h1>
-
 <Chat topic=""></Chat>
 <Readme />
 

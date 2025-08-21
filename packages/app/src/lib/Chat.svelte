@@ -1,17 +1,32 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
-
-	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBCH } from '@bitauth/libauth';
+	import {
+		binToHex,
+		cashAddressToLockingBytecode,
+		compilerOperationSigningSerializationLocktime,
+		disassembleBytecodeBCH,
+		encodeTransactionBCH,
+		hexToBin
+	} from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet, hexToBin } from 'mainnet-js';
-	import { getScriptHash, getHdPrivateKey, type UtxoI, getAllTransactions } from '@unspent/tau';
+	import { BaseWallet, Wallet, TestNetWallet, NFTCapability } from 'mainnet-js';
+	import { blo } from 'blo';
 
-	import { Channel, buildChannel } from '@fbch/lib';
+	import {
+		cashAssemblyToHex,
+		getScriptHash,
+		getHdPrivateKey,
+		type UtxoI,
+		getAllTransactions
+	} from '@unspent/tau';
 
+	import { Channel, Post, buildChannel } from '@fbch/lib';
+
+	import trash from '$lib/images/trash.svg';
 	import BitauthLink from '$lib/BitauthLink.svelte';
 	import ChatPost from '$lib/ChatPost.svelte';
 	import CONNECTED from '$lib/images/connected.svg';
@@ -24,24 +39,30 @@
 		? 'https://bch.loping.net/address/'
 		: 'https://cbch.loping.net/address/';
 
-	let now = 0;
+	const protocol_prefix = cashAssemblyToHex(`OP_RETURN <"U3V">`);
+
+	let now = $state(0);
 	let connectionStatus = $state('');
 	let contractState = $state('');
 
 	let { topic, transactions } = $props();
 	let message = $state('');
+	let thisAuth = $state('');
+	let sequence = $state(0);
 
-	let address = $derived(Channel.getAddress(topic, prefix));
+	//let address = $derived(Channel.getAddress(topic, prefix));
 	const scripthash = $derived(Channel.getScriptHash(topic));
 
 	let posts: any[] = $state([]);
+
 	let key = '';
 	let electrumClient: any;
 	let walletScriptHash = '';
 
 	let wallet: any;
+	let walletUnspent: any[] = $state([]);
 
-	const handleNotifications = function (data: any) {
+	const handleNotifications = async function (data: any) {
 		if (data.method === 'blockchain.headers.subscribe') {
 			let d = data.params[0];
 			now = d.height;
@@ -49,30 +70,119 @@
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
 				connectionStatus = ConnectionStatus[electrumClient.status];
-				updateContract();
-				//updateWallet();
+				await updateContract();
+				await updateWallet();
+				updateScroll();
 			}
 		} else {
 			console.log(data);
 		}
 	};
 
+	const updateScroll = function () {
+		let chat = document.getElementById('chat')!;
+		var xH = chat.scrollHeight;
+		chat.scrollTo(0, xH);
+	};
+
+	const updateWallet = async function () {
+		let response = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			walletScriptHash,
+			'include_tokens'
+		);
+		if (response instanceof Error) throw response;
+
+		walletUnspent = response.filter(
+			(u: UtxoI) =>
+				u.token_data && u.token_data.nft && u.token_data.nft.commitment.startsWith(protocol_prefix)
+		);
+		thisAuth = walletUnspent[0].token_data.category;
+	};
+
 	const updateContract = async function () {
-		if (now == 0) {
-			let tip = await electrumClient.request('blockchain.headers.get_tip');
-			now = tip.height;
-		}
+
+		let response = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			scripthash,
+			'include_tokens'
+		);
+
+		if (response instanceof Error) throw response;
+
+		let tx_hashes = Array.from(new Set(response.map((utxo: any) => utxo.tx_hash))) as string[];
+		
 		let historyResponse = await electrumClient.request(
 			'blockchain.scripthash.get_history',
 			scripthash,
 			now - 1500,
 			-1
 		);
-		if (historyResponse instanceof Error) throw historyResponse;
 
-		let tx_hashes = historyResponse.map((r) => r.tx_hash);
 		let transactions = await getAllTransactions(electrumClient, tx_hashes);
 		posts = buildChannel(historyResponse, transactions, topic);
+		posts = posts.map((p) => {
+			return {
+				thisAuth: thisAuth == p.auth,
+				...p
+			};
+		});
+
+		if (posts.slice(-1).length > 0) {
+			sequence = posts.slice(-1)[0].height <= 0 ? posts.slice(-1)[0].sequence + 1 : 0;
+		} else {
+			sequence = 0;
+		}
+	};
+
+	const clearPost = async function (post: Post) {
+		let response = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			scripthash,
+			'include_tokens'
+		);
+		if (response instanceof Error) throw response;
+
+		let utxos = response.filter((u: UtxoI) => u.tx_hash == post.hash);
+		let clearPostTx = Channel.clear(topic, utxos, walletUnspent[0], key, now);
+		let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
+		console.log(raw_tx);
+		await broadcast(raw_tx);
+	};
+
+	const send = async function (msg: string) {
+		let post = Channel.post(
+			topic,
+			msg,
+			walletUnspent[0],
+			(Math.round(now / 1000) + 10) * 10,
+			key,
+			sequence
+		);
+
+		let raw_tx = binToHex(encodeTransactionBCH(post.transaction));
+		await broadcast(raw_tx);
+		message = '';
+	};
+
+	const broadcast = async function (raw_tx: string) {
+		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
+		sequence += 1;
+		if (response instanceof Error) {
+			connectionStatus = ConnectionStatus[electrumClient.status];
+			throw response;
+		}
+		response as any[];
+	};
+
+	const newAuthBaton = async function () {
+		let uname = cashAssemblyToHex(`OP_RETURN <"U3V"> <"anonymous">`);
+		let sendResponse = await wallet.tokenGenesis({
+			cashaddr: wallet.getTokenDepositAddress()!, // token UTXO recipient, if not specified will default to sender's address
+			commitment: uname, // NFT Commitment message
+			capability: NFTCapability.minting, // NFT capability
+			value: 1_000_000 // Satoshi value
+		});
 	};
 
 	onMount(async () => {
@@ -84,6 +194,7 @@
 		if (typeof bytecodeResult == 'string') throw bytecodeResult;
 		walletScriptHash = getScriptHash(bytecodeResult.bytecode);
 
+		now = await wallet.provider.getBlockHeight();
 		// Initialize an electrum client.
 		electrumClient = new ElectrumClient(Channel.USER_AGENT, '1.4.1', server);
 
@@ -96,8 +207,8 @@
 		connectionStatus = ConnectionStatus[electrumClient.status];
 		// Set up a subscription for new block headers.
 		await electrumClient.subscribe('blockchain.scripthash.subscribe', scripthash);
-		updateContract();
-		//updateWallet();
+		await updateWallet();
+		await updateContract();
 	});
 
 	onDestroy(async () => {
@@ -108,10 +219,12 @@
 
 <div class="box">
 	<div class="row header">
-        <a href="{explorer}{address}"> explorer</a>
+		{now.toLocaleString()}<sub>■</sub>
+		{sequence}
+
 		<div style="flex: 2 2 auto;"></div>
-        <b><a href="/pop/">/pop</a>/{topic}</b>
-        <div style="flex: 2 2 auto;"></div>
+		<b><a href="/pop/">/pop</a>/{topic}</b>
+		<div style="flex: 2 2 auto;"></div>
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
 		{:else}
@@ -119,16 +232,43 @@
 		{/if}
 		<BitauthLink template={Channel.template} />
 	</div>
-	<div class="row content">
+	<div id="chat" class="row content">
 		{#await transactions then build}
 			{#each posts as post}
+				<div class="deleteMe">
+					<button onclick={() => clearPost(post)}>
+						<img src={trash} />
+					</button>
+				</div>
+
 				<ChatPost {...post} />
 			{/each}
 		{:catch error}
 			<p style="color: red">{error.message}</p>
 		{/await}
 	</div>
-	<div class="row footer" bind:innerHTML={message} contenteditable></div>
+	<div class="row footer">
+		<div class="edit"><textarea bind:value={message}></textarea></div>
+		<div class="send">
+			<div class="auth">
+				{#if thisAuth}
+					<img height="32px" src={blo(thisAuth, 16)} alt="avatar" />
+				{/if}
+			</div>
+			<button onclick={() => send(message)}>Send</button>
+		</div>
+	</div>
+
+	{#if walletUnspent.length == 0}
+		<h2>Create new identity</h2>
+		<button onclick={() => newAuthBaton()}>New identity 1M sats</button>
+	{/if}
+</div>
+
+<div>
+	{#if walletUnspent.length > 0}
+		{disassembleBytecodeBCH(hexToBin(walletUnspent[0].token_data.nft.commitment))}
+	{/if}
 </div>
 
 <style>
@@ -147,8 +287,8 @@
 	}
 
 	.box .row.header {
-        padding: 3px;
-        display: flex;
+		padding: 3px;
+		display: flex;
 		color: #ff00ff77;
 		font-weight: 800;
 		text-align: center;
@@ -162,13 +302,71 @@
 
 	.box .row.content {
 		flex: 1 1 auto;
+		overflow-y: scroll;
+		overflow-x: hidden;
+		max-height: 65vh;
+	}
+
+	.box .row.footer .edit {
+		width: 100%;
+		flex: 1 1 auto;
+		background: #fff0f044;
+		border: #666;
+		border-width: 1px;
+		padding: 5px;
+	}
+	.edit textarea {
+		width: 100%;
+		min-height: 10em;
 	}
 
 	.box .row.footer {
-		background: #fff;
+		background: #eeeeee22;
 		flex: 0 1 auto;
+		display: flex;
+		flex-direction: row;
 		height: auto;
 		resize: none;
 		padding: 10px;
+	}
+
+	.deleteMe {
+		position: relative;
+		overflow: visible;
+		height: 0px;
+		left: 10px;
+	}
+	.deleteMe button {
+		background-color: #817585; /* Green */
+		border: none;
+		color: white;
+		padding: 1px;
+		height:5px
+		border-radius: 20px;
+		text-align: center;
+	}
+	.send {
+		align-content: center;
+		padding: 5px;
+	}
+
+	.auth {
+		align-content: center;
+		padding: 10px;
+	}
+	.auth img {
+		border-radius: 50%;
+	}
+
+	button {
+		background-color: #a45eb6; /* Green */
+		border: none;
+		color: white;
+		padding: 10px;
+		border-radius: 20px;
+		text-align: center;
+		text-decoration: none;
+		display: inline-block;
+		font-size: 16px;
 	}
 </style>

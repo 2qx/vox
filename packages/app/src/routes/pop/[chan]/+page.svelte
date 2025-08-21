@@ -4,9 +4,7 @@
 
 	let { data }: PageProps = $props();
 </script>
-
 <Chat topic={data.topic}></Chat>
-
 <style>
 	/* main {
 		height: 100%;

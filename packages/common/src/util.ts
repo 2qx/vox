@@ -4,6 +4,8 @@ import {
   CashAddressType,
   // CashAddressNetworkPrefix,
   cashAddressTypeBitsToType,
+  cashAssemblyToBin,
+  CompilerBCH,
   decodeCashAddressFormat,
   decodeCashAddressFormatWithoutPrefix,
   decodeCashAddressVersionByte,
@@ -15,6 +17,7 @@ import {
   lockingBytecodeToCashAddress,
   // OutputTemplate,
   Output,
+  OutputTemplate,
   sha256,
   swapEndianness,
   Transaction,
@@ -116,6 +119,19 @@ export function sumSourceOutputValue(source: Output[], subTokenDust = false) {
   }
 }
 
+export function sumOutputValue(outputs: OutputTemplate<CompilerBCH>[], subTokenDust = false) {
+  if (outputs.length > 0) {
+    const balanceArray: bigint[] = outputs.map((o: OutputTemplate<CompilerBCH>) => {
+      return o.valueSatoshis;
+    });
+    const balance = balanceArray.reduce((a: bigint, b: bigint) => a + b - (subTokenDust ? 800n : 0n), 0n);
+    return balance;
+  } else {
+    return 0n;
+  }
+}
+
+
 export function sumSourceOutputTokenAmounts(source: Output[], tokenId?: string): bigint {
   if (source.length > 0) {
     const tokenArray: (string | bigint)[] = source
@@ -149,3 +165,9 @@ export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, 
 
 
 export const numToVm = (n: number) => bigIntToVmNumber(BigInt(n))
+
+export function cashAssemblyToHex(str: string): string {
+  let result = cashAssemblyToBin(str)
+  if (typeof result === "string") throw result
+  return binToHex(result)
+}
