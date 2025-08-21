@@ -84,10 +84,10 @@ function parsePostTransaction(
     transaction: string
 ): Post | undefined {
 
-    if (!transaction) return 
+    if (!transaction) return
     let tx = decodeTransactionBCH(hexToBin(transaction))
     if (typeof tx == "string") return new Post({ height: height, hash: hash, error: tx })
-    if (!tx.outputs[0]!.token) return 
+    if (!tx.outputs[0]!.token) return
     if (!tx.outputs[0]!.token.nft) return new Post({ height: height, hash: hash, error: "no nft on first output" })
     if (!tx.outputs[0]!.token.nft.commitment) return new Post({ height: height, hash: hash, error: "no nft commitment first output" })
 
@@ -174,9 +174,16 @@ export function buildChannel(
             return x.sequence! - y.sequence!;
         }
         else {
+            // sort normally
             if (x.height! > 0) {
                 return x.height! - y.height!;
-            } else {
+            } 
+            // x is neg, x is after
+            else if (x.height! <= 0 && y.height! > 0) {
+                return 1
+            }
+            // both are negative, reverse
+            else {
                 return y.height! - x.height!;
             }
 
@@ -238,7 +245,7 @@ export class Channel {
     static getInput(channel: string, utxo: UtxoI, edit = false): InputTemplate<CompilerBCH> {
 
         let scriptId = edit ? 'edit_message' : 'process_message';
-        
+
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -321,12 +328,12 @@ export class Channel {
         let couponThreshold = isPremature ? 100_000_000 : 10_000_000;
 
         console.log(couponThreshold)
-        
-       
+
+
         let bytecode = Vault.getCouponLockingBytecode(couponThreshold, futureTime)
         console.log(binToHex(Coupon.getUnlockingBytecode(couponThreshold, bytecode)))
-        let cashAddResult = lockingBytecodeToCashAddress({prefix:"bchtest",bytecode})
-        if(typeof cashAddResult == "string") throw cashAddResult
+        let cashAddResult = lockingBytecodeToCashAddress({ prefix: "bchtest", bytecode })
+        if (typeof cashAddResult == "string") throw cashAddResult
         console.log(cashAddResult)
         console.log(binToHex(bytecode))
         return {
@@ -336,7 +343,7 @@ export class Channel {
     }
 
 
-  
+
 
     static getWalletInputs(utxos: UtxoI[], key?: string, sequence?: number): InputTemplate<CompilerBCH>[] {
         return utxos.map((u: UtxoI) => this.getWalletInput(u, key, sequence))
