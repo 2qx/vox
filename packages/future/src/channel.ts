@@ -143,6 +143,17 @@ function chunkString(str: string, len: number) {
     return r
 }
 
+
+const blockSort = (a: number, b: number): number => {
+    if (b <= 0 && a > 0) {
+        return -1
+    } else if (b > 0 && a > 0) {
+        return Math.sign(a - b)
+    } else {
+        return Math.sign(b - a)
+    }
+}
+
 /**
  * Build a list of top level posts given a list of transactions
  *
@@ -169,25 +180,11 @@ export function buildChannel(
         })
         .filter(p => p != undefined)
 
-    return posts.sort((x, y) => {
-        if (x.height === y.height) {
-            return x.sequence! - y.sequence!;
+    return posts.sort((a: Post, b: Post) => {
+        if (b.height === a.height) {
+            return Math.sign(a.sequence! - b.sequence!);
         }
-        else {
-            // sort normally
-            if (x.height! > 0) {
-                return x.height! - y.height!;
-            } 
-            // x is neg, x is after
-            else if (x.height! <= 0 && y.height! > 0) {
-                return 1
-            }
-            // both are negative, reverse
-            else {
-                return y.height! - x.height!;
-            }
-
-        }
+        else return blockSort(a.height!, b.height!)
     })
 }
 
