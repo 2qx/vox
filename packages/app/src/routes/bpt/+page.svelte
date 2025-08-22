@@ -229,9 +229,9 @@
 			</div>
 		</div>
 	{/if}
-	{#if transaction}
+	<!-- {#if transaction}
 		<Transaction {transaction} {sourceOutputs} {category} />
-	{/if}
+	{/if} -->
 	{transactionError}
 
 	{#if walletUnspent.filter((u) => !u.token_data).filter((u) => u.height > 0).length > 0}

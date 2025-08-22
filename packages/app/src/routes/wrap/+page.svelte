@@ -216,9 +216,9 @@
 			<button onclick={() => broadcast(transaction_hex)}>Broadcast</button>
 		</div>
 	{/if}
-	{#if transaction}
+	<!-- {#if transaction}
 		<Transaction {transaction} {sourceOutputs} />
-	{/if}
+	{/if} -->
 	{transactionError}
 
 	<div class="grid">

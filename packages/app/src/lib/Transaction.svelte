@@ -19,11 +19,11 @@ Version: {transaction.version}
 			<tbody>
 				{#each sourceOutputs as i}
 					<tr>
-						<td class="r">
+						<td class="r sats">
 							{i.valueSatoshis.toLocaleString()}
 						</td>
 
-						<td class="r">
+						<td class="r sats">
 							{#if i.token}
 								<i>{i.token.amount.toLocaleString()}</i>
 							{:else}
@@ -59,10 +59,10 @@ Version: {transaction.version}
 			<tbody>
 				{#each transaction.outputs as o}
 					<tr>
-						<td class="r">
+						<td class="r sats">
 							{o.valueSatoshis.toLocaleString()}
 						</td>
-						<td class="r">
+						<td class="r sats">
 							{#if o.token}
 								<i>{o.token.amount.toLocaleString()}</i>
 							{:else}
@@ -136,10 +136,15 @@ Version: {transaction.version}
 		min-width: 50%;
 		text-align: right;
 	}
+	.sats {
+		font-size: x-small;
+	}
+
 	tfoot {
 		font-weight: 700;
 	}
 	thead tr td {
+		
 		border: 2px ridge rgba(247, 202, 248, 0.6);
 		background-color: #ffffff5b;
 	}
