@@ -176,7 +176,7 @@
 	};
 
 	const newAuthBaton = async function () {
-		let uname = cashAssemblyToHex(`OP_RETURN <"U3V"> <"anonymous">`);
+		let uname = cashAssemblyToHex(`OP_RETURN <"U3V"> <"pseudonymous">`);
 		let sendResponse = await wallet.tokenGenesis({
 			cashaddr: wallet.getTokenDepositAddress()!, // token UTXO recipient, if not specified will default to sender's address
 			commitment: uname, // NFT Commitment message
@@ -188,7 +188,7 @@
 	const topUp = async function (amount: number) {
 		balance = walletUnspent[0].value;
 		thisAuth = walletUnspent[0].token_data.category;
-		let uname = cashAssemblyToHex(`OP_RETURN <"U3V"> <"anonymous">`);
+		let uname = cashAssemblyToHex(`OP_RETURN <"U3V"> <"pseudonymous">`);
 
 		let sendResponse = await wallet.send(
 			new TokenSendRequest({

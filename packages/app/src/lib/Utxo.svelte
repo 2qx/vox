@@ -2,7 +2,8 @@
 	import { disassembleBytecodeBCH, hexToBin } from '@bitauth/libauth';
 	import bch from '$lib/images/BCH.svg';
 
-	import Ticker from './Ticker.svelte';
+    import TokenNftData from './TokenNftData.svelte'
+	import TokenAmount from './TokenAmount.svelte';
 	import TokenIcon from './TokenIcon.svelte';
 
 	let { tx_pos, tx_hash, height, value, token_data } = $props();
@@ -10,18 +11,21 @@
 
 <div class="container">
 	<div class="post">
-		
 		<div class="balance">
 			<div class="fill">
 				{#if token_data}
-					<TokenIcon category={token_data.category}></TokenIcon>
-					
-					{#if Number(token_data.amount) > 0}
-						{Number(token_data.amount).toLocaleString(undefined, {})}
-					{/if}<b> &nbsp;<Ticker category={token_data.category}/></b><br>
-					{#if token_data.nft }
-						{disassembleBytecodeBCH(hexToBin(token_data.nft.commitment))}
-					{/if}
+					<div>
+						<TokenAmount amount={token_data.amount} category={token_data.category}/><br/>
+					</div>
+
+					<div>
+						{#if token_data.nft}
+						<TokenNftData {... token_data.nft}/>
+						{/if}
+					</div>
+					<div>
+						<TokenIcon category={token_data.category}></TokenIcon>
+					</div>
 				{/if}
 			</div>
 			<div>
@@ -31,7 +35,7 @@
 		<div class="header">
 			<div class="timestamp">{tx_hash} : {tx_pos}</div>
 			<div class="fill"></div>
-			<div class="timestamp"> {height}</div>
+			<div class="timestamp">{height}</div>
 		</div>
 	</div>
 </div>
@@ -47,6 +51,8 @@
 		background-color: #eeeeee;
 		margin: auto;
 		width: 100%;
+		border: #bbb solid;
+		border-width: 1px;
 	}
 
 	.header {
@@ -61,16 +67,24 @@
 		align-content: flex-start;
 		color: #857070;
 		max-width: 70%;
-		word-wrap: anywhere;
+		word-break: break-all;
 	}
 	.fill {
 		flex: 1;
-		word-wrap: anywhere;
+		word-break: break-all;
+		display: flex;
+		flex-direction: column;
+	}
+	.fill div {
+	}
+	.fill div p {
+		text-align: right;
 	}
 	.timestamp {
 		font-size: xx-small;
 		font-weight: 200;
 		color: #777;
+		word-break: break-all;
 	}
 	.auth {
 		align-content: center;

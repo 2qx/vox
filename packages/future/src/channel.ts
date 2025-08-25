@@ -8,6 +8,7 @@ import {
     CompilerBCH,
     createVirtualMachineBCH,
     deriveHdPublicKey,
+    disassembleBytecodeBCH,
     generateTransaction,
     hdPrivateKeyToP2pkhLockingBytecode,
     hexToBin,
@@ -75,6 +76,14 @@ export class Post {
         this.error = error;
     }
 }
+
+export function parseUsername(commitment:string){
+    const commitmentBin = hexToBin(commitment)
+    const commitmentAsm = disassembleBytecodeBCH(commitmentBin)
+    const unameHex = commitmentAsm.split(" ")!.pop()!.substring(2)
+    return binToUtf8(hexToBin(unameHex))
+}
+
 
 
 function parsePostTransaction(

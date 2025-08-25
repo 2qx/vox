@@ -51,6 +51,8 @@
 		background-color: #eeeeee;
 		margin: auto;
 		width: 100%;
+
+			word-break: break-word;
 	}
 
 	.footer {
@@ -85,6 +87,7 @@
 			font-weight: 400;
 			line-height: 1;
 		}
+		
 	}
 
 	.post.op{

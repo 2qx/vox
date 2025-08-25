@@ -192,12 +192,13 @@
 
 <section>
 	<div class="status">
+		<BitauthLink template={BlockPoint.template} />
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
 		{:else}
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
-		<BitauthLink template={BlockPoint.template} />
+
 	</div>
 	<h1>Claim Block Point Rewards</h1>
 

@@ -141,10 +141,11 @@
 		overflow: hidden;
 		outline: none;
 		font-weight: 600;
+		font-size: small;
 	}
 
 	.app-button button:disabled {
-		filter: grayscale(95%) opacity(50%) blur(2px);
+		filter: grayscale(95%) opacity(60%) blur(2px);
 		font-weight: 100;
 	}
 </style>

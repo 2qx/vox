@@ -29,10 +29,12 @@
 	let walletError = false;
 	let balance = $state(0);
 	let electrumClient: any;
+	let connectionError = $state('');
 	let history: any[];
 	let unspent: UtxoI[] = $state([]);
 	let showInfo = $state(false);
 	let scripthash = $state('');
+
 	let showHistory = $state(false);
 	let cancelWatch: any;
 
@@ -112,9 +114,13 @@
 			// Initialize an electrum client.
 			electrumClient = new ElectrumClient('vox/wallet', '1.4.1', server);
 
-			// Wait for the client to connect.
-			await electrumClient.connect();
-			// Set up a callback function to handle new blocks.
+			try {
+				// Wait for the client to connect.
+				await electrumClient.connect();
+				// Set up a callback function to handle new blocks.
+			} catch (e) {
+				connectionError = e;
+			}
 
 			// Listen for notifications.
 			electrumClient.on('notification', handleNotifications);
@@ -151,6 +157,9 @@
 				</qr-code>
 				<p id="deposit">{wallet.getDepositAddress()}</p>
 			{/if}
+			{#if connectionError}
+			<b>{connectionError}</b>
+			{/if}
 			{#if balance >= 0}
 				<div>
 					<br />
@@ -177,61 +186,7 @@
 				{#each unspent! as u, i (u.tx_hash + ':' + u.tx_pos)}
 					<Utxo {...u} />
 				{/each}
-				<!-- <table class="wallet">
-					<thead>
-						<tr class="header">
-							<td></td>
-							<td>Token</td>
-							<td>Fungible</td>
-							<td>NFT</td>
-							<td
-								>Sats
-								<img width="15" src={bch} alt="bchLogo" />
-							</td>
-						</tr>
-					</thead>
-
-					<tbody>
-						{#each unspent! as c, i (c.txid + ':' + c.vout)}
-							<tr>
-								<td class="r">
-									<i>
-										{#if c.token}
-											<img height="64px" src={blo(c.token?.tokenId, 16)} alt={c.token?.tokenId} />
-										{:else}
-											<img width="64px" src={bch} alt="bchLogo" />
-										{/if}
-									</i>
-								</td>
-								<td class="r">
-									<i>
-										{#if c.token}
-											{c.token?.tokenId}
-										{/if}
-									</i>
-								</td>
-								<td class="r">
-									<i>
-										{#if c.token}
-											{c.token.amount}
-										{/if}
-									</i>
-								</td>
-								<td class="r">
-									<i>
-										{#if c.token}
-											{c.token.commitment}
-										{/if}
-									</i>
-								</td>
-								<td class="r">
-									
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table> -->
-
+				
 				<div class="walletHead">
 					<!-- <div>
 						<img width="32" src={walletIcon} alt="hotWallet" />
@@ -323,6 +278,7 @@
 	.scanable {
 		padding: 60px;
 		background-color: white;
+		border-radius: 20px;
 	}
 	.scanable div {
 		text-align: center;
@@ -332,16 +288,17 @@
 		background-color: #a45eb6; /* Green */
 		border: none;
 		color: white;
-		padding: 15px 32px;
+		padding: 15px 15px;
 		border-radius: 20px;
 		text-align: center;
 		text-decoration: none;
 		display: inline-block;
 		font-size: 16px;
+		margin: auto;
 	}
 
 	.walletHead {
-		padding: 15px 32px;
+		padding: 15px 15px;
 		display: flex;
 	}
 

@@ -71,6 +71,12 @@ pre {
 	color: var(--color-text);
 }
 
+section {
+	background: linear-gradient(#ffffff3d, #ffffff99);
+	border-radius: 30px;
+	padding: 30px;
+}
+
 .text-column {
 	display: flex;
 	max-width: 48rem;
@@ -89,6 +95,8 @@ button {
 button:focus:not(:focus-visible) {
 	outline: none;
 }
+
+
 
 @media (min-width: 720px) {
 	h1 {
