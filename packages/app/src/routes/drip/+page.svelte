@@ -137,10 +137,7 @@
 
 <svelte:head>
 	<title>Drip Mine</title>
-	<meta
-		name="description"
-		content="Release miner extractable value (MEV) on Bitcoin Cash (BCH) from your browser!"
-	/>
+	<meta name="description" content="Release the miner extractable value (MEV)!" />
 </svelte:head>
 
 <section>
@@ -152,7 +149,7 @@
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
 	</div>
-	<h1>Release miner extractable value (MEV) on Bitcoin Cash (BCH) from your browser!</h1>
+	<h1>Release the miner extractable value (MEV)!</h1>
 	<div class="header">
 		<button onclick={() => processAllOutpus()}>Release all Miner Extractable Value (MEV)</button>
 	</div>
@@ -162,8 +159,8 @@
 			{#each unspent.filter((i: any) => i.height > 0) as item, index}
 				<div class="row">
 					<button onclick={() => processOutput(item, index)}>
-						<img src={blo(`0x${item.tx_hash}`)} alt={item.tx_hash} />
-						<p>{Number(item.value).toLocaleString()}</p>
+						<img src={blo(`0x${item.tx_hash}`, 32)} alt={item.tx_hash} />
+						<!-- <p>{Number(item.value).toLocaleString()}</p> -->
 					</button>
 				</div>
 			{/each}
@@ -177,8 +174,8 @@
 			{#each unspent.filter((i: any) => i.height <= 0) as item, index}
 				<div class="row">
 					<button disabled>
-						<img src={blo(`0x${item.tx_hash}`)} alt={item.tx_hash} />
-						<p>{Number(item.value).toLocaleString()}</p>
+						<img src={blo(`0x${item.tx_hash}`, 32)} alt={item.tx_hash} />
+						<!-- <p>{Number(item.value).toLocaleString()}</p> -->
 					</button>
 				</div>
 			{/each}
@@ -229,9 +226,12 @@
 		margin: auto;
 	}
 
+	button {
+		padding: 0px;
+	}
 	button p {
 		font-size: x-small;
-		font-weight: 600;
+		font-weight: 400;
 		margin: 0px;
 	}
 	button:disabled {
@@ -251,7 +251,7 @@
 	}
 
 	.header {
-		padding: 15px 32px;
+		padding: 15px 16px;
 		display: flex;
 	}
 </style>

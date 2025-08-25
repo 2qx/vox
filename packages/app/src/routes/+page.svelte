@@ -94,14 +94,12 @@
 	<div class="welcome">
 		{#each protocols as item}
 			<div class="app-button">
-				
-					<a href={item.link}>
-						<button disabled={item.disabled}>
-							<img width="80px" src={item.image} alt={item.description} /><br />
-							{item.name}
-						</button>
-					</a>
-				
+				<a href={item.link}>
+					<button disabled={item.disabled}>
+						<img width="80px" src={item.image} alt={item.description} /><br />
+						{item.name}
+					</button>
+				</a>
 			</div>
 		{/each}
 	</div>
@@ -113,6 +111,7 @@
 		align-items: center;
 		flex: 0.6;
 		display: flex;
+		padding: 0px;
 	}
 
 	h1 {
@@ -142,6 +141,7 @@
 		outline: none;
 		font-weight: 600;
 		font-size: small;
+		filter: drop-shadow(8px 8px 16px #ffffff);
 	}
 
 	.app-button button:disabled {

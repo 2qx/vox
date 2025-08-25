@@ -278,7 +278,7 @@
 	.scanable {
 		padding: 60px;
 		background-color: white;
-		border-radius: 20px;
+		border-radius: 30px;
 	}
 	.scanable div {
 		text-align: center;

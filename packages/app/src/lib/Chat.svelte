@@ -23,7 +23,7 @@
 		getAllTransactions
 	} from '@unspent/tau';
 
-	import { Channel, Post, buildChannel } from '@fbch/lib';
+	import { Channel, Post, buildChannel, parseUsername } from '@fbch/lib';
 
 	import trash from '$lib/images/trash.svg';
 	import BitauthLink from '$lib/BitauthLink.svelte';
@@ -199,7 +199,7 @@
 				value: balance + amount // Satoshi value
 			})
 		);
-		await updateWallet()
+		await updateWallet();
 	};
 
 	onMount(async () => {
@@ -242,12 +242,12 @@
 		<div style="flex: 2 2 auto;"></div>
 		<b><a href="/pop/">/pop</a>/{topic}</b>
 		<div style="flex: 2 2 auto;"></div>
+		<BitauthLink template={Channel.template} />
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
 		{:else}
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
-		<BitauthLink template={Channel.template} />
 	</div>
 	<div id="chat" class="row content">
 		{#await transactions then build}
@@ -266,12 +266,15 @@
 	<div class="row footer">
 		<div class="edit"><textarea bind:value={message}></textarea></div>
 		<div class="send">
-			<div>
-				{balance.toLocaleString()}
-			</div>
 			<div class="auth">
 				{#if thisAuth}
 					<img height="32px" src={blo(thisAuth, 16)} alt="avatar" />
+				{/if}
+				{#if walletUnspent.length > 0}
+					<div style="font-size:x-small;">
+						{parseUsername(walletUnspent[0].token_data.nft.commitment)}<br />
+						{balance.toLocaleString()}sats
+					</div>
 				{/if}
 			</div>
 			<button onclick={() => send(message)}>Send</button>
@@ -288,12 +291,6 @@
 	{#if walletUnspent.length == 0}
 		<h2>Create new identity</h2>
 		<button onclick={() => newAuthBaton()}>New identity 1M sats</button>
-	{/if}
-</div>
-
-<div>
-	{#if walletUnspent.length > 0}
-		{disassembleBytecodeBCH(hexToBin(walletUnspent[0].token_data.nft.commitment))}
 	{/if}
 </div>
 
