@@ -223,7 +223,6 @@
 
 	.grid .row {
 		grid-gap: 0.2rem;
-		margin: auto;
 	}
 
 	button {

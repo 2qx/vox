@@ -3,6 +3,7 @@
 	import { page } from '$app/state';
 	import walletIcon from '$lib/images/hot.svg';
 	import hot from '$lib/images/hot.svg';
+	import hotCT from '$lib/images/cashTokens.svg';
 	import bch from '$lib/images/BCH.svg';
 
 	import { cashAddressToLockingBytecode, stringify, swapEndianness } from '@bitauth/libauth';
@@ -23,13 +24,12 @@
 	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 
 	let now = $state(0);
-	let data;
 	let wallet: Wallet | TestNetWallet | undefined = $state();
-	let walletState = '';
 	let walletError = false;
 	let balance = $state(0);
 	let electrumClient: any;
 	let connectionError = $state('');
+	let showTokenAddress = $state(true);
 	let history: any[];
 	let unspent: UtxoI[] = $state([]);
 	let showInfo = $state(false);
@@ -141,42 +141,62 @@
 	<div class="status">
 		<div class="scanable">
 			{#if wallet}
-				<qr-code
-					id="qr1"
-					contents={wallet.getDepositAddress()}
-					module-color="#000"
-					position-ring-color="#8dc351"
-					position-center-color="#ff00ec"
-					mask-x-to-y-ratio="1.2"
-					style="width: 150px;
+				{#if !showTokenAddress}
+					<button
+						onclick={() => {
+							showTokenAddress = !showTokenAddress;
+						}}
+						aria-label="toggle address"
+					>
+						<qr-code
+							id="qr1"
+							contents={wallet.getDepositAddress()}
+							module-color="#000"
+							position-ring-color="#8dc351"
+							position-center-color="#ff00ec"
+							mask-x-to-y-ratio="1.2"
+							style="width: 150px;
                 height: 150px;
                 margin: 0.5em auto;
                 background-color: #fff;"
-				>
-					<img src={hot} width="30px" slot="icon" />
-				</qr-code>
-				<p id="deposit">{wallet.getDepositAddress()}</p>
+						>
+							<img src={hot} width="30px" slot="icon" />
+						</qr-code>
+					</button>
+
+					<p id="deposit" style="text-align: center;">{wallet.getDepositAddress()}</p>
+				{:else}
+					<button
+						onclick={() => {
+							showTokenAddress = !showTokenAddress;
+						}}
+						aria-label="toggle address"
+					>
+						<qr-code
+							id="qr1"
+							contents={wallet.getTokenDepositAddress()}
+							module-color="#000"
+							position-ring-color="#8dc351"
+							position-center-color="#ff00ec"
+							mask-x-to-y-ratio="1.2"
+							style="width: 150px;
+                height: 150px;
+                margin: 0.5em auto;
+                background-color: #fff;"
+						>
+							<img src={hotCT} width="30px" slot="icon" />
+						</qr-code>
+					</button>
+					<p id="deposit" style="text-align: center;">{wallet.getTokenDepositAddress()}</p>
+				{/if}
 			{/if}
 			{#if connectionError}
-			<b>{connectionError}</b>
+				<b>{connectionError}</b>
 			{/if}
 			{#if balance >= 0}
 				<div>
-					<br />
-					<b>
-						{balance!.toLocaleString()} satoshis
-					</b>
+						{balance!.toLocaleString()} sats
 				</div>
-			{/if}
-			<div class="walletHead">
-				<button onclick={toggleSeed}>Show/hide backup</button>
-			</div>
-			{#if showInfo}
-				<h3>DO NOT SHARE WITH ANYONE!</h3>
-				<p>
-					{wallet!.toDbString()}
-				</p>
-				Note: vox.cash {new Date().toLocaleDateString()}
 			{/if}
 		</div>
 
@@ -186,11 +206,8 @@
 				{#each unspent! as u, i (u.tx_hash + ':' + u.tx_pos)}
 					<Utxo {...u} />
 				{/each}
-				
+
 				<div class="walletHead">
-					<!-- <div>
-						<img width="32" src={walletIcon} alt="hotWallet" />
-					</div> -->
 					<button onclick={() => consolidateFungibleTokens()}> Consolidate Tokens</button>
 					<button onclick={() => consolidateSats()}> Consolidate Sats</button>
 				</div>
@@ -202,13 +219,25 @@
 		{/if}
 
 		{#if wallet}
-			<button
-				onclick={() => {
-					showHistory = !showHistory;
-				}}>Show/hide History</button
-			>
+			<div class="showSeed">
+				<button onclick={toggleSeed}>Show/hide backup</button>
+				{#if showInfo}
+					<h3>DO NOT SHARE WITH ANYONE!</h3>
+					<p>
+						{wallet!.toDbString()}
+					</p>
+					Note: vox.cash {new Date().toLocaleDateString()}
+				{/if}
+			</div>
 
 			<div class="history">
+				<button
+					onclick={() => {
+						showHistory = !showHistory;
+					}}
+				>
+					Show/hide History
+				</button>
 				{#if showHistory}
 					<h3>History</h3>
 					{#await wallet!.getHistory('sat', 0, 10, true)}
@@ -279,9 +308,15 @@
 		padding: 60px;
 		background-color: white;
 		border-radius: 30px;
+		display: grid;
 	}
 	.scanable div {
 		text-align: center;
+	}
+
+	.scanable button {
+		text-align: center;
+		background-color: #fff;
 	}
 
 	button {
@@ -300,6 +335,10 @@
 	.walletHead {
 		padding: 15px 15px;
 		display: flex;
+	}
+
+	.showSeed {
+		padding: 25px;
 	}
 
 	.r {
