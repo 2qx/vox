@@ -25,7 +25,7 @@ import {
     UtxoI,
 } from '@unspent/tau';
 
-const BADGER = hexToBin('242f6ecedb404c743477e35b09733a56cacae34f3109d5cee1cbc1d5630affd7')
+export const BADGER = hexToBin('242f6ecedb404c743477e35b09733a56cacae34f3109d5cee1cbc1d5630affd7')
 
 
 export default class BadgerStake {

@@ -4,7 +4,6 @@
 	import {
 		binToHex,
 		cashAddressToLockingBytecode,
-		compilerOperationSigningSerializationLocktime,
 		disassembleBytecodeBCH,
 		encodeTransactionBCH,
 		hexToBin
@@ -13,7 +12,7 @@
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet, NFTCapability } from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet, NFTCapability, TokenSendRequest } from 'mainnet-js';
 	import { blo } from 'blo';
 
 	import {
@@ -42,6 +41,7 @@
 	const protocol_prefix = cashAssemblyToHex(`OP_RETURN <"U3V">`);
 
 	let now = $state(0);
+	let balance = $state(0);
 	let connectionStatus = $state('');
 	let contractState = $state('');
 
@@ -98,6 +98,7 @@
 				u.token_data && u.token_data.nft && u.token_data.nft.commitment.startsWith(protocol_prefix)
 		);
 		thisAuth = walletUnspent[0].token_data.category;
+		balance = walletUnspent[0].value;
 	};
 
 	const updateContract = async function () {
@@ -184,6 +185,23 @@
 		});
 	};
 
+	const topUp = async function (amount: number) {
+		balance = walletUnspent[0].value;
+		thisAuth = walletUnspent[0].token_data.category;
+		let uname = cashAssemblyToHex(`OP_RETURN <"U3V"> <"anonymous">`);
+
+		let sendResponse = await wallet.send(
+			new TokenSendRequest({
+				cashaddr: wallet.getTokenDepositAddress()!,
+				tokenId: thisAuth,
+				commitment: uname, // NFT Commitment message
+				capability: NFTCapability.minting, // NFT capability
+				value: balance + amount // Satoshi value
+			})
+		);
+		await updateWallet()
+	};
+
 	onMount(async () => {
 		const isMainnet = page.url.hostname !== 'vox.cash';
 		BaseWallet.StorageProvider = IndexedDBProvider;
@@ -248,6 +266,9 @@
 	<div class="row footer">
 		<div class="edit"><textarea bind:value={message}></textarea></div>
 		<div class="send">
+			<div>
+				{balance.toLocaleString()}
+			</div>
 			<div class="auth">
 				{#if thisAuth}
 					<img height="32px" src={blo(thisAuth, 16)} alt="avatar" />
@@ -256,6 +277,13 @@
 			<button onclick={() => send(message)}>Send</button>
 		</div>
 	</div>
+
+	{#if walletUnspent.length > 0}
+		<div class="row footer">
+			<button onclick={() => topUp(10000000)}>Top up 10M sats</button>
+			<button onclick={() => topUp(1000000)}>Top up 1M sats</button>
+		</div>
+	{/if}
 
 	{#if walletUnspent.length == 0}
 		<h2>Create new identity</h2>

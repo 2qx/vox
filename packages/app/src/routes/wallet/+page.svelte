@@ -5,8 +5,10 @@
 	import hot from '$lib/images/hot.svg';
 	import bch from '$lib/images/BCH.svg';
 
-	import { stringify, swapEndianness } from '@bitauth/libauth';
+	import { cashAddressToLockingBytecode, stringify, swapEndianness } from '@bitauth/libauth';
 	import { blo } from 'blo';
+
+	import { getScriptHash, sumUtxoValue, type UtxoI } from '@unspent/tau';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
@@ -15,15 +17,35 @@
 
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
+	import Utxo from '$lib/Utxo.svelte';
 
+	const isMainnet = page.url.hostname == 'vox.cash';
+	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+
+	let now = $state(0);
 	let data;
-	let wallet: any;
+	let wallet: Wallet | TestNetWallet | undefined = $state();
 	let walletState = '';
 	let walletError = false;
-	let balance: number;
+	let balance = $state(0);
+	let electrumClient: any;
 	let history: any[];
-	let unspent: any[];
-	let showInfo = false;
+	let unspent: UtxoI[] = $state([]);
+	let showInfo = $state(false);
+	let scripthash = $state('');
+	let showHistory = $state(false);
+	let cancelWatch: any;
+
+	const handleNotifications = function (data: any) {
+		if (data.method === 'blockchain.headers.subscribe') {
+			let d = data.params[0];
+			now = d.height;
+		} else if (data.method === 'blockchain.scripthash.subscribe') {
+			updateWallet();
+		} else {
+			console.log(data);
+		}
+	};
 
 	async function consolidateFungibleTokens() {
 		const cashaddr = wallet.getTokenDepositAddress();
@@ -57,11 +79,24 @@
 	}
 
 	async function consolidateSats() {
-		return await wallet.sendMax(wallet.getDepositAddress());
+		return await wallet!.sendMax(wallet!.getDepositAddress());
 	}
 
 	const toggleSeed = () => {
 		showInfo = !showInfo;
+	};
+
+	const updateWallet = async function () {
+		console.log('updating wallet...');
+		let response = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			scripthash,
+			'include_tokens'
+		);
+		if (response instanceof Error) throw response;
+		unspent = response;
+
+		balance = sumUtxoValue(unspent as UtxoI[], true);
 	};
 
 	onMount(async () => {
@@ -69,10 +104,26 @@
 			const isTestnet = page.url.hostname !== 'vox.cash';
 			BaseWallet.StorageProvider = IndexedDBProvider;
 			wallet = isTestnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
-			console.log(wallet.toDbString());
-			balance = await wallet.getBalance('sat');
+			balance = (await wallet.getBalance('sat')) as number;
 
-			unspent = await wallet.getUtxos();
+			let lockingBytecode = cashAddressToLockingBytecode(wallet.getDepositAddress());
+			if (typeof lockingBytecode == 'string') throw lockingBytecode;
+			scripthash = getScriptHash(lockingBytecode.bytecode, true);
+			// Initialize an electrum client.
+			electrumClient = new ElectrumClient('vox/wallet', '1.4.1', server);
+
+			// Wait for the client to connect.
+			await electrumClient.connect();
+			// Set up a callback function to handle new blocks.
+
+			// Listen for notifications.
+			electrumClient.on('notification', handleNotifications);
+
+			// Set up a subscription for new block headers.
+			await electrumClient.subscribe('blockchain.scripthash.subscribe', scripthash);
+			await electrumClient.subscribe('blockchain.headers.subscribe');
+
+			await updateWallet();
 		} catch (e) {
 			walletError = true;
 			throw e;
@@ -104,7 +155,7 @@
 				<div>
 					<br />
 					<b>
-						{balance.toLocaleString()} satoshis
+						{balance!.toLocaleString()} satoshis
 					</b>
 				</div>
 			{/if}
@@ -112,20 +163,21 @@
 				<button onclick={toggleSeed}>Show/hide backup</button>
 			</div>
 			{#if showInfo}
-			<h3>DO NOT SHARE WITH ANYONE!</h3>
+				<h3>DO NOT SHARE WITH ANYONE!</h3>
 				<p>
-					{wallet.toDbString()}
+					{wallet!.toDbString()}
 				</p>
 				Note: vox.cash {new Date().toLocaleDateString()}
 			{/if}
 		</div>
 
 		{#if unspent}
-			{#if unspent.length > 0}
-				
-
+			{#if unspent!.length > 0}
 				<h3>Unspent Outputs (coins)</h3>
-				<table class="wallet">
+				{#each unspent! as u, i (u.tx_hash + ':' + u.tx_pos)}
+					<Utxo {...u} />
+				{/each}
+				<!-- <table class="wallet">
 					<thead>
 						<tr class="header">
 							<td></td>
@@ -140,7 +192,7 @@
 					</thead>
 
 					<tbody>
-						{#each unspent as c, i (c.txid + ':' + c.vout)}
+						{#each unspent! as c, i (c.txid + ':' + c.vout)}
 							<tr>
 								<td class="r">
 									<i>
@@ -173,12 +225,12 @@
 									</i>
 								</td>
 								<td class="r">
-									{Number(c.satoshis).toLocaleString(undefined, {})}
+									
 								</td>
 							</tr>
 						{/each}
 					</tbody>
-				</table>
+				</table> -->
 
 				<div class="walletHead">
 					<!-- <div>
@@ -186,9 +238,6 @@
 					</div> -->
 					<button onclick={() => consolidateFungibleTokens()}> Consolidate Tokens</button>
 					<button onclick={() => consolidateSats()}> Consolidate Sats</button>
-					<!-- <button on:click={() => shapeWallet()}> Shape</button>
-					<button on:click={() => sendMaxTokens()}> Sweep FBCH</button>
-					<button on:click={() => sendMax()}> Sweep BCH</button> -->
 				</div>
 			{:else}
 				<p>no wallet utxos available</p>
@@ -198,33 +247,45 @@
 		{/if}
 
 		{#if wallet}
-			{#await wallet.getHistory('sat', 0, 10, true)}
-				<p>...getting history</p>
-			{:then history}
-				<h3>History</h3>
-				{#if history.length > 0}
-					{#each history as c, i (c.hash)}
-						{#if c.timestamp > 0}
-							<pre>{new Date(c.timestamp * 1000).toISOString()}</pre>
+			<button
+				onclick={() => {
+					showHistory = !showHistory;
+				}}>Show/hide History</button
+			>
+
+			<div class="history">
+				{#if showHistory}
+					<h3>History</h3>
+					{#await wallet!.getHistory('sat', 0, 10, true)}
+						<p>...getting history</p>
+					{:then history}
+						{#if history.length > 0}
+							{#each history as c, i (c.hash)}
+								{#if c!.timestamp > 0}
+									<pre>{new Date(c!.timestamp * 1000).toISOString()}</pre>
+								{:else}
+									<pre>{new Date().toISOString()}</pre>
+								{/if}
+								<pre># {c.blockHeight}■ {c.hash} </pre>
+								<pre>  assets:cash    {c.valueChange.toLocaleString().padStart(14)} sat</pre>
+								<pre>  expenses:fees  {c.fee
+										.toLocaleString()
+										.padStart(14)} sat # {c.size} bytes</pre>
+								{#each c.tokenAmountChanges as tokenChange}
+									{#if tokenChange.amount != 0n}
+										<pre>  assets:cash:tokens  {tokenChange.amount.toLocaleString()} {tokenChange.tokenId} </pre>
+									{/if}
+								{/each}
+								<pre>   &nbsp;</pre>
+							{/each}
 						{:else}
-							<pre>{new Date().toISOString()}</pre>
+							<p>no history</p>
 						{/if}
-						<pre># {c.blockHeight}■ {c.hash} </pre>
-						<pre>  assets:cash    {c.valueChange.toLocaleString().padStart(14)} sat</pre>
-						<pre>  expenses:fees  {c.fee.toLocaleString().padStart(14)} sat # {c.size} bytes</pre>
-						{#each c.tokenAmountChanges as tokenChange}
-							{#if tokenChange.amount != 0n}
-								<pre>  assets:cash:tokens  {tokenChange.amount.toLocaleString()} {tokenChange.tokenId} </pre>
-							{/if}
-						{/each}
-						<pre>   &nbsp;</pre>
-					{/each}
-				{:else}
-					<p>no history</p>
+					{:catch error}
+						<p style="color: red">{error.message}</p>
+					{/await}
 				{/if}
-			{:catch error}
-				<p style="color: red">{error.message}</p>
-			{/await}
+			</div>
 		{/if}
 	</div>
 </section>
@@ -267,7 +328,7 @@
 		text-align: center;
 	}
 
-	.walletHead button {
+	button {
 		background-color: #a45eb6; /* Green */
 		border: none;
 		color: white;
