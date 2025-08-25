@@ -79,7 +79,7 @@
 		padding: 5px 5px 5px 5px;
 	}
 	.auth img {
-		border-radius: 50%;
+		border-radius: 20%;
 	}
 
 	.post :global {

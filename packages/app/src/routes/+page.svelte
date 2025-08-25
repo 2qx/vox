@@ -130,6 +130,7 @@
 		justify-content: center;
 		text-align: center;
 		border-radius: 50%;
+		margin: auto;
 	}
 
 	.app-button button {
@@ -142,6 +143,7 @@
 		font-weight: 600;
 		font-size: small;
 		filter: drop-shadow(8px 8px 16px #ffffff);
+		
 	}
 
 	.app-button button:disabled {

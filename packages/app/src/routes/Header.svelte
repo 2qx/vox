@@ -6,6 +6,7 @@
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 	import { BaseWallet, Wallet, TestNetWallet } from 'mainnet-js';
+	import DISCONNECTED from '$lib/images/disconnected.svg';
 
 	let data;
 	let wallet: any;
@@ -17,7 +18,7 @@
 			const isTestnet = page.url.hostname !== 'vox.cash';
 			BaseWallet.StorageProvider = IndexedDBProvider;
 			wallet = isTestnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
-			balance = (await wallet.getBalance('bch')).toLocaleString({maximumSignificantDigits:2});
+			balance = (await wallet.getBalance('bch')).toLocaleString({ maximumSignificantDigits: 2 });
 		} catch (e) {
 			walletError = true;
 			throw e;
@@ -52,14 +53,11 @@
 		<ul>
 			<li aria-current={page.url.pathname === '/wallet' ? 'page' : undefined}>
 				{#if wallet}
-					{#if walletError}
-						⚠️
-					{/if}
 					<a href="/wallet">
 						{#if typeof balance !== 'undefined'}
 							{balance} BCH
 						{:else}
-							0 BCH
+							<img src={DISCONNECTED} alt="Disconnected" />
 						{/if}
 						<img width="30" src={walletIcon} alt="wallet" />
 					</a>
@@ -96,11 +94,7 @@
 		text-align: center;
 	}
 
-	
-
-	
-
-    li a img {
+	li a img {
 		color: black;
 		padding: 10px;
 	}

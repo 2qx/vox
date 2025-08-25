@@ -198,7 +198,6 @@
 		{:else}
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
-
 	</div>
 	<h1>Claim Block Point Rewards</h1>
 
@@ -211,7 +210,8 @@
 		<div>
 			<img width="50" src={icon} alt={ticker} />
 			<br />
-			{sumWalletBlockPoint.toLocaleString()} {ticker}
+			{sumWalletBlockPoint.toLocaleString()}
+			{ticker}
 		</div>
 	</div>
 
@@ -246,7 +246,8 @@
 								<img width="100" src={icon} alt="bptLogo" /><br />
 								Claim {t.height > unspent[i].height
 									? Math.floor(((now - t.height) * t.value) / 100000000)
-									: Math.floor(((now - unspent[i].height) * t.value) / 100000000)} {ticker}
+									: Math.floor(((now - unspent[i].height) * t.value) / 100000000)}
+								{ticker}
 							</button>
 						{:else}
 							<button class="action" disabled>
@@ -257,7 +258,8 @@
 										})
 									: (((now - unspent[i].height) * t.value) / 100000000).toLocaleString(undefined, {
 											minimumFractionDigits: 3
-										})} {ticker}
+										})}
+								{ticker}
 							</button>
 						{/if}
 					</div>
@@ -297,12 +299,14 @@
 	.action {
 		display: inline-block;
 		border-radius: 10px;
-		background-color: rgba(200, 229, 238, 0.514);
-		color: #000000;
-		margin: 5px;
+		background-color: rgba(255, 255, 255, 0.781);
+		/* color: #000000; */
+		border: #ffffff solid;
+		margin: auto;
 		padding: 10px;
 		font-weight: 900;
 		font-size: small;
+		filter: drop-shadow(8px 8px 16px #ffffff);
 	}
 
 	.action:disabled {
