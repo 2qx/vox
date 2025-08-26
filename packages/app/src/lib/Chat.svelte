@@ -4,9 +4,7 @@
 	import {
 		binToHex,
 		cashAddressToLockingBytecode,
-		disassembleBytecodeBCH,
 		encodeTransactionBCH,
-		hexToBin
 	} from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
@@ -50,7 +48,6 @@
 	let thisAuth = $state('');
 	let sequence = $state(0);
 
-	//let address = $derived(Channel.getAddress(topic, prefix));
 	const scripthash = $derived(Channel.getScriptHash(topic));
 
 	let posts: any[] = $state([]);
@@ -229,9 +226,10 @@
 	});
 
 	onDestroy(async () => {
-		const electrumClient = new ElectrumClient(Channel.USER_AGENT, '1.4.1', server);
 		await electrumClient.disconnect();
 	});
+
+	
 </script>
 
 <div class="box">
@@ -280,7 +278,7 @@
 				</div>
 				<button onclick={() => send(message)}>Send</button>
 			</div>
-			{:else}
+		{:else}
 			<p>Not connected?</p>
 		{/if}
 	</div>

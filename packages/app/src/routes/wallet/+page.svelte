@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 	import walletIcon from '$lib/images/hot.svg';
 	import hot from '$lib/images/hot.svg';
@@ -134,6 +134,10 @@
 			walletError = true;
 			throw e;
 		}
+	});
+
+	onDestroy(async () => {
+		await electrumClient.disconnect();
 	});
 </script>
 

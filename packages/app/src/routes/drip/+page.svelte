@@ -130,7 +130,6 @@
 	});
 
 	onDestroy(async () => {
-		const electrumClient = new ElectrumClient('unspent/drip', '1.4.1', server);
 		await electrumClient.disconnect();
 	});
 </script>

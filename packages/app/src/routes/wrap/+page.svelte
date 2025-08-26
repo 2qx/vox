@@ -160,7 +160,6 @@
 	});
 
 	onDestroy(async () => {
-		const electrumClient = new ElectrumClient(Wrap.USER_AGENT, '1.4.1', server);
 		await electrumClient.disconnect();
 	});
 	

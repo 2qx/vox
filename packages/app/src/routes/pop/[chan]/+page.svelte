@@ -3,11 +3,10 @@
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
+	let topic = $derived(data.topic)
 </script>
-<Chat topic={data.topic}></Chat>
+
+<Chat {topic}></Chat>
+
 <style>
-	/* main {
-		height: 100%;
-		margin: 0;
-	} */
 </style>

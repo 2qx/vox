@@ -77,7 +77,7 @@ export class Post {
     }
 }
 
-export function parseUsername(commitment:string){
+export function parseUsername(commitment: string) {
     const commitmentBin = hexToBin(commitment)
     const commitmentAsm = disassembleBytecodeBCH(commitmentBin)
     const unameHex = commitmentAsm.split(" ")!.pop()!.substring(2)
@@ -191,6 +191,8 @@ export function buildChannel(
 
     return posts.sort((a: Post, b: Post) => {
         if (b.height === a.height) {
+            return Math.sign(a.sequence! - b.sequence!);
+        } else if (b.height! <= 0 && a.height! <= 0) {
             return Math.sign(a.sequence! - b.sequence!);
         }
         else return blockSort(a.height!, b.height!)
