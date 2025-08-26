@@ -287,32 +287,40 @@
 			<p style="color: red">{error.message}</p>
 		{/await}
 	</div>
-	<div class="row footer">
-		{#if connectionStatus == 'CONNECTED'}
-			<div class="edit">
-				<textarea onkeyup={() => reEstimate(message)} bind:value={message}> </textarea>
-				<div class="estimate">
-					{estimate.toLocaleString()} sats
+	{#if walletUnspent.length == 0}
+		<div class="row footer">
+			<h2>Create new identity</h2>
+			<button onclick={() => newAuthBaton()}>New identity 1M sats</button>
+		</div>
+	{:else}
+		<div class="row footer">
+			{#if connectionStatus == 'CONNECTED'}
+				<div class="edit">
+					<textarea onkeyup={() => reEstimate(message)} bind:value={message}> </textarea>
+					<div class="estimate">
+						{estimate.toLocaleString()} sats
+					</div>
 				</div>
-			</div>
-			<div class="send">
-				<div class="auth">
-					{#if thisAuth}
-						<img height="32px" src={blo(thisAuth, 16)} alt="avatar" />
-					{/if}
-					{#if walletUnspent.length > 0}
-						<div style="font-size:x-small;">
-							{parseUsername(walletUnspent[0].token_data.nft.commitment)}<br />
-							{balance.toLocaleString()}sats
-						</div>
-					{/if}
+				<div class="send">
+					<div class="auth">
+						{#if thisAuth}
+							<img height="32px" src={blo(thisAuth, 16)} alt="avatar" />
+						{/if}
+						{#if walletUnspent.length > 0}
+							<div style="font-size:x-small;">
+								{parseUsername(walletUnspent[0].token_data.nft.commitment)}<br />
+								{balance.toLocaleString()}sats
+							</div>
+						{/if}
+					</div>
+					<button onclick={() => send(message)}>Send</button>
 				</div>
-				<button onclick={() => send(message)}>Send</button>
-			</div>
-		{:else}
-			<p>Not connected?</p>
-		{/if}
-	</div>
+			{:else}
+				<p>Not connected?</p>
+			{/if}
+		</div>
+	{/if}
+
 	<div class="row footer">
 		<div style="margin: auto;">Advanced</div>
 		<div>
@@ -330,11 +338,6 @@
 				<button onclick={() => topUp(10000000)}>Top up 10M sats</button>
 				<button onclick={() => topUp(1000000)}>Top up 1M sats</button>
 			</div>
-		{/if}
-
-		{#if walletUnspent.length == 0}
-			<h2>Create new identity</h2>
-			<button onclick={() => newAuthBaton()}>New identity 1M sats</button>
 		{/if}
 	{/if}
 </div>
