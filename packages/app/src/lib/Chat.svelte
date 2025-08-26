@@ -14,7 +14,8 @@
 		getScriptHash,
 		getHdPrivateKey,
 		type UtxoI,
-		getAllTransactions
+		getAllTransactions,
+		sumSourceOutputValue
 	} from '@unspent/tau';
 
 	import { Channel, Post, buildChannel, parseUsername } from '@fbch/lib';
@@ -43,6 +44,7 @@
 	let message = $state('');
 	let thisAuth = $state('');
 	let sequence = $state(0);
+	let estimate = $state(0);
 	let showSettings = $state(false);
 
 	const scripthash = $derived(Channel.getScriptHash(topic));
@@ -80,7 +82,13 @@
 	};
 
 	const likePost = async function (postId: string) {
-		let likePostTx = Channel.like(topic, postId, walletUnspent[0], (Math.round(now / 1000) + 10) * 10, key);
+		let likePostTx = Channel.like(
+			topic,
+			postId,
+			walletUnspent[0],
+			(Math.round(now / 1000) + 10) * 10,
+			key
+		);
 		console.log(postId);
 		let raw_tx = binToHex(encodeTransactionBCH(likePostTx.transaction));
 		console.log(raw_tx);
@@ -150,6 +158,19 @@
 		let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
 		console.log(raw_tx);
 		await broadcast(raw_tx);
+	};
+
+	const reEstimate = async function (msg: string) {
+		let post = Channel.post(
+			topic,
+			msg,
+			walletUnspent[0],
+			(Math.round(now / 1000) + 10) * 10,
+			key,
+			sequence
+		);
+		const returned = post.transaction.outputs[post.transaction.outputs.length - 1].valueSatoshis;
+		estimate = Number(sumSourceOutputValue(post.sourceOutputs) - returned);
 	};
 
 	const send = async function (msg: string) {
@@ -268,7 +289,12 @@
 	</div>
 	<div class="row footer">
 		{#if connectionStatus == 'CONNECTED'}
-			<div class="edit"><textarea bind:value={message}></textarea></div>
+			<div class="edit">
+				<textarea onkeyup={() => reEstimate(message)} bind:value={message}> </textarea>
+				<div class="estimate">
+					{estimate.toLocaleString()} sats
+				</div>
+			</div>
 			<div class="send">
 				<div class="auth">
 					{#if thisAuth}
@@ -360,6 +386,15 @@
 	.edit textarea {
 		width: 100%;
 		min-height: 10em;
+	}
+
+	.estimate {
+		font-size: x-small;
+		font-weight: 200;
+		align-content: flex-start;
+		color: #554949;
+		word-wrap: anywhere;
+		text-align: right;
 	}
 
 	.box .row.footer {

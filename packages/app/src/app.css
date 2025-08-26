@@ -75,6 +75,7 @@ section {
 	background: linear-gradient(#ffffff3d, #ffffff99);
 	border-radius: 30px;
 	padding: 5px;
+	padding-top: 20px;
 }
 
 .text-column {
