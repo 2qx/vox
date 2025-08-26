@@ -79,6 +79,7 @@
 
 	button{
 		border-width: 0px;
+		background: transparent;
 	}
 	.actions {
 		margin: auto;
