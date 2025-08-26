@@ -218,21 +218,7 @@
 	<div class="swap">
 		<button onclick={() => claimAll()}>Claim All Rewards</button>
 	</div>
-
-	{#if transaction && transactionValid}
-		<div class="swap">
-			<div>
-				{#if amount > 0}
-					place: {amount.toLocaleString()} sats
-				{:else if amount < 0}
-					redeem: {(-amount).toLocaleString()} wrapped sats
-				{/if}
-			</div>
-		</div>
-	{/if}
-	<!-- {#if transaction}
-		<Transaction {transaction} {sourceOutputs} {category} />
-	{/if} -->
+	
 	{transactionError}
 
 	{#if walletUnspent.filter((u) => !u.token_data).filter((u) => u.height > 0).length > 0}

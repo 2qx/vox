@@ -1,11 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
-	import {
-		binToHex,
-		cashAddressToLockingBytecode,
-		encodeTransactionBCH,
-	} from '@bitauth/libauth';
+	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBCH } from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
@@ -47,6 +43,7 @@
 	let message = $state('');
 	let thisAuth = $state('');
 	let sequence = $state(0);
+	let showSettings = $state(false);
 
 	const scripthash = $derived(Channel.getScriptHash(topic));
 
@@ -80,6 +77,14 @@
 		let chat = document.getElementById('chat')!;
 		var xH = chat.scrollHeight;
 		chat.scrollTo(0, xH);
+	};
+
+	const likePost = async function (postId: string) {
+		let likePostTx = Channel.like(topic, postId, walletUnspent[0], (Math.round(now / 1000) + 10) * 10, key);
+		console.log(postId);
+		let raw_tx = binToHex(encodeTransactionBCH(likePostTx.transaction));
+		console.log(raw_tx);
+		await broadcast(raw_tx);
 	};
 
 	const updateWallet = async function () {
@@ -228,8 +233,6 @@
 	onDestroy(async () => {
 		await electrumClient.disconnect();
 	});
-
-	
 </script>
 
 <div class="box">
@@ -250,12 +253,14 @@
 	<div id="chat" class="row content">
 		{#await transactions then build}
 			{#each posts as post}
-				<ChatPost {...post} />
-				<div class="deleteMe">
-					<button onclick={() => clearPost(post)}>
-						<img height="24px" src={trash} />
-					</button>
-				</div>
+				<ChatPost {likePost} {...post} />
+				{#if showSettings}
+					<div class="deleteMe">
+						<button onclick={() => clearPost(post)}>
+							<img height="36px" src={trash} />
+						</button>
+					</div>
+				{/if}
 			{/each}
 		{:catch error}
 			<p style="color: red">{error.message}</p>
@@ -282,7 +287,18 @@
 			<p>Not connected?</p>
 		{/if}
 	</div>
-	{#if connectionStatus == 'CONNECTED'}
+	<div class="row footer">
+		<div style="margin: auto;">Advanced</div>
+		<div>
+			<!-- Rounded switch -->
+			<label class="switch">
+				<input type="checkbox" bind:checked={showSettings} />
+				<span class="slider round"></span>
+			</label>
+		</div>
+	</div>
+
+	{#if showSettings}
 		{#if walletUnspent.length > 0}
 			<div class="row footer">
 				<button onclick={() => topUp(10000000)}>Top up 10M sats</button>
@@ -360,13 +376,13 @@
 		position: relative;
 		overflow: visible;
 		height: 0px;
-		left: 40px;
-		top: -25px;
+		left: 30px;
+		top: -45px;
 	}
 	.deleteMe button {
-		background-color: #fff; /* Green */
-		padding: 1px;
-		border-radius: 20px;
+		background-color: rgb(233, 138, 138); /* Green */
+		padding: 5px;
+		border-radius: 40%;
 	}
 	.send {
 		align-content: center;
@@ -391,5 +407,67 @@
 		text-decoration: none;
 		display: inline-block;
 		font-size: 16px;
+	}
+
+	.switch {
+		position: relative;
+		display: inline-block;
+		width: 60px;
+		height: 34px;
+	}
+
+	/* Hide default HTML checkbox */
+	.switch input {
+		opacity: 0;
+		width: 0;
+		height: 0;
+	}
+
+	/* The slider */
+	.slider {
+		position: absolute;
+		cursor: pointer;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background-color: #ccc;
+		-webkit-transition: 0.4s;
+		transition: 0.4s;
+	}
+
+	.slider:before {
+		position: absolute;
+		content: '';
+		height: 26px;
+		width: 26px;
+		left: 4px;
+		bottom: 4px;
+		background-color: white;
+		-webkit-transition: 0.4s;
+		transition: 0.4s;
+	}
+
+	input:checked + .slider {
+		background-color: #a45eb6;
+	}
+
+	input:focus + .slider {
+		box-shadow: 0 0 1px #a45eb6;
+	}
+
+	input:checked + .slider:before {
+		-webkit-transform: translateX(26px);
+		-ms-transform: translateX(26px);
+		transform: translateX(26px);
+	}
+
+	/* Rounded sliders */
+	.slider.round {
+		border-radius: 34px;
+	}
+
+	.slider.round:before {
+		border-radius: 50%;
 	}
 </style>

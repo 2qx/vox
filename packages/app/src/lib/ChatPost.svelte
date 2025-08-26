@@ -1,8 +1,19 @@
 <script>
 	import { blo } from 'blo';
-
-	
-	let { thisAuth, hash, auth, height, sequence, body, likes, dislikes, ref, error } = $props();
+	import likesIcon from '$lib/images/likes.svg';
+	let {
+		likePost = $bindable(),
+		thisAuth,
+		hash,
+		auth,
+		height,
+		sequence,
+		body,
+		likes,
+		dislikes,
+		ref,
+		error
+	} = $props();
 </script>
 
 <div class="container">
@@ -13,7 +24,7 @@
 			<div style="width:32px"></div>
 		{/if}
 	</div>
-	<div class="post {thisAuth ? 'op' : ''}" >
+	<div class="post {thisAuth ? 'op' : ''}">
 		<div class="footer">
 			<div class="fill"></div>
 			<div class="action"></div>
@@ -28,6 +39,17 @@
 		<div class="footer">
 			<div class="hash">{hash}</div>
 			<div class="fill"></div>
+
+			<div class="actions">
+				<button
+					onclick={() => {
+						likePost(hash);
+					}}
+				>
+						<img height="16px" src={likesIcon} alt="likes" />
+					{likes}
+				</button>
+			</div>
 			<div class="timestamp">{height} ■ {sequence}</div>
 		</div>
 	</div>
@@ -52,9 +74,18 @@
 		margin: auto;
 		width: 100%;
 
-			word-break: break-word;
+		word-break: break-word;
 	}
 
+	button{
+		border-width: 0px;
+	}
+	.actions {
+		margin: auto;
+		font-size: x-small;
+		font-weight: 400;
+		vertical-align: middle;
+	}
 	.footer {
 		display: flex;
 	}
@@ -87,10 +118,9 @@
 			font-weight: 400;
 			line-height: 1;
 		}
-		
 	}
 
-	.post.op{
+	.post.op {
 		background-color: #fff;
 	}
 

@@ -117,13 +117,13 @@ function parsePostTransaction(
     // V0
     if (code[0].slice(0, 8) == "6a025630") body = code.map(c => binToUtf8(hexToBin(c.slice(10)))).join("")
     // V+
-    if (code[0].slice(0, 8) == "6a02562B") {
-        ref = code.map(c => binToUtf8(hexToBin(c.slice(10))))[0]!
+    if (code[0].slice(0, 8) == "6a0256b2") {
+        ref = code[0].slice(10)
         like = 1
     }
     // V-
-    if (code[0].slice(0, 8) == "6a02562D") {
-        ref = code.map(c => binToUtf8(hexToBin(c.slice(10))))[0]!
+    if (code[0].slice(0, 8) == "6a02562d") {
+        ref = code[0].slice(10)
         dislike = 1
     }
 
@@ -189,7 +189,14 @@ export function buildChannel(
         })
         .filter(p => p != undefined)
 
-    return posts.sort((a: Post, b: Post) => {
+
+    let likeOccurances = posts.filter(p => p.likes == 1).map(p => { return p.ref });
+    let likes = likeOccurances.reduce((acc, e) => acc.set(e, (acc.get(e) || 0) + 1), new Map());
+    for (const post of posts) {
+        post.likes = likes.get(post.hash) ? likes.get(post.hash) : 0
+    }
+
+    posts = posts.sort((a: Post, b: Post) => {
         if (b.height === a.height) {
             return Math.sign(a.sequence! - b.sequence!);
         } else if (b.height! <= 0 && a.height! <= 0) {
@@ -197,6 +204,8 @@ export function buildChannel(
         }
         else return blockSort(a.height!, b.height!)
     })
+
+    return posts.filter(p => p.body != "")
 }
 
 
@@ -414,6 +423,24 @@ export class Channel {
 
     }
 
+    static getLikeOutput(channel: string, postId: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBCH> {
+        let m = "6a0256B2" + binToHex(encodeDataPush(hexToBin(postId)))
+        return {
+            lockingBytecode: this.getLockingBytecode(channel),
+            valueSatoshis: BigInt(couponValue),
+            token: {
+                amount: 0n,
+                category: hexToBin(auth.token_data!.category),
+                nft: {
+                    capability: 'none',
+                    commitment: hexToBin(m)
+                }
+            }
+        }
+    }
+
+
+
     static getChangeOutput(auth: UtxoI, changeAmount: bigint, privateKey?: any, addressIndex = 0): OutputTemplate<CompilerBCH> {
 
         const lockingBytecode = privateKey ? {
@@ -530,15 +557,52 @@ export class Channel {
         if (prevUtxos) walletUtxos.push(...prevUtxos)
 
         config.inputs.push(... this.getWalletInputs(walletUtxos, key, sequence));
-
         config.outputs.push(... this.getChannelMessageOutputs(channel, message, auth, couponAmount));
 
         sourceOutputs.push(this.getWalletSourceOutput(auth, key));
         let valueIn = sumSourceOutputValue(sourceOutputs)
-
         let change = valueIn - BigInt(config.outputs.length * couponAmount);
         config.outputs.push(this.getChangeOutput(auth, change, key));
+        return this.buildAndValidateTransaction(config, sourceOutputs, fee);
 
+    }
+
+    /**
+    * Like a post.
+    *
+    * @param channel - channel identifier.
+    * @param postId - transaction id of the post being liked.
+    * @param auth - utxo paying transaction fees.
+    * @param couponAmount - amount to pay message (per commitment).
+    * @param key - private key to sign transaction wallet inputs.
+    * @param fee - network fee to pay, default 1 sat per byte.
+    *
+    * @throws {Error} if transaction generation fails.
+    * @returns a transaction template.
+    */
+
+    static like(channel: string, postId: string, auth: UtxoI, couponAmount: number, key?: string, fee = 1) {
+
+        const inputs: InputTemplate<CompilerBCH>[] = [];
+        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const sourceOutputs: Output[] = [];
+
+        let config = {
+            locktime: 0,
+            version: 2,
+            inputs,
+            outputs
+        }
+
+        let walletUtxos = [auth]
+
+        config.inputs.push(... this.getWalletInputs(walletUtxos, key));
+        config.outputs.push(this.getLikeOutput(channel, postId, auth, couponAmount));
+
+        sourceOutputs.push(this.getWalletSourceOutput(auth, key));
+        let valueIn = sumSourceOutputValue(sourceOutputs)
+        let change = valueIn - BigInt(config.outputs.length * couponAmount);
+        config.outputs.push(this.getChangeOutput(auth, change, key));
         return this.buildAndValidateTransaction(config, sourceOutputs, fee);
 
     }
