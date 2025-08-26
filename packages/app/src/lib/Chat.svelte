@@ -51,6 +51,7 @@
 
 	let posts: any[] = $state([]);
 
+	let timer: any;
 	let key = '';
 	let electrumClient: any;
 	let walletScriptHash = '';
@@ -160,7 +161,13 @@
 		await broadcast(raw_tx);
 	};
 
-	const reEstimate = async function (msg: string) {
+	const debounceEstimate = () => {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			estimate = reEstimate(message)
+		}, 500);
+	};
+	const reEstimate = function (msg: string) {
 		let post = Channel.post(
 			topic,
 			msg,
@@ -170,7 +177,7 @@
 			sequence
 		);
 		const returned = post.transaction.outputs[post.transaction.outputs.length - 1].valueSatoshis;
-		estimate = Number(sumSourceOutputValue(post.sourceOutputs) - returned);
+		return Number(sumSourceOutputValue(post.sourceOutputs) - returned);
 	};
 
 	const send = async function (msg: string) {
@@ -296,7 +303,7 @@
 		<div class="row footer">
 			{#if connectionStatus == 'CONNECTED'}
 				<div class="edit">
-					<textarea onkeyup={() => reEstimate(message)} bind:value={message}> </textarea>
+					<textarea onkeyup={() => debounceEstimate()} bind:value={message}> </textarea>
 					<div class="estimate">
 						{estimate.toLocaleString()} sats
 					</div>
