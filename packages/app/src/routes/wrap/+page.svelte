@@ -22,42 +22,42 @@
 	import Transaction from '$lib/Transaction.svelte';
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
-	let connectionStatus = '';
+
+	let connectionStatus = $state('');
 
 	let transaction_hex = '';
-	let transaction: any = undefined;
-	let transactionValid = false;
+	let transaction: any = $state(undefined);
+	let transactionValid = $state(undefined);
 	let sourceOutputs: any = undefined;
 
-	let unspent: any[] = [];
-	let walletUnspent: any[] = [];
+	let unspent: any[] = $state([]);
+	let walletUnspent: any[] = $state([]);
 	let key = '';
 	let electrumClient: any;
-	let scripthash = '';
-	let walletScriptHash = '';
-	let sumVaultWrapped = 0n;
-	let sumVault = 0;
+	let scripthash = $state('');
+	let walletScriptHash = $state('');
+	let sumVaultWrapped = $state(0n);
+	let sumVault = $state(0);
 
-	let sumWalletWrapped = 0n;
-	let sumWallet = 0;
+	let sumWalletWrapped = $state(0n);
+	let sumWallet = $state(0);
 
 	scripthash = Wrap.getScriptHash();
 	let contractState = '';
 
 	const isMainnet = page.url.hostname == 'vox.cash';
-	let icon = isMainnet ? WBCH : tWBCH;
-	let category = isMainnet ? binToHex(wbchCat) : binToHex(twbchCat);
-	let baseTicker = isMainnet ? 'BCH' : 'tBCH';
-	let ticker = isMainnet ? 'WBCH' : 'tWBCH';
-	let prefix = isMainnet ? 'bitcoincash' : 'bchtest';
-
-	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const icon = isMainnet ? WBCH : tWBCH;
+	const category = isMainnet ? binToHex(wbchCat) : binToHex(twbchCat);
+	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
+	const ticker = isMainnet ? 'WBCH' : 'tWBCH';
+	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
+	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 
 	let spent = new Set();
 
-	let amount = 0;
+	let amount = $state(0);
 	let wallet: any;
-	let transactionError: string | boolean = '';
+	let transactionError: string | boolean = $state('');
 
 	const handleNotifications = function (data: any) {
 		if (data.method === 'blockchain.scripthash.subscribe') {
@@ -191,7 +191,6 @@
 	</div>
 	<div class="swap">
 		<input
-			style="width:100%;"
 			type="range"
 			bind:value={amount}
 			step="1000"
@@ -220,7 +219,7 @@
 	{/if} -->
 	{transactionError}
 
-	<div class="grid">
+	<!-- <div class="grid">
 		{#if walletUnspent.length > 0}
 			<h4>Wallet Unspent Transaction Outputs (coins)</h4>
 			<table>
@@ -274,9 +273,9 @@
 		{:else}
 			<p>Wallet has no coins or wrapped coins to swap?</p>
 		{/if}
-	</div>
+	</div> -->
 
-	<div class="grid">
+	<!-- <div class="grid">
 		{#if unspent.length > 0}
 			<h4>{ticker} Vault Threads</h4>
 
@@ -323,7 +322,7 @@
 		{:else}
 			<p>... getting wrapped vault threads.</p>
 		{/if}
-	</div>
+	</div> -->
 
 	<Readme />
 </section>
@@ -331,6 +330,9 @@
 <style>
 	.swap {
 		display: flex;
+	}
+	.swap input{
+		width: 90%;
 	}
 	.status {
 		text-align: end;

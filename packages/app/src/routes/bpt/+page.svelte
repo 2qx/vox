@@ -29,37 +29,36 @@
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 
-	let now = 0;
-	let connectionStatus = '';
-	let contractState = '';
+	let now = $state(0);
+	let connectionStatus = $state('');
+	let contractState = $state('');
 
 	let transaction_hex = '';
 	let transaction: any = undefined;
 	let transactionValid = false;
 	let sourceOutputs: any = undefined;
 
-	let unspent: any[] = [];
-	let walletUnspent: any[] = [];
-	let key = '';
-	let electrumClient: any;
-	let scripthash = '';
-	let walletScriptHash = '';
+	let unspent: any[] = $state([]);
+	let walletUnspent: any[] = $state([]);
+	let key = $state('');
+	let electrumClient: any = $state();
+	let scripthash = $state('');
+	let walletScriptHash = $state('');
 
-	let sumWalletBlockPoint = 0n;
-	let sumWallet = 0;
-	let sumVaultBlockPoint = 0n;
-	let sumVault = 0;
+	let sumWalletBlockPoint = $state(0n);
+	let sumWallet = $state(0n);
+	let sumVaultBlockPoint = $state(0n);
+	let sumVault = $state(0n);
 
 	scripthash = BlockPoint.getScriptHash();
 
 	const isMainnet = page.url.hostname == 'vox.cash';
-	let icon = isMainnet ? BPTS : tBPTS;
-	let category = isMainnet ? binToHex(bptCat) : binToHex(tbptCat);
-	let baseTicker = isMainnet ? 'BCH' : 'tBCH';
-	let ticker = isMainnet ? 'BPTS' : 'tBPTS';
-	let prefix = isMainnet ? 'bitcoincash' : 'bchtest';
-
-	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const icon = isMainnet ? BPTS : tBPTS;
+	const category = isMainnet ? binToHex(bptCat) : binToHex(tbptCat);
+	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
+	const ticker = isMainnet ? 'BPTS' : 'tBPTS';
+	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
+	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 
 	let spent = new Set();
 
@@ -215,13 +214,12 @@
 		</div>
 	</div>
 
-	<div class="swap">
-		<button onclick={() => claimAll()}>Claim All Rewards</button>
-	</div>
-	
 	{transactionError}
 
 	{#if walletUnspent.filter((u) => !u.token_data).filter((u) => u.height > 0).length > 0}
+		<div class="swap">
+			<button onclick={() => claimAll()}>Claim All Rewards</button>
+		</div>
 		<h4>Wallet Unspent Transaction Outputs (coins)</h4>
 		<div class="grid">
 			{#each walletUnspent as t, i}
@@ -253,7 +251,9 @@
 			{/each}
 		</div>
 	{:else}
-		<p>No confirmed coins to claim Block Points</p>
+		<div class="swap">
+			<p>No confirmed coins to claim Block Points, check back in a few minutes.</p>
+		</div>
 	{/if}
 
 	<Readme />
@@ -269,6 +269,7 @@
 
 	.swap {
 		display: flex;
+		margin: auto;
 		align-items: center;
 		justify-content: center;
 	}

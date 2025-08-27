@@ -41,10 +41,10 @@
 	</main>
 
 	<footer>
-		<p>
+		<!-- <p>
 			<a href="/pop/p2p">bitcoin</a> ■ <a href="/pop/free">freedom</a>
 			■ <a href="/pop/biz">markets</a> ■ <a href="/pop/pow">mining</a>
-		</p>
+		</p> -->
 		<p><a href="https://github.com/2qx/vox" target="_blank">Open source</a></p>
 	</footer>
 
