@@ -27,7 +27,7 @@
 
 	let transaction_hex = '';
 	let transaction: any = $state(undefined);
-	let transactionValid = $state(undefined);
+	let transactionValid = $state(false);
 	let sourceOutputs: any = undefined;
 
 	let unspent: any[] = $state([]);
@@ -36,8 +36,8 @@
 	let electrumClient: any;
 	let scripthash = $state('');
 	let walletScriptHash = $state('');
-	let sumVaultWrapped = $state(0n);
-	let sumVault = $state(0);
+	// let sumVaultWrapped = $state(0n);
+	// let sumVault = $state(0);
 
 	let sumWalletWrapped = $state(0n);
 	let sumWallet = $state(0);
@@ -100,8 +100,8 @@
 			unspent = response;
 		}
 		unspent = unspent.filter((t) => t.token_data && t.token_data.category == category);
-		sumVault = sumUtxoValue(unspent, true);
-		sumVaultWrapped = sumTokenAmounts(unspent, category);
+		// sumVault = sumUtxoValue(unspent, true);
+		// sumVaultWrapped = sumTokenAmounts(unspent, category);
 	};
 
 	const broadcast = async function (raw_tx: string) {

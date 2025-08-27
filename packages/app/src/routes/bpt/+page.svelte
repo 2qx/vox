@@ -46,9 +46,9 @@
 	let walletScriptHash = $state('');
 
 	let sumWalletBlockPoint = $state(0n);
-	let sumWallet = $state(0n);
+	let sumWallet = $state(0);
 	let sumVaultBlockPoint = $state(0n);
-	let sumVault = $state(0n);
+	let sumVault = $state(0);
 
 	scripthash = BlockPoint.getScriptHash();
 
@@ -135,19 +135,20 @@
 
 	const claimReward = function (
 		now: number,
-		unspent: UtxoI,
+		utxo: UtxoI,
 		wallet: UtxoI,
 		key: string,
 		category: any
 	) {
 		try {
-			let result = BlockPoint.claim(now, unspent, wallet, key, category);
+			let result = BlockPoint.claim(now, utxo, wallet, key, category);
 			transaction = result.transaction;
 			sourceOutputs = result.sourceOutputs;
 			transaction_hex = binToHex(encodeTransactionBCH(transaction));
 			broadcast(transaction_hex);
 			transactionValid = result.verify === true ? true : false;
 			if (result.verify === true) transactionError = '';
+			unspent = unspent.filter(u => `${u.tx_hash}:${u.tx_pos}` !== `${utxo.tx_hash}:${utxo.tx_pos}`)
 		} catch (error: any) {
 			transaction = undefined;
 			sourceOutputs = undefined;
