@@ -33,9 +33,9 @@
 	let connectionStatus = $state('');
 	let contractState = $state('');
 
-	let transaction_hex = '';
+	let transaction_hex = $state('');
 	let transaction: any = undefined;
-	let transactionValid = false;
+	let transactionValid = $state(false);
 	let sourceOutputs: any = undefined;
 
 	let unspent: any[] = $state([]);
@@ -66,7 +66,7 @@
 	let wallet: any;
 	let transactionError: string | boolean = '';
 
-	const handleNotifications = function (data: any) {
+	const handleNotifications = async function (data: any) {
 		if (data.method === 'blockchain.headers.subscribe') {
 			let d = data.params[0];
 			now = d.height;
@@ -75,8 +75,8 @@
 				contractState = data.params[1];
 				connectionStatus = ConnectionStatus[electrumClient.status];
 				amount = 0;
-				updateUnspent();
-				updateWallet();
+				await updateUnspent();
+				await updateWallet();
 			}
 		} else {
 			console.log(data);
@@ -90,14 +90,13 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		let walletUnspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
-		if (walletUnspent.length == 0 || spent.intersection(walletUnspentIds).size == 0) {
-			walletUnspent = response;
-		}
+		//let walletUnspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
+		//	if (walletUnspent.length == 0 || spent.intersection(walletUnspentIds).size == 0) {
+		walletUnspent = response;
+		//}
 
 		sumWallet = sumUtxoValue(walletUnspent, true);
 		sumWalletBlockPoint = sumTokenAmounts(walletUnspent, category);
-		walletUnspent = walletUnspent.filter((t) => t.height > 0);
 	};
 
 	const updateUnspent = async function () {
@@ -141,6 +140,9 @@
 		category: any
 	) {
 		try {
+			walletUnspent = walletUnspent.filter(
+				(u) => `${u.tx_hash}:${u.tx_pos}` !== `${wallet.tx_hash}:${wallet.tx_pos}`
+			);
 			let result = BlockPoint.claim(now, utxo, wallet, key, category);
 			transaction = result.transaction;
 			sourceOutputs = result.sourceOutputs;
@@ -148,7 +150,6 @@
 			broadcast(transaction_hex);
 			transactionValid = result.verify === true ? true : false;
 			if (result.verify === true) transactionError = '';
-			unspent = unspent.filter(u => `${u.tx_hash}:${u.tx_pos}` !== `${utxo.tx_hash}:${utxo.tx_pos}`)
 		} catch (error: any) {
 			transaction = undefined;
 			sourceOutputs = undefined;
