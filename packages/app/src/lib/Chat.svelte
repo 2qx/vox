@@ -167,6 +167,8 @@
 			estimate = reEstimate(message)
 		}, 500);
 	};
+
+	
 	const reEstimate = function (msg: string) {
 		let post = Channel.post(
 			topic,

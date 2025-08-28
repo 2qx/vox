@@ -61,7 +61,7 @@
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 
 	let spent = new Set();
-
+	let timer: any = 0;
 	let amount = 0;
 	let wallet: any;
 	let transactionError: string | boolean = '';
@@ -75,12 +75,19 @@
 				contractState = data.params[1];
 				connectionStatus = ConnectionStatus[electrumClient.status];
 				amount = 0;
-				await updateUnspent();
-				await updateWallet();
+				debounceUpdateWallet();
 			}
 		} else {
 			console.log(data);
 		}
+	};
+
+	const debounceUpdateWallet = () => {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			updateWallet();
+			updateUnspent();
+		}, 1500);
 	};
 
 	const updateWallet = async function () {
@@ -181,8 +188,6 @@
 		// Set up a subscription for new block headers.
 		await electrumClient.subscribe('blockchain.scripthash.subscribe', scripthash);
 		await electrumClient.subscribe('blockchain.headers.subscribe');
-		updateUnspent();
-		updateWallet();
 	});
 
 	onDestroy(async () => {
@@ -240,10 +245,10 @@
 								<img width="100" src={icon} alt="bptLogo" /><br />
 								{t.height > unspent[i].height
 									? (((now - t.height) * t.value) / 100000000).toLocaleString(undefined, {
-											minimumFractionDigits: 3
+											minimumFractionDigits: 4
 										})
 									: (((now - unspent[i].height) * t.value) / 100000000).toLocaleString(undefined, {
-											minimumFractionDigits: 3
+											minimumFractionDigits: 4
 										})}
 								{ticker}
 							</button>
@@ -301,8 +306,8 @@
 	.action:disabled {
 		display: inline-block;
 		border-radius: 10px;
-		background-color: #55525569;
-		color: #a09999;
+		background-color: #adadad;
+		color: #000000;
 		margin: 1px;
 		padding: 0 5px 0 5px;
 		font-weight: 900;
