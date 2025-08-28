@@ -34,10 +34,11 @@
 	let walletUnspent: any[] = $state([]);
 	let key = '';
 	let electrumClient: any;
+	let timer: any;
 	let scripthash = $state('');
 	let walletScriptHash = $state('');
-	// let sumVaultWrapped = $state(0n);
-	// let sumVault = $state(0);
+	let sumVaultWrapped = $state(0n);
+	let sumVault = $state(0);
 
 	let sumWalletWrapped = $state(0n);
 	let sumWallet = $state(0);
@@ -59,14 +60,22 @@
 	let wallet: any;
 	let transactionError: string | boolean = $state('');
 
+
+	const debounceUpdateWallet = () => {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			updateWallet();
+			updateUnspent();
+		}, 1500);
+	};
+
 	const handleNotifications = function (data: any) {
 		if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
 				connectionStatus = ConnectionStatus[electrumClient.status];
 				amount = 0;
-				updateUnspent();
-				updateWallet();
+				debounceUpdateWallet();
 			}
 		} else {
 			console.log(data);
@@ -100,8 +109,8 @@
 			unspent = response;
 		}
 		unspent = unspent.filter((t) => t.token_data && t.token_data.category == category);
-		// sumVault = sumUtxoValue(unspent, true);
-		// sumVaultWrapped = sumTokenAmounts(unspent, category);
+		sumVault = sumUtxoValue(unspent, true);
+		sumVaultWrapped = sumTokenAmounts(unspent, category);
 	};
 
 	const broadcast = async function (raw_tx: string) {
@@ -130,9 +139,7 @@
 		}
 	};
 
-	const reconnect = async function () {
-		await electrumClient.connect();
-	};
+	
 
 	onMount(async () => {
 		const isMainnet = page.url.hostname !== 'vox.cash';

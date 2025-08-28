@@ -97,13 +97,12 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		//let walletUnspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
-		//	if (walletUnspent.length == 0 || spent.intersection(walletUnspentIds).size == 0) {
-		walletUnspent = response;
-		//}
 
+        walletUnspent = response;
 		sumWallet = sumUtxoValue(walletUnspent, true);
 		sumWalletBlockPoint = sumTokenAmounts(walletUnspent, category);
+
+		walletUnspent = walletUnspent.filter((u: UtxoI) => !u.token_data).filter((u: UtxoI) => u.height > 0)
 	};
 
 	const updateUnspent = async function () {
@@ -142,15 +141,15 @@
 	const claimReward = function (
 		now: number,
 		utxo: UtxoI,
-		wallet: UtxoI,
+		walletUtxo: UtxoI,
 		key: string,
 		category: any
 	) {
 		try {
 			walletUnspent = walletUnspent.filter(
-				(u) => `${u.tx_hash}:${u.tx_pos}` !== `${wallet.tx_hash}:${wallet.tx_pos}`
+				(u) => `${u.tx_hash}:${u.tx_pos}` !== `${walletUtxo.tx_hash}:${walletUtxo.tx_pos}`
 			);
-			let result = BlockPoint.claim(now, utxo, wallet, key, category);
+			let result = BlockPoint.claim(now, utxo, walletUtxo, key, category);
 			transaction = result.transaction;
 			sourceOutputs = result.sourceOutputs;
 			transaction_hex = binToHex(encodeTransactionBCH(transaction));
@@ -194,6 +193,7 @@
 		const electrumClient = new ElectrumClient(BlockPoint.USER_AGENT, '1.4.1', server);
 		await electrumClient.disconnect();
 	});
+
 </script>
 
 <section>
@@ -223,7 +223,7 @@
 
 	{transactionError}
 
-	{#if walletUnspent.filter((u) => !u.token_data).filter((u) => u.height > 0).length > 0}
+	{#if walletUnspent.length > 0}
 		<div class="swap">
 			<button onclick={() => claimAll()}>Claim All Rewards</button>
 		</div>
