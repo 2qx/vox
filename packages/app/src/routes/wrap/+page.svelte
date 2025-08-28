@@ -60,7 +60,6 @@
 	let wallet: any;
 	let transactionError: string | boolean = $state('');
 
-
 	const debounceUpdateWallet = () => {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
@@ -139,8 +138,6 @@
 		}
 	};
 
-	
-
 	onMount(async () => {
 		const isMainnet = page.url.hostname !== 'vox.cash';
 		BaseWallet.StorageProvider = IndexedDBProvider;
@@ -169,17 +166,16 @@
 	onDestroy(async () => {
 		await electrumClient.disconnect();
 	});
-	
 </script>
 
 <section>
 	<div class="status">
+		<BitauthLink template={Wrap.template} />
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
 		{:else}
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
-		<BitauthLink template={Wrap.template} />
 	</div>
 	<h1>Wrap Bitcoin Cash as a CashToken</h1>
 
@@ -338,7 +334,7 @@
 	.swap {
 		display: flex;
 	}
-	.swap input{
+	.swap input {
 		width: 90%;
 	}
 	.status {

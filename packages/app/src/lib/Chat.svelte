@@ -90,9 +90,8 @@
 			(Math.round(now / 1000) + 10) * 10,
 			key
 		);
-		console.log(postId);
+
 		let raw_tx = binToHex(encodeTransactionBCH(likePostTx.transaction));
-		console.log(raw_tx);
 		await broadcast(raw_tx);
 	};
 
@@ -157,7 +156,6 @@
 		let utxos = response.filter((u: UtxoI) => u.tx_hash == post.hash);
 		let clearPostTx = Channel.clear(topic, utxos, walletUnspent[0], key, now);
 		let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
-		console.log(raw_tx);
 		await broadcast(raw_tx);
 	};
 
@@ -168,7 +166,7 @@
 		}, 500);
 	};
 
-	
+
 	const reEstimate = function (msg: string) {
 		let post = Channel.post(
 			topic,
@@ -237,7 +235,9 @@
 	onMount(async () => {
 		const isMainnet = page.url.hostname !== 'vox.cash';
 		BaseWallet.StorageProvider = IndexedDBProvider;
+		
 		wallet = isMainnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
+		wallet.provider.disconnect()
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 		let bytecodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
 		if (typeof bytecodeResult == 'string') throw bytecodeResult;

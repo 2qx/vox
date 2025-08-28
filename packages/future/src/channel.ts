@@ -255,19 +255,21 @@ export class Channel {
     }
 
 
-    static getInputs(channel: string, utxos: UtxoI[], edit = false): InputTemplate<CompilerBCH>[] {
-        return utxos.map(u => this.getInput(channel, u, edit))
+    static getInputs(channel: string, utxos: UtxoI[], now: number, edit = false): InputTemplate<CompilerBCH>[] {
+        return utxos.map(u => this.getInput(channel, u, now, edit))
     }
 
-    static getInput(channel: string, utxo: UtxoI, edit = false): InputTemplate<CompilerBCH> {
+    static getInput(channel: string, utxo: UtxoI, now: number, edit = false): InputTemplate<CompilerBCH> {
 
         let scriptId = edit ? 'edit_message' : 'process_message';
+
+        const sequence = (now-utxo.height) >= 1000 ? 1000 : 0
 
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
             // 
-            sequenceNumber: 0,
+            sequenceNumber: sequence,
             unlockingBytecode: {
                 compiler: this.compiler,
                 script: scriptId,
@@ -339,20 +341,18 @@ export class Channel {
         // if the utxo was underfunded, clear it without generating a coupon.
         if ((futureTime - utxo.height) < 1000) return
 
-        let isPremature = futureTime > now;
+        let isPremature =  (now - utxo.height) < 1000;
 
         let outputValue = isPremature ? utxo.value * 10 : utxo.value;
         let couponThreshold = isPremature ? 100_000_000 : 10_000_000;
 
-        console.log(couponThreshold)
+        console.log(couponThreshold.toLocaleString())
 
 
         let bytecode = Vault.getCouponLockingBytecode(couponThreshold, futureTime)
-        console.log(binToHex(Coupon.getUnlockingBytecode(couponThreshold, bytecode)))
         let cashAddResult = lockingBytecodeToCashAddress({ prefix: "bchtest", bytecode })
         if (typeof cashAddResult == "string") throw cashAddResult
-        console.log(cashAddResult)
-        console.log(binToHex(bytecode))
+
         return {
             lockingBytecode: bytecode,
             valueSatoshis: BigInt(outputValue),
@@ -508,7 +508,7 @@ export class Channel {
 
         let walletUtxos = [auth]
         if (extraUtxos) walletUtxos.push(...extraUtxos)
-        config.inputs.push(... this.getInputs(channel, utxos));
+        config.inputs.push(... this.getInputs(channel, utxos, now));
         config.inputs.push(... this.getWalletInputs(walletUtxos, key));
 
         config.outputs.push(... this.getCouponOutputs(utxos, now));
