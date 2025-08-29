@@ -137,6 +137,7 @@
 	});
 
 	onDestroy(async () => {
+		await wallet!.provider.disconnect();
 		await electrumClient.disconnect();
 	});
 </script>
@@ -199,7 +200,7 @@
 			{/if}
 			{#if balance >= 0}
 				<div>
-						{balance!.toLocaleString()} sats
+					{balance!.toLocaleString()} sats
 				</div>
 			{/if}
 		</div>

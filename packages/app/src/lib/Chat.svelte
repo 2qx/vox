@@ -95,6 +95,13 @@
 		await broadcast(raw_tx);
 	};
 
+	const setHeight = async function () {
+		let response = await electrumClient.request(
+			'blockchain.headers.get_tip'
+		);
+		if (response instanceof Error) throw response;
+		now = response.height;
+	};
 	const updateWallet = async function () {
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
@@ -107,11 +114,14 @@
 			(u: UtxoI) =>
 				u.token_data && u.token_data.nft && u.token_data.nft.commitment.startsWith(protocol_prefix)
 		);
-		thisAuth = walletUnspent[0].token_data.category;
-		balance = walletUnspent[0].value;
+		if (walletUnspent.length > 0 && walletUnspent[0].token_data) {
+			thisAuth = walletUnspent[0].token_data.category;
+			balance = walletUnspent[0].value;
+		}
 	};
 
 	const updateContract = async function () {
+
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
 			scripthash,
@@ -119,7 +129,6 @@
 		);
 
 		if (response instanceof Error) throw response;
-
 		let tx_hashes = Array.from(new Set(response.map((utxo: any) => utxo.tx_hash))) as string[];
 
 		let historyResponse = await electrumClient.request(
@@ -130,6 +139,7 @@
 		);
 
 		let transactions = await getAllTransactions(electrumClient, tx_hashes);
+
 		posts = buildChannel(historyResponse, transactions, topic);
 		posts = posts.map((p) => {
 			return {
@@ -162,10 +172,9 @@
 	const debounceEstimate = () => {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
-			estimate = reEstimate(message)
+			estimate = reEstimate(message);
 		}, 500);
 	};
-
 
 	const reEstimate = function (msg: string) {
 		let post = Channel.post(
@@ -237,13 +246,11 @@
 		BaseWallet.StorageProvider = IndexedDBProvider;
 		
 		wallet = isMainnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
-		wallet.provider.disconnect()
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 		let bytecodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
 		if (typeof bytecodeResult == 'string') throw bytecodeResult;
 		walletScriptHash = getScriptHash(bytecodeResult.bytecode);
 
-		now = await wallet.provider.getBlockHeight();
 		// Initialize an electrum client.
 		electrumClient = new ElectrumClient(Channel.USER_AGENT, '1.4.1', server);
 
@@ -256,11 +263,13 @@
 		connectionStatus = ConnectionStatus[electrumClient.status];
 		// Set up a subscription for new block headers.
 		await electrumClient.subscribe('blockchain.scripthash.subscribe', scripthash);
+		await setHeight();
 		await updateWallet();
 		await updateContract();
 	});
 
 	onDestroy(async () => {
+		await wallet.provider.disconnect();
 		await electrumClient.disconnect();
 	});
 </script>

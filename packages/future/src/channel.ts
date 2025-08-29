@@ -440,7 +440,6 @@ export class Channel {
     }
 
 
-
     static getChangeOutput(auth: UtxoI, changeAmount: bigint, privateKey?: any, addressIndex = 0): OutputTemplate<CompilerBCH> {
 
         const lockingBytecode = privateKey ? {
