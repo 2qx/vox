@@ -22,42 +22,51 @@
 	import Transaction from '$lib/Transaction.svelte';
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
-	let connectionStatus = '';
+
+	let connectionStatus = $state('');
 
 	let transaction_hex = '';
-	let transaction: any = undefined;
-	let transactionValid = false;
+	let transaction: any = $state(undefined);
+	let transactionValid = $state(false);
 	let sourceOutputs: any = undefined;
 
-	let unspent: any[] = [];
-	let walletUnspent: any[] = [];
+	let unspent: any[] = $state([]);
+	let walletUnspent: any[] = $state([]);
 	let key = '';
 	let electrumClient: any;
-	let scripthash = '';
-	let walletScriptHash = '';
-	let sumVaultWrapped = 0n;
-	let sumVault = 0;
+	let timer: any;
+	let scripthash = $state('');
+	let walletScriptHash = $state('');
+	let sumVaultWrapped = $state(0n);
+	let sumVault = $state(0);
 
-	let sumWalletWrapped = 0n;
-	let sumWallet = 0;
+	let sumWalletWrapped = $state(0n);
+	let sumWallet = $state(0);
 
 	scripthash = Wrap.getScriptHash();
 	let contractState = '';
 
 	const isMainnet = page.url.hostname == 'vox.cash';
-	let icon = isMainnet ? WBCH : tWBCH;
-	let category = isMainnet ? binToHex(wbchCat) : binToHex(twbchCat);
-	let baseTicker = isMainnet ? 'BCH' : 'tBCH';
-	let ticker = isMainnet ? 'WBCH' : 'tWBCH';
-	let prefix = isMainnet ? 'bitcoincash' : 'bchtest';
-
-	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const icon = isMainnet ? WBCH : tWBCH;
+	const category = isMainnet ? binToHex(wbchCat) : binToHex(twbchCat);
+	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
+	const ticker = isMainnet ? 'WBCH' : 'tWBCH';
+	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
+	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 
 	let spent = new Set();
 
-	let amount = 0;
+	let amount = $state(0);
 	let wallet: any;
-	let transactionError: string | boolean = '';
+	let transactionError: string | boolean = $state('');
+
+	const debounceUpdateWallet = () => {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			updateWallet();
+			updateUnspent();
+		}, 1500);
+	};
 
 	const handleNotifications = function (data: any) {
 		if (data.method === 'blockchain.scripthash.subscribe') {
@@ -65,8 +74,7 @@
 				contractState = data.params[1];
 				connectionStatus = ConnectionStatus[electrumClient.status];
 				amount = 0;
-				updateUnspent();
-				updateWallet();
+				debounceUpdateWallet();
 			}
 		} else {
 			console.log(data);
@@ -130,10 +138,6 @@
 		}
 	};
 
-	const reconnect = async function () {
-		await electrumClient.connect();
-	};
-
 	onMount(async () => {
 		const isMainnet = page.url.hostname !== 'vox.cash';
 		BaseWallet.StorageProvider = IndexedDBProvider;
@@ -160,20 +164,18 @@
 	});
 
 	onDestroy(async () => {
-		const electrumClient = new ElectrumClient(Wrap.USER_AGENT, '1.4.1', server);
 		await electrumClient.disconnect();
 	});
-	
 </script>
 
 <section>
 	<div class="status">
+		<BitauthLink template={Wrap.template} />
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
 		{:else}
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
-		<BitauthLink template={Wrap.template} />
 	</div>
 	<h1>Wrap Bitcoin Cash as a CashToken</h1>
 
@@ -192,7 +194,6 @@
 	</div>
 	<div class="swap">
 		<input
-			style="width:100%;"
 			type="range"
 			bind:value={amount}
 			step="1000"
@@ -216,12 +217,12 @@
 			<button onclick={() => broadcast(transaction_hex)}>Broadcast</button>
 		</div>
 	{/if}
-	{#if transaction}
+	<!-- {#if transaction}
 		<Transaction {transaction} {sourceOutputs} />
-	{/if}
+	{/if} -->
 	{transactionError}
 
-	<div class="grid">
+	<!-- <div class="grid">
 		{#if walletUnspent.length > 0}
 			<h4>Wallet Unspent Transaction Outputs (coins)</h4>
 			<table>
@@ -275,9 +276,9 @@
 		{:else}
 			<p>Wallet has no coins or wrapped coins to swap?</p>
 		{/if}
-	</div>
+	</div> -->
 
-	<div class="grid">
+	<!-- <div class="grid">
 		{#if unspent.length > 0}
 			<h4>{ticker} Vault Threads</h4>
 
@@ -324,7 +325,7 @@
 		{:else}
 			<p>... getting wrapped vault threads.</p>
 		{/if}
-	</div>
+	</div> -->
 
 	<Readme />
 </section>
@@ -332,6 +333,9 @@
 <style>
 	.swap {
 		display: flex;
+	}
+	.swap input {
+		width: 90%;
 	}
 	.status {
 		text-align: end;

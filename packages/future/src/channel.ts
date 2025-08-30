@@ -9,7 +9,6 @@ import {
     createVirtualMachineBCH,
     deriveHdPublicKey,
     disassembleBytecodeBCH,
-    encodeTransaction,
     generateTransaction,
     hdPrivateKeyToP2pkhLockingBytecode,
     hexToBin,
@@ -17,13 +16,12 @@ import {
     OutputTemplate,
     Output,
     swapEndianness,
-    stringify,
     verifyTransactionTokens,
     hash256,
     decodeTransactionBCH,
-    OpcodesBCH,
     utf8ToBin,
-    encodeDataPush
+    encodeDataPush,
+    lockingBytecodeToCashAddress
 } from "@bitauth/libauth"
 
 import {
@@ -33,13 +31,17 @@ import {
     getLibauthCompiler,
     getScriptHash,
     sumSourceOutputValue,
+    sumOutputValue,
     type UtxoI,
     type TransactionHex,
     type AddressGetHistoryEntry
 } from '@unspent/tau';
 
+import { Coupon } from './coupon.js';
+import { Vault } from './vault.js';
 import { toBin } from './util.js';
 
+const BIP68_MASK = 2147483648
 
 export class Post {
 
@@ -66,7 +68,7 @@ export class Post {
         this.hash = hash;
         this.auth = auth;
         this.height = height;
-        this.sequence = sequence;
+        this.sequence = sequence > BIP68_MASK ? sequence - BIP68_MASK : sequence;
         this.body = body;
         this.likes = likes;
         this.dislikes = dislikes;
@@ -74,6 +76,14 @@ export class Post {
         this.error = error;
     }
 }
+
+export function parseUsername(commitment: string) {
+    const commitmentBin = hexToBin(commitment)
+    const commitmentAsm = disassembleBytecodeBCH(commitmentBin)
+    const unameHex = commitmentAsm.split(" ")!.pop()!.substring(2)
+    return binToUtf8(hexToBin(unameHex))
+}
+
 
 
 function parsePostTransaction(
@@ -83,9 +93,10 @@ function parsePostTransaction(
     transaction: string
 ): Post | undefined {
 
+    if (!transaction) return
     let tx = decodeTransactionBCH(hexToBin(transaction))
     if (typeof tx == "string") return new Post({ height: height, hash: hash, error: tx })
-    if (!tx.outputs[0]!.token) return new Post({ height: height, hash: hash, error: "no token in first output" })
+    if (!tx.outputs[0]!.token) return
     if (!tx.outputs[0]!.token.nft) return new Post({ height: height, hash: hash, error: "no nft on first output" })
     if (!tx.outputs[0]!.token.nft.commitment) return new Post({ height: height, hash: hash, error: "no nft commitment first output" })
 
@@ -104,15 +115,15 @@ function parsePostTransaction(
     if (!code) return
     if (!code[0]) return
     // V0
-    if (code[0].slice(0, 8) == "6a025630") body = code.map(c => binToUtf8(hexToBin(c.slice(10))))[0]!
+    if (code[0].slice(0, 8) == "6a025630") body = code.map(c => binToUtf8(hexToBin(c.slice(10)))).join("")
     // V+
-    if (code[0].slice(0, 8) == "6a02562B") {
-        ref = code.map(c => binToUtf8(hexToBin(c.slice(10))))[0]!
+    if (code[0].slice(0, 8) == "6a0256b2") {
+        ref = code[0].slice(10)
         like = 1
     }
     // V-
-    if (code[0].slice(0, 8) == "6a02562D") {
-        ref = code.map(c => binToUtf8(hexToBin(c.slice(10))))[0]!
+    if (code[0].slice(0, 8) == "6a02562d") {
+        ref = code[0].slice(10)
         dislike = 1
     }
 
@@ -121,7 +132,7 @@ function parsePostTransaction(
         auth: binToHex(tx.outputs[0]?.token?.category!),
         body: body,
         height: height,
-        sequence: tx.inputs[0]?.sequenceNumber,
+        sequence: tx.inputs[0]?.sequenceNumber!,
         ref: ref,
         likes: like,
         dislikes: dislike,
@@ -139,6 +150,17 @@ function chunkString(str: string, len: number) {
     }
 
     return r
+}
+
+
+const blockSort = (a: number, b: number): number => {
+    if (b <= 0 && a > 0) {
+        return -1
+    } else if (b > 0 && a > 0) {
+        return Math.sign(a - b)
+    } else {
+        return Math.sign(b - a)
+    }
 }
 
 /**
@@ -166,7 +188,24 @@ export function buildChannel(
             return parsePostTransaction(channelLock, h.height, h.tx_hash, transactionMap.get(h.tx_hash)!)
         })
         .filter(p => p != undefined)
-    return posts
+
+
+    let likeOccurances = posts.filter(p => p.likes == 1).map(p => { return p.ref });
+    let likes = likeOccurances.reduce((acc, e) => acc.set(e, (acc.get(e) || 0) + 1), new Map());
+    for (const post of posts) {
+        post.likes = likes.get(post.hash) ? likes.get(post.hash) : 0
+    }
+
+    posts = posts.sort((a: Post, b: Post) => {
+        if (b.height === a.height) {
+            return Math.sign(a.sequence! - b.sequence!);
+        } else if (b.height! <= 0 && a.height! <= 0) {
+            return Math.sign(a.sequence! - b.sequence!);
+        }
+        else return blockSort(a.height!, b.height!)
+    })
+
+    return posts.filter(p => p.body != "")
 }
 
 
@@ -186,9 +225,7 @@ export class Channel {
         const lockingBytecodeResult = this.compiler.generateBytecode({
             data: {
                 "bytecode": {
-                    "channel": toBin(channel),
-                    "vault_script": hexToBin("c0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77"),
-                    "coupon_script": hexToBin("00cc00c694a16900c788c08bc39c")
+                    "channel": toBin(channel)
                 }
             },
             scriptId: 'channel_lock',
@@ -218,28 +255,39 @@ export class Channel {
     }
 
 
-    static getInputs(channel: string, utxos: UtxoI[], edit = false): InputTemplate<CompilerBCH>[] {
-        return utxos.map(u => this.getInput(channel, u, edit))
+    static getInputs(channel: string, utxos: UtxoI[], now: number, edit = false): InputTemplate<CompilerBCH>[] {
+        return utxos.map(u => this.getInput(channel, u, now, edit))
     }
 
-    static getInput(channel: string, utxo: UtxoI, edit = false): InputTemplate<CompilerBCH> {
+    static getInput(channel: string, utxo: UtxoI, now: number, edit = false): InputTemplate<CompilerBCH> {
+
+        let scriptId = edit ? 'edit_message' : 'process_message';
+
+        const sequence = (now-utxo.height) >= 1000 ? 1000 : 0
+
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
             // 
-            sequenceNumber: 1,
+            sequenceNumber: sequence,
             unlockingBytecode: {
                 compiler: this.compiler,
-                script: edit ? 'process_message' : 'edit_message',
+                script: scriptId,
                 data: {
                     "bytecode": {
                         "channel": toBin(channel),
-                        "locktime": bigIntToVmNumber(BigInt((Number(utxo.value) / 10) * 1000)),
-                        "vault_script": hexToBin("c0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77"),
-                        "coupon_script": hexToBin("00cc00c694a16900c788c08bc39c")
+                        "locktime": bigIntToVmNumber(BigInt((Number(utxo.value) / 10) * 1000))
                     }
                 },
                 valueSatoshis: BigInt(utxo.value),
+                token: utxo.token_data ? {
+                    category: hexToBin(utxo.token_data.category!),
+                    amount: BigInt(utxo.token_data.amount),
+                    nft: utxo.token_data.nft ? {
+                        commitment: hexToBin(utxo.token_data.nft.commitment!),
+                        capability: utxo.token_data.nft.capability,
+                    } : undefined
+                } : undefined
             },
         } as InputTemplate<CompilerBCH>
     }
@@ -282,53 +330,44 @@ export class Channel {
         }
     }
 
-    static getCouponOutput(utxo: UtxoI, now: number): OutputTemplate<CompilerBCH> | undefined {
-
-        let futureTime = utxo.value / 10 * 1000;
-
-        // if the utxo was underfunded, clear it without generating a coupon.
-        if ((futureTime - utxo.height) < 1000) return
-
-        let isPremature = futureTime > now;
-
-        let outputValue = isPremature ? utxo.value * 10 : utxo.value;
-        let couponThreshold = isPremature ? 100_000_000 : 10_000_000;
-
-        let lockingBytecode = this.getCouponLockingBytecode(futureTime, couponThreshold)
-
-        return {
-            lockingBytecode: lockingBytecode,
-            valueSatoshis: BigInt(outputValue),
-        }
-    }
-
     static getCouponOutputs(utxos: UtxoI[], now: number): OutputTemplate<CompilerBCH>[] {
         return utxos.map(u => this.getCouponOutput(u, now)).filter(u => u !== undefined)
     }
 
-    static getCouponLockingBytecode(time: number, threshold: number) {
-        const lockingBytecodeResult = this.compiler.generateBytecode({
-            data: {
-                "bytecode": {
-                    "vault_locktime": bigIntToVmNumber(BigInt(time)),
-                    "amount": bigIntToVmNumber(BigInt(threshold))
-                }
-            },
-            scriptId: 'channel_lock',
-        })
-        if (!lockingBytecodeResult.success) {
-            /* c8 ignore next */
-            throw new Error('Failed to generate bytecode, script: FutureChan, ' + JSON.stringify(lockingBytecodeResult, null, '  '));
+    static getCouponOutput(utxo: UtxoI, now: number): OutputTemplate<CompilerBCH> | undefined {
+
+        let futureTime = Math.floor(utxo.value / 10) * 1000;
+
+        // if the utxo was underfunded, clear it without generating a coupon.
+        if ((futureTime - utxo.height) < 1000) return
+
+        let isPremature =  (now - utxo.height) < 1000;
+
+        let outputValue = isPremature ? utxo.value * 10 : utxo.value;
+        let couponThreshold = isPremature ? 100_000_000 : 10_000_000;
+
+        console.log(couponThreshold.toLocaleString())
+
+
+        let bytecode = Vault.getCouponLockingBytecode(couponThreshold, futureTime)
+        let cashAddResult = lockingBytecodeToCashAddress({ prefix: "bchtest", bytecode })
+        if (typeof cashAddResult == "string") throw cashAddResult
+
+        return {
+            lockingBytecode: bytecode,
+            valueSatoshis: BigInt(outputValue),
         }
-        return lockingBytecodeResult.bytecode
-    }
-
-    static getWalletInputs(utxos: UtxoI[], key?: string): InputTemplate<CompilerBCH>[] {
-        return utxos.map((u: UtxoI) => this.getWalletInput(u, key))
     }
 
 
-    static getWalletInput(utxo: UtxoI, privateKey?: string, addressIndex = 0): InputTemplate<CompilerBCH> {
+
+
+    static getWalletInputs(utxos: UtxoI[], key?: string, sequence?: number): InputTemplate<CompilerBCH>[] {
+        return utxos.map((u: UtxoI) => this.getWalletInput(u, key, sequence))
+    }
+
+
+    static getWalletInput(utxo: UtxoI, privateKey?: string, sequence?: number, addressIndex = 0): InputTemplate<CompilerBCH> {
 
         let unlockingData = privateKey ? {
             compiler: this.compiler,
@@ -358,7 +397,7 @@ export class Channel {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
-            sequenceNumber: 0,
+            sequenceNumber: sequence ? sequence + BIP68_MASK : sequence,
             unlockingBytecode: unlockingData,
         } as InputTemplate<CompilerBCH>
     }
@@ -383,6 +422,23 @@ export class Channel {
         }) as OutputTemplate<CompilerBCH>[]
 
     }
+
+    static getLikeOutput(channel: string, postId: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBCH> {
+        let m = "6a0256B2" + binToHex(encodeDataPush(hexToBin(postId)))
+        return {
+            lockingBytecode: this.getLockingBytecode(channel),
+            valueSatoshis: BigInt(couponValue),
+            token: {
+                amount: 0n,
+                category: hexToBin(auth.token_data!.category),
+                nft: {
+                    capability: 'none',
+                    commitment: hexToBin(m)
+                }
+            }
+        }
+    }
+
 
     static getChangeOutput(auth: UtxoI, changeAmount: bigint, privateKey?: any, addressIndex = 0): OutputTemplate<CompilerBCH> {
 
@@ -451,14 +507,18 @@ export class Channel {
 
         let walletUtxos = [auth]
         if (extraUtxos) walletUtxos.push(...extraUtxos)
-        config.inputs.push(... this.getInputs(channel, utxos));
+        config.inputs.push(... this.getInputs(channel, utxos, now));
         config.inputs.push(... this.getWalletInputs(walletUtxos, key));
 
         config.outputs.push(... this.getCouponOutputs(utxos, now));
 
-        let valueIn = sumSourceOutputValue(sourceOutputs)
+        sourceOutputs.push(... this.getSourceOutputs(channel, utxos));
+        sourceOutputs.push(this.getWalletSourceOutput(auth, key));
 
-        config.outputs.push(this.getChangeOutput(auth, valueIn, key))
+        let valueIn = sumSourceOutputValue(sourceOutputs)
+        let valueOut = sumOutputValue(config.outputs)
+        let change = valueIn - valueOut;
+        config.outputs.push(this.getChangeOutput(auth, change, key))
 
         return this.buildAndValidateTransaction(config, sourceOutputs, fee)
 
@@ -479,7 +539,7 @@ export class Channel {
      * @returns a transaction template.
      */
 
-    static post(channel: string, message: string, auth: UtxoI, couponAmount: number, key?: string, prevUtxos?: UtxoI[], fee = 1) {
+    static post(channel: string, message: string, auth: UtxoI, couponAmount: number, key?: string, sequence?: number, prevUtxos?: UtxoI[], fee = 1) {
 
         const inputs: InputTemplate<CompilerBCH>[] = [];
         const outputs: OutputTemplate<CompilerBCH>[] = [];
@@ -495,16 +555,53 @@ export class Channel {
         let walletUtxos = [auth]
         if (prevUtxos) walletUtxos.push(...prevUtxos)
 
-        config.inputs.push(... this.getWalletInputs(walletUtxos, key));
-
+        config.inputs.push(... this.getWalletInputs(walletUtxos, key, sequence));
         config.outputs.push(... this.getChannelMessageOutputs(channel, message, auth, couponAmount));
 
         sourceOutputs.push(this.getWalletSourceOutput(auth, key));
         let valueIn = sumSourceOutputValue(sourceOutputs)
-
         let change = valueIn - BigInt(config.outputs.length * couponAmount);
         config.outputs.push(this.getChangeOutput(auth, change, key));
+        return this.buildAndValidateTransaction(config, sourceOutputs, fee);
 
+    }
+
+    /**
+    * Like a post.
+    *
+    * @param channel - channel identifier.
+    * @param postId - transaction id of the post being liked.
+    * @param auth - utxo paying transaction fees.
+    * @param couponAmount - amount to pay message (per commitment).
+    * @param key - private key to sign transaction wallet inputs.
+    * @param fee - network fee to pay, default 1 sat per byte.
+    *
+    * @throws {Error} if transaction generation fails.
+    * @returns a transaction template.
+    */
+
+    static like(channel: string, postId: string, auth: UtxoI, couponAmount: number, key?: string, fee = 1) {
+
+        const inputs: InputTemplate<CompilerBCH>[] = [];
+        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const sourceOutputs: Output[] = [];
+
+        let config = {
+            locktime: 0,
+            version: 2,
+            inputs,
+            outputs
+        }
+
+        let walletUtxos = [auth]
+
+        config.inputs.push(... this.getWalletInputs(walletUtxos, key));
+        config.outputs.push(this.getLikeOutput(channel, postId, auth, couponAmount));
+
+        sourceOutputs.push(this.getWalletSourceOutput(auth, key));
+        let valueIn = sumSourceOutputValue(sourceOutputs)
+        let change = valueIn - BigInt(config.outputs.length * couponAmount);
+        config.outputs.push(this.getChangeOutput(auth, change, key));
         return this.buildAndValidateTransaction(config, sourceOutputs, fee);
 
     }

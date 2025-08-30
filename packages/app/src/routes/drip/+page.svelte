@@ -2,19 +2,19 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 
-	import { 
-		decodeTransactionBCH, 
-		binToHex, 
-		hexToBin, 
-		swapEndianness, 
-		hash256 
+	import {
+		decodeTransactionBCH,
+		binToHex,
+		hexToBin,
+		swapEndianness,
+		hash256
 	} from '@bitauth/libauth';
 	import Readme from './README.md';
 
 	import { blo } from 'blo';
 	// Import library features.
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
-	import  Drip  from '@unspent/drip';
+	import Drip from '@unspent/drip';
 
 	import dripIcon from '$lib/images/drip.svg';
 	import CONNECTED from '$lib/images/connected.svg';
@@ -62,19 +62,21 @@
 		response as any[];
 	};
 
-	const processAllOutpus = function(){
-		unspent.filter((i: any) => i.height > 0).map((u, i)=>{
-			processOutput(u,i)
-		})
-	}
+	const processAllOutpus = function () {
+		unspent
+			.filter((i: any) => i.height > 0)
+			.map((u, i) => {
+				processOutput(u, i);
+			});
+	};
 
 	const processOutput = async function (utxo: any, index: number) {
 		let txn_hex = Drip.processOutpoint(utxo);
-		let transaction = decodeTransactionBCH(hexToBin(txn_hex))
-		if(typeof transaction === "string") throw transaction
+		let transaction = decodeTransactionBCH(hexToBin(txn_hex));
+		if (typeof transaction === 'string') throw transaction;
 		spent.add(`${utxo.tx_hash}":"${utxo.tx_pos}`);
 		debounceClearSpent();
-		
+
 		let new_id = swapEndianness(binToHex(hash256(hexToBin(txn_hex))));
 
 		let outValue = Number(transaction.outputs[0].valueSatoshis);
@@ -112,7 +114,6 @@
 	};
 
 	onMount(async () => {
-
 		// Initialize an electrum client.
 		electrumClient = new ElectrumClient(Drip.USER_AGENT, '1.4.1', server);
 
@@ -129,30 +130,25 @@
 	});
 
 	onDestroy(async () => {
-		const electrumClient = new ElectrumClient('unspent/drip', '1.4.1', server);
 		await electrumClient.disconnect();
 	});
-
 </script>
 
 <svelte:head>
 	<title>Drip Mine</title>
-	<meta
-		name="description"
-		content="Release miner extractable value (MEV) on Bitcoin Cash (BCH) from your browser!"
-	/>
+	<meta name="description" content="Release the miner extractable value (MEV)!" />
 </svelte:head>
 
 <section>
 	<div class="status">
+		<BitauthLink template={Drip.template} />
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
 		{:else}
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
-		<BitauthLink template={Drip.template} />
 	</div>
-	<h1>Release miner extractable value (MEV) on Bitcoin Cash (BCH) from your browser!</h1>
+	<h1>Release the miner extractable value (MEV)!</h1>
 	<div class="header">
 		<button onclick={() => processAllOutpus()}>Release all Miner Extractable Value (MEV)</button>
 	</div>
@@ -162,8 +158,8 @@
 			{#each unspent.filter((i: any) => i.height > 0) as item, index}
 				<div class="row">
 					<button onclick={() => processOutput(item, index)}>
-						<img src={blo(`0x${item.tx_hash}`)} alt={item.tx_hash} />
-						<p>{Number(item.value).toLocaleString()}</p>
+						<img src={blo(`0x${item.tx_hash}`, 32)} alt={item.tx_hash} />
+						<!-- <p>{Number(item.value).toLocaleString()}</p> -->
 					</button>
 				</div>
 			{/each}
@@ -177,8 +173,8 @@
 			{#each unspent.filter((i: any) => i.height <= 0) as item, index}
 				<div class="row">
 					<button disabled>
-						<img src={blo(`0x${item.tx_hash}`)} alt={item.tx_hash} />
-						<p>{Number(item.value).toLocaleString()}</p>
+						<img src={blo(`0x${item.tx_hash}`, 32)} alt={item.tx_hash} />
+						<!-- <p>{Number(item.value).toLocaleString()}</p> -->
 					</button>
 				</div>
 			{/each}
@@ -221,19 +217,19 @@
 		flex-direction: row;
 		flex-wrap: wrap;
 		align-items: flex-start;
+		text-align: center;
 	}
 
 	.grid .row {
-		justify-content: center;
-		align-items: center;
-		text-align: center;
 		grid-gap: 0.2rem;
-		margin: 0 0 0.2rem 0;
 	}
 
+	button {
+		padding: 0px;
+	}
 	button p {
 		font-size: x-small;
-		font-weight: 600;
+		font-weight: 400;
 		margin: 0px;
 	}
 	button:disabled {
@@ -245,16 +241,15 @@
 		border: none;
 		color: white;
 		padding: 15px 32px;
+		margin: auto;
 		border-radius: 20px;
-		text-align: center;
 		text-decoration: none;
 		display: inline-block;
 		font-size: 16px;
 	}
 
 	.header {
-		padding: 15px 32px;
+		padding: 15px 16px;
 		display: flex;
 	}
-
 </style>

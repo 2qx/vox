@@ -29,45 +29,44 @@
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 
-	let now = 0;
-	let connectionStatus = '';
-	let contractState = '';
+	let now = $state(0);
+	let connectionStatus = $state('');
+	let contractState = $state('');
 
-	let transaction_hex = '';
+	let transaction_hex = $state('');
 	let transaction: any = undefined;
-	let transactionValid = false;
+	let transactionValid = $state(false);
 	let sourceOutputs: any = undefined;
 
-	let unspent: any[] = [];
-	let walletUnspent: any[] = [];
-	let key = '';
-	let electrumClient: any;
-	let scripthash = '';
-	let walletScriptHash = '';
+	let unspent: any[] = $state([]);
+	let walletUnspent: any[] = $state([]);
+	let key = $state('');
+	let electrumClient: any = $state();
+	let scripthash = $state('');
+	let walletScriptHash = $state('');
 
-	let sumWalletBlockPoint = 0n;
-	let sumWallet = 0;
-	let sumVaultBlockPoint = 0n;
-	let sumVault = 0;
+	let sumWalletBlockPoint = $state(0n);
+	let sumWallet = $state(0);
+	let sumVaultBlockPoint = $state(0n);
+	let sumVault = $state(0);
 
 	scripthash = BlockPoint.getScriptHash();
 
 	const isMainnet = page.url.hostname == 'vox.cash';
-	let icon = isMainnet ? BPTS : tBPTS;
-	let category = isMainnet ? binToHex(bptCat) : binToHex(tbptCat);
-	let baseTicker = isMainnet ? 'BCH' : 'tBCH';
-	let ticker = isMainnet ? 'BPTS' : 'tBPTS';
-	let prefix = isMainnet ? 'bitcoincash' : 'bchtest';
-
-	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const icon = isMainnet ? BPTS : tBPTS;
+	const category = isMainnet ? binToHex(bptCat) : binToHex(tbptCat);
+	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
+	const ticker = isMainnet ? 'BPTS' : 'tBPTS';
+	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
+	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 
 	let spent = new Set();
-
+	let timer: any = 0;
 	let amount = 0;
 	let wallet: any;
 	let transactionError: string | boolean = '';
 
-	const handleNotifications = function (data: any) {
+	const handleNotifications = async function (data: any) {
 		if (data.method === 'blockchain.headers.subscribe') {
 			let d = data.params[0];
 			now = d.height;
@@ -76,12 +75,19 @@
 				contractState = data.params[1];
 				connectionStatus = ConnectionStatus[electrumClient.status];
 				amount = 0;
-				updateUnspent();
-				updateWallet();
+				debounceUpdateWallet();
 			}
 		} else {
 			console.log(data);
 		}
+	};
+
+	const debounceUpdateWallet = () => {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			updateWallet();
+			updateUnspent();
+		}, 1500);
 	};
 
 	const updateWallet = async function () {
@@ -91,14 +97,12 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		let walletUnspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
-		if (walletUnspent.length == 0 || spent.intersection(walletUnspentIds).size == 0) {
-			walletUnspent = response;
-		}
 
+        walletUnspent = response;
 		sumWallet = sumUtxoValue(walletUnspent, true);
 		sumWalletBlockPoint = sumTokenAmounts(walletUnspent, category);
-		walletUnspent = walletUnspent.filter((t) => t.height > 0);
+
+		walletUnspent = walletUnspent.filter((u: UtxoI) => !u.token_data).filter((u: UtxoI) => u.height > 0)
 	};
 
 	const updateUnspent = async function () {
@@ -136,13 +140,16 @@
 
 	const claimReward = function (
 		now: number,
-		unspent: UtxoI,
-		wallet: UtxoI,
+		utxo: UtxoI,
+		walletUtxo: UtxoI,
 		key: string,
 		category: any
 	) {
 		try {
-			let result = BlockPoint.claim(now, unspent, wallet, key, category);
+			walletUnspent = walletUnspent.filter(
+				(u) => `${u.tx_hash}:${u.tx_pos}` !== `${walletUtxo.tx_hash}:${walletUtxo.tx_pos}`
+			);
+			let result = BlockPoint.claim(now, utxo, walletUtxo, key, category);
 			transaction = result.transaction;
 			sourceOutputs = result.sourceOutputs;
 			transaction_hex = binToHex(encodeTransactionBCH(transaction));
@@ -180,24 +187,23 @@
 		// Set up a subscription for new block headers.
 		await electrumClient.subscribe('blockchain.scripthash.subscribe', scripthash);
 		await electrumClient.subscribe('blockchain.headers.subscribe');
-		updateUnspent();
-		updateWallet();
 	});
 
 	onDestroy(async () => {
 		const electrumClient = new ElectrumClient(BlockPoint.USER_AGENT, '1.4.1', server);
 		await electrumClient.disconnect();
 	});
+
 </script>
 
 <section>
 	<div class="status">
+		<BitauthLink template={BlockPoint.template} />
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
 		{:else}
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
-		<BitauthLink template={BlockPoint.template} />
 	</div>
 	<h1>Claim Block Point Rewards</h1>
 
@@ -210,31 +216,17 @@
 		<div>
 			<img width="50" src={icon} alt={ticker} />
 			<br />
-			{sumWalletBlockPoint.toLocaleString()} {ticker}
+			{sumWalletBlockPoint.toLocaleString()}
+			{ticker}
 		</div>
 	</div>
 
-	<div class="swap">
-		<button onclick={() => claimAll()}>Claim All Rewards</button>
-	</div>
-
-	{#if transaction && transactionValid}
-		<div class="swap">
-			<div>
-				{#if amount > 0}
-					place: {amount.toLocaleString()} sats
-				{:else if amount < 0}
-					redeem: {(-amount).toLocaleString()} wrapped sats
-				{/if}
-			</div>
-		</div>
-	{/if}
-	{#if transaction}
-		<Transaction {transaction} {sourceOutputs} {category} />
-	{/if}
 	{transactionError}
 
-	{#if walletUnspent.filter((u) => !u.token_data).filter((u) => u.height > 0).length > 0}
+	{#if walletUnspent.length > 0}
+		<div class="swap">
+			<button onclick={() => claimAll()}>Claim All Rewards</button>
+		</div>
 		<h4>Wallet Unspent Transaction Outputs (coins)</h4>
 		<div class="grid">
 			{#each walletUnspent as t, i}
@@ -245,18 +237,20 @@
 								<img width="100" src={icon} alt="bptLogo" /><br />
 								Claim {t.height > unspent[i].height
 									? Math.floor(((now - t.height) * t.value) / 100000000)
-									: Math.floor(((now - unspent[i].height) * t.value) / 100000000)} {ticker}
+									: Math.floor(((now - unspent[i].height) * t.value) / 100000000)}
+								{ticker}
 							</button>
 						{:else}
 							<button class="action" disabled>
 								<img width="100" src={icon} alt="bptLogo" /><br />
 								{t.height > unspent[i].height
 									? (((now - t.height) * t.value) / 100000000).toLocaleString(undefined, {
-											minimumFractionDigits: 3
+											minimumFractionDigits: 4
 										})
 									: (((now - unspent[i].height) * t.value) / 100000000).toLocaleString(undefined, {
-											minimumFractionDigits: 3
-										})} {ticker}
+											minimumFractionDigits: 4
+										})}
+								{ticker}
 							</button>
 						{/if}
 					</div>
@@ -264,7 +258,9 @@
 			{/each}
 		</div>
 	{:else}
-		<p>No confirmed coins to claim Block Points</p>
+		<div class="swap">
+			<p>No confirmed coins to claim Block Points, check back in a few minutes.</p>
+		</div>
 	{/if}
 
 	<Readme />
@@ -280,6 +276,7 @@
 
 	.swap {
 		display: flex;
+		margin: auto;
 		align-items: center;
 		justify-content: center;
 	}
@@ -296,19 +293,21 @@
 	.action {
 		display: inline-block;
 		border-radius: 10px;
-		background-color: rgba(200, 229, 238, 0.514);
-		color: #000000;
-		margin: 5px;
+		background-color: rgba(255, 255, 255, 0.781);
+		/* color: #000000; */
+		border: #ffffff solid;
+		margin: auto;
 		padding: 10px;
 		font-weight: 900;
 		font-size: small;
+		filter: drop-shadow(8px 8px 16px #ffffff);
 	}
 
 	.action:disabled {
 		display: inline-block;
 		border-radius: 10px;
-		background-color: #55525569;
-		color: #a09999;
+		background-color: #adadad;
+		color: #000000;
 		margin: 1px;
 		padding: 0 5px 0 5px;
 		font-weight: 900;

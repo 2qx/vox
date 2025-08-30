@@ -1,28 +1,9 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import logo from '$lib/images/vox.svg';
 	import walletIcon from '$lib/images/hot.svg';
 
-	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet } from 'mainnet-js';
 
-	let data;
-	let wallet: any;
-	let walletError = false;
-	let balance: number;
-
-	onMount(async () => {
-		try {
-			const isTestnet = page.url.hostname !== 'vox.cash';
-			BaseWallet.StorageProvider = IndexedDBProvider;
-			wallet = isTestnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
-			balance = (await wallet.getBalance('bch')).toLocaleString({maximumSignificantDigits:2});
-		} catch (e) {
-			walletError = true;
-			throw e;
-		}
-	});
 </script>
 
 {#if page.url.hostname.includes('127.0.0.1') || page.url.hostname.includes('localhost')}
@@ -51,19 +32,9 @@
 		</svg>
 		<ul>
 			<li aria-current={page.url.pathname === '/wallet' ? 'page' : undefined}>
-				{#if wallet}
-					{#if walletError}
-						⚠️
-					{/if}
-					<a href="/wallet">
-						{#if typeof balance !== 'undefined'}
-							{balance} BCH
-						{:else}
-							0 BCH
-						{/if}
-						<img width="30" src={walletIcon} alt="wallet" />
-					</a>
-				{/if}
+				<a href="/wallet">
+					<img width="30" src={walletIcon} alt="wallet" />
+				</a>
 			</li>
 		</ul>
 		<svg viewBox="0 0 2 3" aria-hidden="true">
@@ -96,11 +67,7 @@
 		text-align: center;
 	}
 
-	
-
-	
-
-    li a img {
+	li a img {
 		color: black;
 		padding: 10px;
 	}
