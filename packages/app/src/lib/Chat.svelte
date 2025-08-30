@@ -215,6 +215,7 @@
 	};
 
 	const newAuthBaton = async function () {
+		await wallet.sendMax(wallet.getDepositAddress())
 		let uname = cashAssemblyToHex(`OP_RETURN <"U3V"> <"pseudonymous">`);
 		let sendResponse = await wallet.tokenGenesis({
 			cashaddr: wallet.getTokenDepositAddress()!, // token UTXO recipient, if not specified will default to sender's address
