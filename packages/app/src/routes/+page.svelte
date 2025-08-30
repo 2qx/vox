@@ -82,7 +82,7 @@
 			description: 'Chat app for the future.',
 			image: '/vox.svg',
 			link: '/pop',
-			disabled: isMainnet
+			disabled: !isMainnet
 		}
 	];
 </script>
