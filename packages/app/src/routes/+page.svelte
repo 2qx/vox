@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { page } from '$app/state';
+	const isMainnet = page.url.hostname == 'vox.cash';
 	let protocols = [
 		{
 			name: 'Badger',
@@ -80,7 +82,7 @@
 			description: 'Chat app for the future.',
 			image: '/vox.svg',
 			link: '/pop',
-			disabled: false
+			disabled: isMainnet
 		}
 	];
 </script>
