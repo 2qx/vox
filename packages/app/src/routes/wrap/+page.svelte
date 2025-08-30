@@ -159,6 +159,7 @@
 
 		// Set up a subscription for new block headers.
 		await electrumClient.subscribe('blockchain.scripthash.subscribe', scripthash);
+		await electrumClient.subscribe('blockchain.scripthash.subscribe', walletScriptHash);
 		updateUnspent();
 		updateWallet();
 	});

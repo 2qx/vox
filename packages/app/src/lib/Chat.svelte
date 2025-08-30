@@ -59,6 +59,14 @@
 	let wallet: any;
 	let walletUnspent: any[] = $state([]);
 
+	const debounceUpdateWallet = () => {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			updateWallet();
+			updateContract();
+		}, 1500);
+	};
+
 	const handleNotifications = async function (data: any) {
 		if (data.method === 'blockchain.headers.subscribe') {
 			let d = data.params[0];
@@ -67,9 +75,7 @@
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
 				connectionStatus = ConnectionStatus[electrumClient.status];
-				await updateContract();
-				await updateWallet();
-				updateScroll();
+				debounceUpdateWallet();
 			}
 		} else {
 			console.log(data);
@@ -96,9 +102,7 @@
 	};
 
 	const setHeight = async function () {
-		let response = await electrumClient.request(
-			'blockchain.headers.get_tip'
-		);
+		let response = await electrumClient.request('blockchain.headers.get_tip');
 		if (response instanceof Error) throw response;
 		now = response.height;
 	};
@@ -121,7 +125,6 @@
 	};
 
 	const updateContract = async function () {
-
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
 			scripthash,
@@ -215,7 +218,7 @@
 	};
 
 	const newAuthBaton = async function () {
-		await wallet.sendMax(wallet.getDepositAddress())
+		await wallet.sendMax(wallet.getDepositAddress());
 		let uname = cashAssemblyToHex(`OP_RETURN <"U3V"> <"pseudonymous">`);
 		let sendResponse = await wallet.tokenGenesis({
 			cashaddr: wallet.getTokenDepositAddress()!, // token UTXO recipient, if not specified will default to sender's address
@@ -245,7 +248,7 @@
 	onMount(async () => {
 		const isMainnet = page.url.hostname !== 'vox.cash';
 		BaseWallet.StorageProvider = IndexedDBProvider;
-		
+
 		wallet = isMainnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 		let bytecodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
@@ -264,9 +267,11 @@
 		connectionStatus = ConnectionStatus[electrumClient.status];
 		// Set up a subscription for new block headers.
 		await electrumClient.subscribe('blockchain.scripthash.subscribe', scripthash);
+		await electrumClient.subscribe('blockchain.scripthash.subscribe', walletScriptHash);
 		await setHeight();
 		await updateWallet();
 		await updateContract();
+		updateScroll();
 	});
 
 	onDestroy(async () => {
