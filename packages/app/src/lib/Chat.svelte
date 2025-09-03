@@ -314,10 +314,14 @@
 			<p style="color: red">{error.message}</p>
 		{/await}
 	</div>
-	{#if walletUnspent.length == 0}
+	{#if balance > 1000000 && walletUnspent.length == 0}
 		<div class="row footer">
 			<h2>Create new identity</h2>
 			<button onclick={() => newAuthBaton()}>New identity 1M sats</button>
+		</div>
+		{:else if balance < 1100000 && walletUnspent.length == 0}
+		<div class="row footer">
+			<p><a href="/wallet">Deposit funds</a> to create identity</p>
 		</div>
 	{:else}
 		<div class="row footer">
