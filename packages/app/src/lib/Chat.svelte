@@ -15,7 +15,8 @@
 		getHdPrivateKey,
 		type UtxoI,
 		getAllTransactions,
-		sumSourceOutputValue
+		sumSourceOutputValue,
+		sumUtxoValue
 	} from '@unspent/tau';
 
 	import { Channel, Post, buildChannel, parseUsername } from '@fbch/lib';
@@ -37,6 +38,7 @@
 
 	let now = $state(0);
 	let balance = $state(0);
+	let contractBalance = $state(0n);
 	let connectionStatus = $state('');
 	let contractState = $state('');
 
@@ -132,6 +134,7 @@
 		);
 
 		if (response instanceof Error) throw response;
+		contractBalance = sumUtxoValue(response);
 		let tx_hashes = Array.from(new Set(response.map((utxo: any) => utxo.tx_hash))) as string[];
 
 		let historyResponse = await electrumClient.request(
@@ -287,6 +290,7 @@
 		<div style="flex: 2 2 auto;"></div>
 		<b><a href="/pop/">/pop</a>/{topic}</b>
 		<div style="flex: 2 2 auto;"></div>
+		{contractBalance.toLocaleString()} sats &nbsp;
 		<BitauthLink template={Channel.template} />
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
