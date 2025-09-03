@@ -31,7 +31,7 @@
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 	const explorer = isMainnet
-		? 'https://bch.loping.net/address/'
+		? 'https://explorer.salemkode.com/address/'
 		: 'https://cbch.loping.net/address/';
 
 	const protocol_prefix = cashAssemblyToHex(`OP_RETURN <"U3V">`);
@@ -50,6 +50,7 @@
 	let showSettings = $state(false);
 
 	const scripthash = $derived(Channel.getScriptHash(topic));
+	const contractAddress = $derived(Channel.getAddress(topic, prefix));
 
 	let posts: any[] = $state([]);
 
@@ -290,7 +291,11 @@
 		<div style="flex: 2 2 auto;"></div>
 		<b><a href="/pop/">/pop</a>/{topic}</b>
 		<div style="flex: 2 2 auto;"></div>
-		{contractBalance.toLocaleString()} sats &nbsp;
+		{#if contractBalance}
+		<a target="_blank" href="{explorer}{contractAddress}" >
+			{Math.floor(Number(contractBalance) / 1000).toLocaleString()}k sats &nbsp;
+			</a>
+		{/if}
 		<BitauthLink template={Channel.template} />
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
@@ -319,7 +324,7 @@
 			<h2>Create new identity</h2>
 			<button onclick={() => newAuthBaton()}>New identity 1M sats</button>
 		</div>
-		{:else if balance < 1100000 && walletUnspent.length == 0}
+	{:else if balance < 1100000 && walletUnspent.length == 0}
 		<div class="row footer">
 			<p><a href="/wallet">Deposit funds</a> to create identity</p>
 		</div>
