@@ -42,7 +42,7 @@
 			description: 'Tokenized timelocked BCH',
 			image: '/FBCH.svg',
 			link: '/future',
-			disabled: true
+			disabled: false
 		},
 
 		{
@@ -95,7 +95,7 @@
 <section>
 	<div class="welcome">
 		{#each protocols as item}
-			<div class="app-button">
+			<div class="app-button" data-sveltekit-reload>
 				<a href={item.link}>
 					<button disabled={item.disabled}>
 						<img width="80px" src={item.image} alt={item.description} /><br />
