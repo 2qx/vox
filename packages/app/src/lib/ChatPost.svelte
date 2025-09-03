@@ -73,7 +73,7 @@
 		background-color: #eeeeee;
 		margin: auto;
 		width: 100%;
-
+        white-space: pre-line;
 		word-break: break-word;
 	}
 
