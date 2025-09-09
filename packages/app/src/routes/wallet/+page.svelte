@@ -103,9 +103,10 @@
 
 	onMount(async () => {
 		try {
-			const isTestnet = page.url.hostname !== 'vox.cash';
+			
 			BaseWallet.StorageProvider = IndexedDBProvider;
-			wallet = isTestnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
+			wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`) ;
+
 			balance = (await wallet.getBalance('sat')) as number;
 
 			let lockingBytecode = cashAddressToLockingBytecode(wallet.getDepositAddress());

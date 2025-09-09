@@ -98,11 +98,13 @@
 		);
 		if (response instanceof Error) throw response;
 
-        walletUnspent = response;
+		walletUnspent = response;
 		sumWallet = sumUtxoValue(walletUnspent, true);
 		sumWalletBlockPoint = sumTokenAmounts(walletUnspent, category);
 
-		walletUnspent = walletUnspent.filter((u: UtxoI) => !u.token_data).filter((u: UtxoI) => u.height > 0)
+		walletUnspent = walletUnspent
+			.filter((u: UtxoI) => !u.token_data)
+			.filter((u: UtxoI) => u.height > 0);
 	};
 
 	const updateUnspent = async function () {
@@ -166,9 +168,10 @@
 	};
 
 	onMount(async () => {
-		const isMainnet = page.url.hostname !== 'vox.cash';
+		
 		BaseWallet.StorageProvider = IndexedDBProvider;
-		wallet = isMainnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
+		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
+
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 		let lockcodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
 		if (typeof lockcodeResult == 'string') throw lockcodeResult;
@@ -194,7 +197,6 @@
 		const electrumClient = new ElectrumClient(BlockPoint.USER_AGENT, '1.4.1', server);
 		await electrumClient.disconnect();
 	});
-
 </script>
 
 <section>

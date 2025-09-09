@@ -127,6 +127,35 @@
 		}
 	};
 
+	const clearPosts = async function () {
+		let response = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			scripthash,
+			'include_tokens'
+		);
+		if (response instanceof Error) throw response;
+		let old = response.filter((u: UtxoI) => u.height > 0 && (now - u.height) > 1000);
+		let clearPostTx = Channel.clear(topic, old, walletUnspent[0], key, now);
+		let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
+		console.log(raw_tx)
+		await broadcast(raw_tx);
+	};
+
+	const takeSpam = async function () {
+		let response = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			scripthash,
+			'include_tokens'
+		);
+		if (response instanceof Error) throw response;
+		
+		let spam = response.filter((u: UtxoI) => (Math.floor(u.value / 10) * 1000) - u.height < 1000);
+		let clearPostTx = Channel.clear(topic, spam, walletUnspent[0], key, now);
+		let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
+		console.log(raw_tx)
+		await broadcast(raw_tx);
+	};
+
 	const updateContract = async function () {
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
@@ -136,6 +165,8 @@
 
 		if (response instanceof Error) throw response;
 		contractBalance = sumUtxoValue(response);
+		
+		
 		let tx_hashes = Array.from(new Set(response.map((utxo: any) => utxo.tx_hash))) as string[];
 
 		let historyResponse = await electrumClient.request(
@@ -155,6 +186,7 @@
 			};
 		});
 
+		// update the current sequence state to match the chan
 		if (posts.slice(-1).length > 0) {
 			sequence = posts.slice(-1)[0].height <= 0 ? posts.slice(-1)[0].sequence + 1 : 0;
 		} else {
@@ -197,11 +229,13 @@
 	};
 
 	const send = async function (msg: string) {
+		let minValue = (Math.round(now / 1000) + 10) * 10
+		
 		let post = Channel.post(
 			topic,
 			msg,
 			walletUnspent[0],
-			(Math.round(now / 1000) + 10) * 10,
+			minValue,
 			key,
 			sequence
 		);
@@ -250,9 +284,9 @@
 	};
 
 	onMount(async () => {
-		const isMainnet = page.url.hostname !== 'vox.cash';
+
 		BaseWallet.StorageProvider = IndexedDBProvider;
-		wallet = isMainnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
+		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`) ;
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 		let bytecodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
 		if (typeof bytecodeResult == 'string') throw bytecodeResult;
@@ -292,8 +326,8 @@
 		<b><a href="/pop/">/pop</a>/{topic}</b>
 		<div style="flex: 2 2 auto;"></div>
 		{#if contractBalance}
-		<a target="_blank" href="{explorer}{contractAddress}" >
-			{Math.floor(Number(contractBalance) / 1000).toLocaleString()}k sats &nbsp;
+			<a target="_blank" href="{explorer}{contractAddress}">
+				{Math.floor(Number(contractBalance) / 1000).toLocaleString()}k sats &nbsp;
 			</a>
 		{/if}
 		<BitauthLink template={Channel.template} />
@@ -373,6 +407,10 @@
 			<div class="row footer">
 				<button onclick={() => topUp(10000000)}>Top up 10M sats</button>
 				<button onclick={() => topUp(1000000)}>Top up 1M sats</button>
+			</div>
+			<div class="row footer">
+				<button onclick={() => clearPosts()}>Clear Old Posts</button>
+				<!-- <button onclick={() => takeSpam()}>Take Spam</button> -->
 			</div>
 		{/if}
 	{/if}
