@@ -134,11 +134,13 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		let old = response.filter((u: UtxoI) => u.height > 0 && (now - u.height) > 1000);
-		let clearPostTx = Channel.clear(topic, old, walletUnspent[0], key, now);
-		let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
-		console.log(raw_tx)
-		await broadcast(raw_tx);
+		let old = response.filter((u: UtxoI) => u.height > 0 && now - u.height > 1000);
+		if (old.length > 0) {
+			let clearPostTx = Channel.clear(topic, old, walletUnspent[0], key, now);
+			let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
+			console.log(raw_tx);
+			await broadcast(raw_tx);
+		}
 	};
 
 	const burnSpam = async function () {
@@ -148,13 +150,14 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		
-		let spam = response.filter((u: UtxoI) => ((Math.floor(u.value / 10) * 1000) - u.height) < 1000);
-		console.log(spam)
-		let clearPostTx = Channel.clear(topic, spam, walletUnspent[0], key, now);
-		let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
-		console.log(raw_tx)
-		await broadcast(raw_tx);
+
+		let spam = response.filter((u: UtxoI) => Math.floor(u.value / 10) * 1000 - u.height < 1000);
+		if (spam.length > 0) {
+			let clearPostTx = Channel.clear(topic, spam, walletUnspent[0], key, now);
+			let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
+			console.log(raw_tx);
+			await broadcast(raw_tx);
+		}
 	};
 
 	const updateContract = async function () {
@@ -166,8 +169,7 @@
 
 		if (response instanceof Error) throw response;
 		contractBalance = sumUtxoValue(response);
-		
-		
+
 		let tx_hashes = Array.from(new Set(response.map((utxo: any) => utxo.tx_hash))) as string[];
 
 		let historyResponse = await electrumClient.request(
@@ -230,16 +232,9 @@
 	};
 
 	const send = async function (msg: string) {
-		let minValue = (Math.round(now / 1000) + 10) * 10
-		
-		let post = Channel.post(
-			topic,
-			msg,
-			walletUnspent[0],
-			minValue,
-			key,
-			sequence
-		);
+		let minValue = (Math.round(now / 1000) + 10) * 10;
+
+		let post = Channel.post(topic, msg, walletUnspent[0], minValue, key, sequence);
 
 		let raw_tx = binToHex(encodeTransactionBCH(post.transaction));
 		await broadcast(raw_tx);
@@ -285,9 +280,8 @@
 	};
 
 	onMount(async () => {
-
 		BaseWallet.StorageProvider = IndexedDBProvider;
-		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`) ;
+		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 		let bytecodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
 		if (typeof bytecodeResult == 'string') throw bytecodeResult;
