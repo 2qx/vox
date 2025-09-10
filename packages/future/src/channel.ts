@@ -263,7 +263,7 @@ export class Channel {
 
         let scriptId = edit ? 'edit_message' : 'process_message';
 
-        const sequence = (now-utxo.height) >= 1000 ? 1000 : 0
+        const sequence = (now - utxo.height) >= 1000 ? 1000 : 0
 
         return {
             outpointIndex: utxo.tx_pos,
@@ -339,19 +339,16 @@ export class Channel {
         let futureTime = Math.floor(utxo.value / 10) * 1000;
 
         // if the utxo was underfunded, clear it without generating a coupon.
-        if ((futureTime - utxo.height) < 1000) return
-
-        let isPremature =  (now - utxo.height) < 1000;
+        let isSpam =  ((futureTime - utxo.height) < 1000);
+        let isPremature = (now - utxo.height) < 1000;
 
         let outputValue = isPremature ? utxo.value * 10 : utxo.value;
+        
+        // A non matching output value indicates the message is spam
+        outputValue = isSpam ? utxo.value-1 : outputValue
         let couponThreshold = isPremature ? 100_000_000 : 10_000_000;
-
-        console.log(couponThreshold.toLocaleString())
-
-
+        couponThreshold = isSpam ? 10_000_000 : couponThreshold
         let bytecode = Vault.getCouponLockingBytecode(couponThreshold, futureTime)
-        let cashAddResult = lockingBytecodeToCashAddress({ prefix: "bchtest", bytecode })
-        if (typeof cashAddResult == "string") throw cashAddResult
 
         return {
             lockingBytecode: bytecode,

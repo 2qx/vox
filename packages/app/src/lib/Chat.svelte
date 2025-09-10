@@ -141,7 +141,7 @@
 		await broadcast(raw_tx);
 	};
 
-	const takeSpam = async function () {
+	const burnSpam = async function () {
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
 			scripthash,
@@ -149,7 +149,8 @@
 		);
 		if (response instanceof Error) throw response;
 		
-		let spam = response.filter((u: UtxoI) => (Math.floor(u.value / 10) * 1000) - u.height < 1000);
+		let spam = response.filter((u: UtxoI) => ((Math.floor(u.value / 10) * 1000) - u.height) < 1000);
+		console.log(spam)
 		let clearPostTx = Channel.clear(topic, spam, walletUnspent[0], key, now);
 		let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
 		console.log(raw_tx)
@@ -410,7 +411,7 @@
 			</div>
 			<div class="row footer">
 				<button onclick={() => clearPosts()}>Clear Old Posts</button>
-				<!-- <button onclick={() => takeSpam()}>Take Spam</button> -->
+				<button onclick={() => burnSpam()}>Burn Spam</button>
 			</div>
 		{/if}
 	{/if}
