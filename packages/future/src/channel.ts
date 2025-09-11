@@ -139,19 +139,18 @@ function parsePostTransaction(
     })
 }
 
-function chunkString(str: string, len: number) {
-    const size = Math.ceil(str.length / len)
-    const r = Array(size)
-    let offset = 0
+function chunks (arr:Uint8Array, len:number) {
 
-    for (let i = 0; i < size; i++) {
-        r[i] = str.substr(offset, len)
-        offset += len
-    }
+  var chunks = [],
+      i = 0,
+      n = arr.length;
 
-    return r
+  while (i < n) {
+    chunks.push(arr.slice(i, i += len));
+  }
+
+  return chunks;
 }
-
 
 const blockSort = (a: number, b: number): number => {
     if (b <= 0 && a > 0) {
@@ -402,8 +401,9 @@ export class Channel {
 
 
     static getChannelMessageOutputs(channel: string, message: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBCH>[] {
-        let chunks = chunkString(message, 32).map((m) => "6a025630" + binToHex(encodeDataPush(utf8ToBin(m))))
-        return chunks.map((m) => {
+        const binaryMessage = utf8ToBin(message)
+        let chunked = [ ... chunks(binaryMessage, 32).map((m) => "6a025630" + binToHex(encodeDataPush(m))) ]
+        return chunked.map((m) => {
             return {
                 lockingBytecode: this.getLockingBytecode(channel),
                 valueSatoshis: BigInt(couponValue),
