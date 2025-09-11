@@ -116,14 +116,14 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-
+		balance = sumUtxoValue(response);
+		
 		walletUnspent = response.filter(
 			(u: UtxoI) =>
 				u.token_data && u.token_data.nft && u.token_data.nft.commitment.startsWith(protocol_prefix)
 		);
 		if (walletUnspent.length > 0 && walletUnspent[0].token_data) {
 			thisAuth = walletUnspent[0].token_data.category;
-			balance = walletUnspent[0].value;
 		}
 	};
 
