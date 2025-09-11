@@ -219,16 +219,20 @@
 	};
 
 	const reEstimate = function (msg: string) {
-		let post = Channel.post(
-			topic,
-			msg,
-			walletUnspent[0],
-			(Math.round(now / 1000) + 10) * 10,
-			key,
-			sequence
-		);
-		const returned = post.transaction.outputs[post.transaction.outputs.length - 1].valueSatoshis;
-		return Number(sumSourceOutputValue(post.sourceOutputs) - returned);
+		if (msg.length > 0) {
+			let post = Channel.post(
+				topic,
+				msg,
+				walletUnspent[0],
+				(Math.round(now / 1000) + 10) * 10,
+				key,
+				sequence
+			);
+			const returned = post.transaction.outputs[post.transaction.outputs.length - 1].valueSatoshis;
+			return Number(sumSourceOutputValue(post.sourceOutputs) - returned);
+		} else {
+			return 0;
+		}
 	};
 
 	const send = async function (msg: string) {

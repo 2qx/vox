@@ -115,7 +115,7 @@ function parsePostTransaction(
     if (!code) return
     if (!code[0]) return
     // V0
-    if (code[0].slice(0, 8) == "6a025630") body = code.map(c => binToUtf8(hexToBin(c.slice(10)))).join("")
+    if (code[0].slice(0, 8) == "6a025630") body = code.map(c => c.slice(10)).join("")
     // V+
     if (code[0].slice(0, 8) == "6a0256b2") {
         ref = code[0].slice(10)
@@ -130,7 +130,7 @@ function parsePostTransaction(
     return new Post({
         hash: hash,
         auth: binToHex(tx.outputs[0]?.token?.category!),
-        body: body,
+        body: binToUtf8(hexToBin(body)),
         height: height,
         sequence: tx.inputs[0]?.sequenceNumber!,
         ref: ref,
