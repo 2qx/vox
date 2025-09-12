@@ -5,7 +5,7 @@ description: About this app
 
 # About this app
 
-Vox.cash is an integrated collection of financial tools using Bitcoin Cash.
+[Vox.cash](https://vox.cash) is an integrated collection of financial tools using Bitcoin Cash.
 
 This app is a reference implementation for an open on-chain protocol. Each app is driven by a [libauth authentication template](https://libauth.org/types/WalletTemplate.html) and corresponding javascript package.
 
@@ -37,13 +37,13 @@ As a fully featured financial hub, Vox will be powered by user subscriptions fee
 
 Users will have a choice to subscribe in the following rates and currencies:
 
-|     price | currency   |
-| --------: | ---------- |
+|   price   | token    |
+| --------: | :---------- |
 | 1,000,000 | WBCH (sats) |
 |   900,000 | FBCH (sats, any series) |
 |    50,000 | BPTS       |
 |    50,000 | BADGERS    |
 
-A subscription will entitle the user to flair and a special icon in the upper right-hand corner of their app. Subscriptions will be cancelable and transferable. 
+A subscription will entitle the user to flair and a ❤️ in the upper right-hand corner of their app for each active subscription. Subscriptions will be cancelable and transferable. 
 
-All features will otherwise be available to all users without tiers. 
+All features will otherwise be available to all users without tiers. Subscriptions will not unlock any special features. 
