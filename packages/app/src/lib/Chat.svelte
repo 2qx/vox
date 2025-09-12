@@ -117,7 +117,7 @@
 		);
 		if (response instanceof Error) throw response;
 		balance = sumUtxoValue(response);
-		
+
 		walletUnspent = response.filter(
 			(u: UtxoI) =>
 				u.token_data && u.token_data.nft && u.token_data.nft.commitment.startsWith(protocol_prefix)
@@ -378,7 +378,7 @@
 						{#if walletUnspent.length > 0}
 							<div style="font-size:x-small;">
 								{parseUsername(walletUnspent[0].token_data.nft.commitment)}<br />
-								{balance.toLocaleString()}sats
+								{walletUnspent[0].value.toLocaleString()}sats
 							</div>
 						{/if}
 					</div>

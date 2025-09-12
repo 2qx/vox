@@ -5,8 +5,26 @@ description: About this app
 
 # About this app
 
-This is an integrated collection of financial tools using Bitcoin Cash.
+Vox.cash is an integrated collection of financial tools using Bitcoin Cash.
 
-This app will contain a wallet allowing users to receive, send and save Bitcoin Cash
+This app is a reference implementation for an open on-chain protocol. Each app is driven by a [libauth authentication template](https://libauth.org/types/WalletTemplate.html) and corresponding javascript package.
 
-There will be a collection of decentralized applications to trade, liquidate, subscribe, mine and chat for & with CashTokens.
+
+# Roadmap
+
+- [x] Modular structure for mini-app libraries.
+- [x] Launch Minimum Viable App
+- [x] Drip (MEV) app based on libauth templates
+- [x] Wrapped BCH (WBCH)
+- [x] Block Points (BPTS) 
+- [x] Initial Vox Pop chat  
+- [ ] Future BCH (port)
+- [ ] SmallIndex database library (for market data)
+- [ ] CatDex limit order markets
+- [ ] Cauldron and Tapswap order-layers
+- [ ] Wallet build-out & upgrades
+- [ ] Subscriptions
+- [ ] Trusts
+- [ ] Dutch Token Auctions
+- [ ] Badgers
+- [ ] Locktime (hodl) / Timeout (will) Apps
