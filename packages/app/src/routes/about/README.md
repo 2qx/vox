@@ -30,3 +30,20 @@ Initial contract design began in late 2024, all contracts have been posted to [B
 - [ ] Dutch Token Auctions
 - [ ] Badgers
 - [ ] Locktime (hodl) / Timeout (will) Apps
+
+# Business model
+
+As a fully featured financial hub, Vox will be powered by user subscriptions fees.
+
+Users will have a choice to subscribe in the following rates and currencies:
+
+|     price | currency   |
+| --------: | ---------- |
+| 1,000,000 | WBCH (sat) |
+|   900,000 | FBCH (sat) |
+|    50,000 | BPTS       |
+|    50,000 | BADGERS    |
+
+A subscription will entitle the user to flair and a social icon in the upper right-hand corner of their app. Subscriptions will be cancelable and transferable. 
+
+All features will otherwise be available to all users without tiers. 
