@@ -16,9 +16,9 @@ Initial contract design began in late 2024, all contracts have been posted to [B
 
 - [x] Modular structure for mini-app libraries.
 - [x] Launch Minimum Viable App
-- [x] Drip (MEV) app based on libauth templates
-- [x] Wrapped BCH (WBCH)
-- [x] Block Points (BPTS) 
+- [x] Drip mini-app
+- [x] re:Wrapped BCH (WBCH) mini-app
+- [x] Block Points (BPTS) mini-app
 - [x] Initial Vox Pop chat  
 - [ ] Future BCH (port)
 - [ ] SmallIndex database library (for market data)
@@ -26,9 +26,10 @@ Initial contract design began in late 2024, all contracts have been posted to [B
 - [ ] Cauldron and Tapswap order-layers
 - [ ] Wallet build-out & upgrades
 - [ ] Subscriptions
+- [ ] Block Point × AMM swaps
 - [ ] Trusts
 - [ ] Dutch Token Auctions
-- [ ] Badgers
+- [ ] re:Badgers (BADGERS)
 - [ ] Locktime (hodl) / Timeout (will) Apps
 
 # Business model
