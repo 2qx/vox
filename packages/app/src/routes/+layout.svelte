@@ -45,7 +45,7 @@
 			<a href="/pop/p2p">bitcoin</a> ■ <a href="/pop/free">freedom</a>
 			■ <a href="/pop/biz">markets</a> ■ <a href="/pop/pow">mining</a>
 		</p> -->
-		<p><a href="/about" target="_blank">About</a> ■ <a href="https://github.com/2qx/vox" target="_blank">Open source</a></p>
+		<p><a href="/about">About</a> ■ <a href="https://github.com/2qx/vox" target="_blank">Open source</a></p>
 	</footer>
 
 	{#if page.url.hostname.includes('127.0.0.1') || page.url.hostname.includes('localhost')}

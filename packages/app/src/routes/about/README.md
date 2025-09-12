@@ -12,6 +12,8 @@ This app is a reference implementation for an open on-chain protocol. Each app i
 
 # Roadmap
 
+Initial contract design began in late 2024, all contracts have been posted to [Bitcoin Cash Research under the 'apps' tag](https://bitcoincashresearch.org/tag/apps). The plan is to conclude initial build out by late 2025-early 2026.
+
 - [x] Modular structure for mini-app libraries.
 - [x] Launch Minimum Viable App
 - [x] Drip (MEV) app based on libauth templates
