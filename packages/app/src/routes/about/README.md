@@ -39,11 +39,11 @@ Users will have a choice to subscribe in the following rates and currencies:
 
 |     price | currency   |
 | --------: | ---------- |
-| 1,000,000 | WBCH (sat) |
-|   900,000 | FBCH (sat) |
+| 1,000,000 | WBCH (sats) |
+|   900,000 | FBCH (sats, any series) |
 |    50,000 | BPTS       |
 |    50,000 | BADGERS    |
 
-A subscription will entitle the user to flair and a social icon in the upper right-hand corner of their app. Subscriptions will be cancelable and transferable. 
+A subscription will entitle the user to flair and a special icon in the upper right-hand corner of their app. Subscriptions will be cancelable and transferable. 
 
 All features will otherwise be available to all users without tiers. 
