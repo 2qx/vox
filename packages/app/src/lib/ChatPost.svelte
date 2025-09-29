@@ -3,6 +3,7 @@
 	import likesIcon from '$lib/images/likes.svg';
 
 	let showMore = $state(false);
+	
     const TRUNCATE = 400;
 	let {
 		likePost = $bindable(),

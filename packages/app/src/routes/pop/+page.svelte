@@ -4,10 +4,18 @@
 	import Chat from '$lib/Chat.svelte';
 
 	let { data }: PageProps = $props();
+	let topic = $derived(data.topic);
+	let postId = $derived(data.postId);
 </script>
-<Chat topic=""></Chat>
+
+{#if postId}
+	You are viewing an archived post
+	{postId}
+{:else}
+	<Chat {topic}></Chat>
+{/if}
+
 <Readme />
 
 <style>
-
 </style>

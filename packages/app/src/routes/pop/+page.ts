@@ -1,12 +1,10 @@
 import type { PageLoad } from './$types';
 
-//export const prerender = true;
+export const prerender = true;
 
-export const load: PageLoad = ({ params }) => {
+export const load: PageLoad = ({ params,url }) => {
 	return {
-		topic: "",
-		post: {
-			title: `/pop/[null]`,
-		}
+		postId: url.searchParams.get('postId'),
+		topic: url.searchParams.get('topic')
 	};
 };
