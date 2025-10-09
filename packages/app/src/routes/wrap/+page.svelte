@@ -11,7 +11,7 @@
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet, hexToBin } from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet } from 'mainnet-js';
 
 	import { sumUtxoValue, sumTokenAmounts, getScriptHash, getHdPrivateKey } from '@unspent/tau';
 	import Wrap from '@unspent/wrap';
@@ -19,7 +19,6 @@
 
 	import Readme from './README.md';
 	import BitauthLink from '$lib/BitauthLink.svelte';
-	import Transaction from '$lib/Transaction.svelte';
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 
@@ -33,7 +32,7 @@
 	let unspent: any[] = $state([]);
 	let walletUnspent: any[] = $state([]);
 	let key = '';
-	let electrumClient: any;
+	let electrumClient:any = $state();
 	let timer: any;
 	let scripthash = $state('');
 	let walletScriptHash = $state('');
@@ -139,9 +138,9 @@
 	};
 
 	onMount(async () => {
-		const isMainnet = page.url.hostname !== 'vox.cash';
+
 		BaseWallet.StorageProvider = IndexedDBProvider;
-		wallet = isMainnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
+		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`) ;
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 		let bytecodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
 		if (typeof bytecodeResult == 'string') throw bytecodeResult;

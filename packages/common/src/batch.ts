@@ -35,5 +35,11 @@ export async function getAllTransactions(electrumClient:any, tx_hashes:string[])
 export async function listUnspentWrap(args:any[]): Promise<UtxoI[]> {
     let unspent = await args[0].request('blockchain.scripthash.listunspent', args[1]);
     if (unspent instanceof Error) throw unspent
-    return unspent
+    return unspent.map((utxo:any) => {
+        return {
+            ... utxo,
+            scripthash: args[1]
+        }
+
+    })
 }

@@ -1,0 +1,135 @@
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "Cauldron: An efficient Constant Product Market Maker (CPMM) contract on Bitcoin Cash through micro-pools.",
+  "name": "Cauldron",
+  "entities": {
+    "covenant": {
+      "description": "A constant product market maker thread administered by a public key signature. Unspent Transaction Outputs (UTXO) threads hold tokens and Bitcoin Cash value, enabling anyone to swap tokens for bch provided the contract adheres to the constant product formula, K = x * y, where K is the constant value, and x and y represent the quantities of tokens and BCH, respectively.)",
+      "name": "Cauldron Micro Pool",
+      "scripts": [
+        "cauldron_covenant_withdraw",
+        "cauldron_covenant",
+        "swap",
+        "withdraw"
+      ],
+      "variables": {
+        "pool_pkh": {
+          "description": "The hash of the public key controlling the cauldron thread.",
+          "name": "Pool Public Key Hash",
+          "type": "AddressData"
+        }
+      }
+    },
+    "wallet": {
+      "description": "",
+      "name": "User Wallet",
+      "variables": {
+        "key": {
+          "description": "The private key that controls this wallet.",
+          "name": "Key",
+          "type": "HdKey"
+        }
+      }
+    }
+  },
+  "scenarios": {
+    "base": {
+      "data": {
+        "bytecode": {}
+      },
+      "description": "",
+      "name": "Base Scenario"
+    },
+    "use_thread": {
+      "data": {
+        "bytecode": {
+          "pool_pkh": "0x1431b2926e6c7953f3dc3f2c5c19fe2d2dc57cfc"
+        }
+      },
+      "description": "",
+      "extends": "base",
+      "name": "Use thread",
+      "transaction": {
+        "inputs": [
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          },
+          {}
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": [
+                "copy"
+              ]
+            },
+            "token": {
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
+              "amount": 9000
+            },
+            "valueSatoshis": 11115
+          },
+          {
+            "token": {
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
+              "amount": 1000
+            },
+            "valueSatoshis": 10000
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "token": {
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "amount": 10000
+          },
+          "valueSatoshis": 10000
+        },
+        {
+          "valueSatoshis": 11415,
+          "token": {}
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "swap": {
+      "passes": [
+        "use_thread"
+      ],
+      "name": "Swap",
+      "script": "",
+      "unlocks": "cauldron_covenant"
+    },
+    "withdraw": {
+      "passes": [
+        "use_thread"
+      ],
+      "name": "Withdraw",
+      "script": "<key.schnorr_signature.all_outputs>\n<key.public_key>\n",
+      "unlocks": "cauldron_covenant_withdraw"
+    },
+    "cauldron_covenant": {
+      "lockingType": "p2sh32",
+      "name": "Cauldron Covenant",
+      "script": "// If there is an input, it must be a pubkey and signature.\n// This means that the owner wants to withdraw the contract.\nOP_DEPTH\nOP_IF\n    // It’s a withdrawal\n    OP_DUP\n    OP_HASH160\n    <pool_pkh>\n    OP_EQUALVERIFY\n    OP_CHECKSIG\nOP_ELSE\n    // It's a trade\n    // Verify it is the correct category ID.\n    OP_INPUTINDEX\n    OP_OUTPUTTOKENCATEGORY\n    OP_INPUTINDEX\n    OP_UTXOTOKENCATEGORY\n    OP_EQUALVERIFY\n    // Enforce version 2\n    // Enforcing version is to make sure that tools that\n    // use this contract stay compatible, when and if\n    // transaction format changes in the future.\n    OP_TXVERSION <2> OP_EQUALVERIFY\n    // Verify that this contract lives on on the output with\n    // the same input as this contract.\n    OP_INPUTINDEX\n    OP_OUTPUTBYTECODE\n    OP_INPUTINDEX\n    OP_UTXOBYTECODE\n    OP_EQUALVERIFY\n    // Calculate target K\n    OP_INPUTINDEX\n    OP_UTXOVALUE\n    OP_INPUTINDEX\n    OP_UTXOTOKENAMOUNT\n    OP_MUL\n    //  On stack: K\n    //  Calculate fee for trade. Fee is ~0.3%.\n    // (abs(bch out - bch in) * 3) / 1000\n    OP_INPUTINDEX\n    OP_UTXOVALUE\n    OP_INPUTINDEX\n    OP_OUTPUTVALUE\n    OP_SUB\n    OP_ABS\n    <3>\n    OP_MUL\n    <1000>\n    OP_DIV\n    // On stack: BCH FEE, target K\n    // Get effective output K when including the fee.\n    OP_INPUTINDEX\n    OP_OUTPUTVALUE\n    // Subtract fee\n    OP_SWAP\n    OP_SUB\n    OP_INPUTINDEX\n    OP_OUTPUTTOKENAMOUNT\n    OP_MUL\n    // Verify that effective K > target K\n    OP_SWAP\n    OP_GREATERTHANOREQUAL\nOP_ENDIF"
+    },
+    "cauldron_covenant_withdraw": {
+      "lockingType": "p2sh32",
+      "name": "My Cauldron Covenant",
+      "script": "// If there is an input, it must be a pubkey and signature.\n// This means that the owner wants to withdraw the contract.\nOP_DEPTH\nOP_IF\n    // It’s a withdrawal\n    OP_DUP\n    OP_HASH160\n    <$(<key.public_key> OP_HASH160)>\n    OP_EQUALVERIFY\n    OP_CHECKSIG\nOP_ELSE\n    // It's a trade\n    // Verify it is the correct category ID.\n    OP_INPUTINDEX\n    OP_OUTPUTTOKENCATEGORY\n    OP_INPUTINDEX\n    OP_UTXOTOKENCATEGORY\n    OP_EQUALVERIFY\n    // Enforce version 2\n    // Enforcing version is to make sure that tools that\n    // use this contract stay compatible, when and if\n    // transaction format changes in the future.\n    OP_TXVERSION <2> OP_EQUALVERIFY\n    // Verify that this contract lives on on the output with\n    // the same input as this contract.\n    OP_INPUTINDEX\n    OP_OUTPUTBYTECODE\n    OP_INPUTINDEX\n    OP_UTXOBYTECODE\n    OP_EQUALVERIFY\n    // Calculate target K\n    OP_INPUTINDEX\n    OP_UTXOVALUE\n    OP_INPUTINDEX\n    OP_UTXOTOKENAMOUNT\n    OP_MUL\n    //  On stack: K\n    //  Calculate fee for trade. Fee is ~0.3%.\n    // (abs(bch out - bch in) * 3) / 1000\n    OP_INPUTINDEX\n    OP_UTXOVALUE\n    OP_INPUTINDEX\n    OP_OUTPUTVALUE\n    OP_SUB\n    OP_ABS\n    <3>\n    OP_MUL\n    <1000>\n    OP_DIV\n    // On stack: BCH FEE, target K\n    // Get effective output K when including the fee.\n    OP_INPUTINDEX\n    OP_OUTPUTVALUE\n    // Subtract fee\n    OP_SWAP\n    OP_SUB\n    OP_INPUTINDEX\n    OP_OUTPUTTOKENAMOUNT\n    OP_MUL\n    // Verify that effective K > target K\n    OP_SWAP\n    OP_GREATERTHANOREQUAL\nOP_ENDIF"
+    }
+  },
+  "supported": [
+    "BCH_2023_05",
+    "BCH_2024_05",
+    "BCH_2025_05",
+    "BCH_SPEC"
+  ]
+}

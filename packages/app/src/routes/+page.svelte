@@ -53,15 +53,24 @@
 			disabled: true
 		},
 		{
+			name: 'SmallDB',
+			description: 'A small database.',
+			image: '/small.svg',
+			link: '/db',
+			disabled: true
+		},
+		{
 			name: 'Subscription',
 			description: 'Token auto-payments.',
 			image: '/subscription.svg',
+			link: '/subscription',
 			disabled: true
 		},
 		{
 			name: 'Timeout',
 			description: 'NFT controlled timeout vault.',
 			image: '/timeout.svg',
+			link: '/timeout',
 			disabled: true
 		},
 		{
@@ -75,6 +84,7 @@
 			name: 'Trust',
 			description: 'Get one percent of a fund monthly in perpetuity.',
 			image: '/unspent.svg',
+			link: '/trust',
 			disabled: true
 		},
 		{
@@ -82,7 +92,7 @@
 			description: 'Chat app for the future.',
 			image: '/vox.svg',
 			link: '/pop',
-			disabled: !isMainnet
+			disabled: false
 		}
 	];
 </script>
@@ -97,7 +107,7 @@
 		{#each protocols as item}
 			<div class="app-button" data-sveltekit-reload>
 				<a href={item.link}>
-					<button disabled={item.disabled}>
+					<button class:disabled={item.disabled}>
 						<img width="80px" src={item.image} alt={item.description} /><br />
 						{item.name}
 					</button>
@@ -138,18 +148,18 @@
 	.app-button button {
 		background-color: transparent;
 		background-repeat: no-repeat;
+		margin-bottom: 20px;
 		border: none;
 		cursor: pointer;
 		overflow: hidden;
 		outline: none;
-		font-weight: 600;
+		font-weight: 500;
 		font-size: small;
-		filter: drop-shadow(8px 8px 16px #ffffff);
-		
+		filter: drop-shadow(5px 5px 5px #ffffffc4);
 	}
 
-	.app-button button:disabled {
-		filter: grayscale(95%) opacity(60%) blur(2px);
+	.app-button .disabled {
+		filter: grayscale(75%) opacity(20%) blur(1px);
 		font-weight: 100;
 	}
 </style>

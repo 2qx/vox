@@ -1,6 +1,10 @@
 <script>
 	import { blo } from 'blo';
 	import likesIcon from '$lib/images/likes.svg';
+
+	let showMore = $state(false);
+	
+    const TRUNCATE = 400;
 	let {
 		likePost = $bindable(),
 		thisAuth,
@@ -24,13 +28,38 @@
 			<div style="width:32px"></div>
 		{/if}
 	</div>
-	<div class="post {thisAuth ? 'op' : ''}">
+	<div class="post {thisAuth ? 'op' : ''} ">
 		<div class="footer">
 			<div class="fill"></div>
 			<div class="action"></div>
 		</div>
 		{#if !error}
-			{body}
+			{#if body.length > TRUNCATE+20  && showMore}
+				<div>
+					{body}
+
+					<button
+						onclick={() => {
+							showMore = !showMore;
+						}}
+					>
+						{showMore ? 'show less' : 'show more'}
+					</button>
+				</div>
+			{:else if body.length > TRUNCATE+20 }
+				<div>
+					{body.substring(0,TRUNCATE) + ' ...'}
+					<button
+						onclick={() => {
+							showMore = !showMore;
+						}}
+					>
+						{showMore ? 'show less' : 'show more'}
+					</button>
+				</div>
+			{:else}
+				{body}
+			{/if}
 		{:else}
 			<div class="error">
 				{error}
@@ -46,7 +75,7 @@
 						likePost(hash);
 					}}
 				>
-						<img height="16px" src={likesIcon} alt="likes" />
+					<img height="16px" src={likesIcon} alt="likes" />
 					{likes}
 				</button>
 			</div>
@@ -73,14 +102,18 @@
 		background-color: #eeeeee;
 		margin: auto;
 		width: 100%;
-        white-space: pre-line;
+		white-space: pre-line;
 		word-break: break-word;
 	}
 
-	button{
+	button {
 		border-width: 0px;
 		background: transparent;
+		font-weight: 700;
+		color: #ad67c2;
+		font-size: small;
 	}
+	
 	.actions {
 		margin: auto;
 		font-size: x-small;

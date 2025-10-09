@@ -1,6 +1,6 @@
-import { 
-    hexToBin, 
-    utf8ToBin 
+import {
+    hexToBin,
+    utf8ToBin
 } from "@bitauth/libauth";
 
 import {
@@ -16,7 +16,7 @@ import {
 } from "./interface.js";
 
 export function toBin(input?: string): Uint8Array {
-    if(!input) return new Uint8Array(0);
+    if (!input) return new Uint8Array(0);
     const data = input.replace(/^0x/, "");
     const encode = data === input ? utf8ToBin : hexToBin;
     return encode(data);
@@ -110,7 +110,7 @@ export function getFutureBlockDateLocale(currentBlock: number, futureBlock: numb
             hour: 'numeric',
             hourCycle: 'h24'
         }
-    }else if (diff < 1000) {
+    } else if (diff < 1000) {
         options = {
             month: 'numeric',
             day: 'numeric',
@@ -119,7 +119,7 @@ export function getFutureBlockDateLocale(currentBlock: number, futureBlock: numb
         options = {
             year: 'numeric'
         }
-    }else if (diff > 50000) {
+    } else if (diff > 50000) {
         options = {
             year: 'numeric',
             month: 'numeric'
@@ -135,10 +135,10 @@ export function getFutureBlockDateLocale(currentBlock: number, futureBlock: numb
     return new Intl.DateTimeFormat(undefined, options).format(futureDate);
 }
 
-export async function getAllUnspentCoupons(electrumClient:any, scriptHashes:string[]): Promise<Map<string, UtxoI>> {
+export async function getAllUnspentCoupons(electrumClient: any, scriptHashes: string[]): Promise<Map<string, CouponItemI>> {
     let allUnspent = (await promiseAllInBatches(listUnspentWrap, scriptHashes.map(a => [electrumClient, a]))).flat()
     var map = new Map();
-    allUnspent.map((obj:UtxoI) => map.set(obj.tx_hash + ":" + obj.tx_pos, obj));
+    allUnspent.map((obj: UtxoI) => map.set(obj.tx_hash + ":" + obj.tx_pos, obj));
     return map as Map<string, any>
 }
 

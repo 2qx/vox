@@ -115,7 +115,7 @@ function parsePostTransaction(
     if (!code) return
     if (!code[0]) return
     // V0
-    if (code[0].slice(0, 8) == "6a025630") body = code.map(c => binToUtf8(hexToBin(c.slice(10)))).join("")
+    if (code[0].slice(0, 8) == "6a025630") body = code.map(c => c.slice(10)).join("")
     // V+
     if (code[0].slice(0, 8) == "6a0256b2") {
         ref = code[0].slice(10)
@@ -130,7 +130,7 @@ function parsePostTransaction(
     return new Post({
         hash: hash,
         auth: binToHex(tx.outputs[0]?.token?.category!),
-        body: body,
+        body: binToUtf8(hexToBin(body)),
         height: height,
         sequence: tx.inputs[0]?.sequenceNumber!,
         ref: ref,
@@ -139,19 +139,18 @@ function parsePostTransaction(
     })
 }
 
-function chunkString(str: string, len: number) {
-    const size = Math.ceil(str.length / len)
-    const r = Array(size)
-    let offset = 0
+function chunks (arr:Uint8Array, len:number) {
 
-    for (let i = 0; i < size; i++) {
-        r[i] = str.substr(offset, len)
-        offset += len
-    }
+  var chunks = [],
+      i = 0,
+      n = arr.length;
 
-    return r
+  while (i < n) {
+    chunks.push(arr.slice(i, i += len));
+  }
+
+  return chunks;
 }
-
 
 const blockSort = (a: number, b: number): number => {
     if (b <= 0 && a > 0) {
@@ -263,7 +262,7 @@ export class Channel {
 
         let scriptId = edit ? 'edit_message' : 'process_message';
 
-        const sequence = (now-utxo.height) >= 1000 ? 1000 : 0
+        const sequence = (now - utxo.height) >= 1000 ? 1000 : 0
 
         return {
             outpointIndex: utxo.tx_pos,
@@ -339,19 +338,16 @@ export class Channel {
         let futureTime = Math.floor(utxo.value / 10) * 1000;
 
         // if the utxo was underfunded, clear it without generating a coupon.
-        if ((futureTime - utxo.height) < 1000) return
-
-        let isPremature =  (now - utxo.height) < 1000;
+        let isSpam =  ((futureTime - utxo.height) < 1000);
+        let isPremature = (now - utxo.height) < 1000;
 
         let outputValue = isPremature ? utxo.value * 10 : utxo.value;
+        
+        // A non matching output value indicates the message is spam
+        outputValue = isSpam ? utxo.value-1 : outputValue
         let couponThreshold = isPremature ? 100_000_000 : 10_000_000;
-
-        console.log(couponThreshold.toLocaleString())
-
-
+        couponThreshold = isSpam ? 10_000_000 : couponThreshold
         let bytecode = Vault.getCouponLockingBytecode(couponThreshold, futureTime)
-        let cashAddResult = lockingBytecodeToCashAddress({ prefix: "bchtest", bytecode })
-        if (typeof cashAddResult == "string") throw cashAddResult
 
         return {
             lockingBytecode: bytecode,
@@ -405,8 +401,9 @@ export class Channel {
 
 
     static getChannelMessageOutputs(channel: string, message: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBCH>[] {
-        let chunks = chunkString(message, 32).map((m) => "6a025630" + binToHex(encodeDataPush(utf8ToBin(m))))
-        return chunks.map((m) => {
+        const binaryMessage = utf8ToBin(message)
+        let chunked = [ ... chunks(binaryMessage, 32).map((m) => "6a025630" + binToHex(encodeDataPush(m))) ]
+        return chunked.map((m) => {
             return {
                 lockingBytecode: this.getLockingBytecode(channel),
                 valueSatoshis: BigInt(couponValue),

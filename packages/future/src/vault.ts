@@ -123,14 +123,14 @@ export class Vault {
         return Array.from({ length: limit }, (e, i) => next + (step * i))
     }
 
-    static getAllCouponSeries(startTime: number, seriesTimes?:number[]): Map<string, CouponDataI> {
+    static getAllCouponSeries(startTime: number, seriesTimes?: number[]): Map<string, CouponDataI> {
 
         if (!seriesTimes) seriesTimes = VAULT_SERIES.map(e => this.getSeriesTimes(startTime - 1000, e, e == 6 ? 4 : undefined)).flat()
         seriesTimes = [...new Set(seriesTimes)]
         let amounts = COUPON_SERIES.map(c => Math.pow(10, c) * 1e8)
         let coupons = amounts.map(amount =>
             seriesTimes.map(
-                (time:number) => {
+                (time: number) => {
                     let scripthash = Coupon.getScriptHash(
                         amount,
                         this.getLockingBytecode(time)
@@ -151,33 +151,34 @@ export class Vault {
     }
 
 
-    // /**
-    //  * Return an array coupons for vaults in a series
-    //  *
-    //  *
-    //  * @param electrumClient - an v4 electrum-cash client
-    //  * @param height - the height after which to list coupons.
-    //  * @param locktime - filter to coupons for a single series
-    //  */
+    /**
+     * Return an array coupons for vaults in a series
+     *
+     *
+     * @param electrumClient - an v4 electrum-cash client
+     * @param height - the height after which to list coupons.
+     * @param locktime - filter to coupons for a single series
+     */
 
-    // public static async getAllCouponUtxos(electrumClient: any, height: number) {
-    //     let couponSeries = Vault.getAllCouponSeries(height)
-    //     let allCoupons = await getAllUnspentCoupons(electrumClient, [...couponSeries.keys()])
-    //     allCoupons.forEach((value, key, map) => {
-    //         let cData = couponSeries.get(value.scripthash)!
-    //         map.set(key,
-    //             {
-    //                 id: value.tx_hash + ":" + value.tx_pos,
-    //                 ...value,
-    //                 ...getRates(height, cData.locktime, Number(value.value), cData.placement),
-    //                 locale: getRateLocale(height, cData.locktime, Number(value.value), cData.placement),
-    //                 ...cData,
-    //                 dateLocale: getFutureBlockDateLocale(height, cData.locktime)
-    //             }
-    //         )
-    //     })
-    //     return Array.from(allCoupons.values()).sort((a, b) => b.spb - a.spb)
+    public static async getAllCouponUtxos(electrumClient: any, height: number) {
+        let couponSeries = Vault.getAllCouponSeries(height)
+        let allCoupons = await getAllUnspentCoupons(electrumClient, [...couponSeries.keys()])
+        allCoupons.forEach((value, key, map) => {
+            let cData = couponSeries.get(value.scripthash)
+            if (cData) {
+                map.set(key,
+                    {
+                        ...value,
+                        ...getRates(height, cData.locktime, Number(value.value), cData.placement),
+                        locale: getRateLocale(height, cData.locktime, Number(value.value), cData.placement),
+                        ...cData,
+                        dateLocale: getFutureBlockDateLocale(height, cData.locktime)
+                    }
+                )
+            }
+        })
+        return Array.from(allCoupons.values()).sort((a, b) => b.spb! - a.spb!)
 
-    // }
+    }
 
 }

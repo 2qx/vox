@@ -20,7 +20,7 @@ export interface CouponDataI {
     lockingBytecode: string;
 }
 
-export interface CouponItemI {
+export interface CouponItemI extends UtxoI{
     id: string;
     scripthash: string;
     utxo: UtxoI;

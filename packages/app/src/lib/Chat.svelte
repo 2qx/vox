@@ -15,7 +15,8 @@
 		getHdPrivateKey,
 		type UtxoI,
 		getAllTransactions,
-		sumSourceOutputValue
+		sumSourceOutputValue,
+		sumUtxoValue
 	} from '@unspent/tau';
 
 	import { Channel, Post, buildChannel, parseUsername } from '@fbch/lib';
@@ -30,13 +31,14 @@
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 	const explorer = isMainnet
-		? 'https://bch.loping.net/address/'
+		? 'https://explorer.salemkode.com/address/'
 		: 'https://cbch.loping.net/address/';
 
 	const protocol_prefix = cashAssemblyToHex(`OP_RETURN <"U3V">`);
 
 	let now = $state(0);
 	let balance = $state(0);
+	let contractBalance = $state(0n);
 	let connectionStatus = $state('');
 	let contractState = $state('');
 
@@ -48,6 +50,7 @@
 	let showSettings = $state(false);
 
 	const scripthash = $derived(Channel.getScriptHash(topic));
+	const contractAddress = $derived(Channel.getAddress(topic, prefix));
 
 	let posts: any[] = $state([]);
 
@@ -113,6 +116,7 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
+		balance = sumUtxoValue(response);
 
 		walletUnspent = response.filter(
 			(u: UtxoI) =>
@@ -120,7 +124,39 @@
 		);
 		if (walletUnspent.length > 0 && walletUnspent[0].token_data) {
 			thisAuth = walletUnspent[0].token_data.category;
-			balance = walletUnspent[0].value;
+		}
+	};
+
+	const clearPosts = async function () {
+		let response = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			scripthash,
+			'include_tokens'
+		);
+		if (response instanceof Error) throw response;
+		let old = response.filter((u: UtxoI) => u.height > 0 && now - u.height > 1000);
+		if (old.length > 0) {
+			let clearPostTx = Channel.clear(topic, old, walletUnspent[0], key, now);
+			let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
+			console.log(raw_tx);
+			await broadcast(raw_tx);
+		}
+	};
+
+	const burnSpam = async function () {
+		let response = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			scripthash,
+			'include_tokens'
+		);
+		if (response instanceof Error) throw response;
+
+		let spam = response.filter((u: UtxoI) => Math.floor(u.value / 10) * 1000 - u.height < 1000);
+		if (spam.length > 0) {
+			let clearPostTx = Channel.clear(topic, spam, walletUnspent[0], key, now);
+			let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
+			console.log(raw_tx);
+			await broadcast(raw_tx);
 		}
 	};
 
@@ -132,6 +168,8 @@
 		);
 
 		if (response instanceof Error) throw response;
+		contractBalance = sumUtxoValue(response);
+
 		let tx_hashes = Array.from(new Set(response.map((utxo: any) => utxo.tx_hash))) as string[];
 
 		let historyResponse = await electrumClient.request(
@@ -151,6 +189,7 @@
 			};
 		});
 
+		// update the current sequence state to match the chan
 		if (posts.slice(-1).length > 0) {
 			sequence = posts.slice(-1)[0].height <= 0 ? posts.slice(-1)[0].sequence + 1 : 0;
 		} else {
@@ -180,27 +219,26 @@
 	};
 
 	const reEstimate = function (msg: string) {
-		let post = Channel.post(
-			topic,
-			msg,
-			walletUnspent[0],
-			(Math.round(now / 1000) + 10) * 10,
-			key,
-			sequence
-		);
-		const returned = post.transaction.outputs[post.transaction.outputs.length - 1].valueSatoshis;
-		return Number(sumSourceOutputValue(post.sourceOutputs) - returned);
+		if (msg.length > 0) {
+			let post = Channel.post(
+				topic,
+				msg,
+				walletUnspent[0],
+				(Math.round(now / 1000) + 10) * 10,
+				key,
+				sequence
+			);
+			const returned = post.transaction.outputs[post.transaction.outputs.length - 1].valueSatoshis;
+			return Number(sumSourceOutputValue(post.sourceOutputs) - returned);
+		} else {
+			return 0;
+		}
 	};
 
 	const send = async function (msg: string) {
-		let post = Channel.post(
-			topic,
-			msg,
-			walletUnspent[0],
-			(Math.round(now / 1000) + 10) * 10,
-			key,
-			sequence
-		);
+		let minValue = (Math.round(now / 1000) + 10) * 10;
+
+		let post = Channel.post(topic, msg, walletUnspent[0], minValue, key, sequence);
 
 		let raw_tx = binToHex(encodeTransactionBCH(post.transaction));
 		await broadcast(raw_tx);
@@ -246,9 +284,8 @@
 	};
 
 	onMount(async () => {
-		const isMainnet = page.url.hostname !== 'vox.cash';
 		BaseWallet.StorageProvider = IndexedDBProvider;
-		wallet = isMainnet ? await TestNetWallet.named(`vox`) : await Wallet.named(`vox`);
+		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 		let bytecodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
 		if (typeof bytecodeResult == 'string') throw bytecodeResult;
@@ -285,8 +322,13 @@
 		{sequence}
 
 		<div style="flex: 2 2 auto;"></div>
-		<b><a href="/pop/">/pop</a>/{topic}</b>
+		<b><a onclick={() => (topic = "")} href="/pop/">pop</a> {topic}</b>
 		<div style="flex: 2 2 auto;"></div>
+		{#if contractBalance}
+			<a target="_blank" href="{explorer}{contractAddress}">
+				{Math.floor(Number(contractBalance) / 1000).toLocaleString()}k sats &nbsp;
+			</a>
+		{/if}
 		<BitauthLink template={Channel.template} />
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
@@ -310,10 +352,14 @@
 			<p style="color: red">{error.message}</p>
 		{/await}
 	</div>
-	{#if walletUnspent.length == 0}
+	{#if balance > 1000000 && walletUnspent.length == 0}
 		<div class="row footer">
 			<h2>Create new identity</h2>
 			<button onclick={() => newAuthBaton()}>New identity 1M sats</button>
+		</div>
+	{:else if balance < 1100000 && walletUnspent.length == 0}
+		<div class="row footer">
+			<p><a href="/wallet">Deposit funds</a> to create identity</p>
 		</div>
 	{:else}
 		<div class="row footer">
@@ -332,7 +378,7 @@
 						{#if walletUnspent.length > 0}
 							<div style="font-size:x-small;">
 								{parseUsername(walletUnspent[0].token_data.nft.commitment)}<br />
-								{balance.toLocaleString()}sats
+								{walletUnspent[0].value.toLocaleString()}sats
 							</div>
 						{/if}
 					</div>
@@ -360,6 +406,10 @@
 			<div class="row footer">
 				<button onclick={() => topUp(10000000)}>Top up 10M sats</button>
 				<button onclick={() => topUp(1000000)}>Top up 1M sats</button>
+			</div>
+			<div class="row footer">
+				<button onclick={() => clearPosts()}>Clear Old Posts</button>
+				<button onclick={() => burnSpam()}>Burn Spam</button>
 			</div>
 		{/if}
 	{/if}

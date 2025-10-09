@@ -125,9 +125,9 @@
         "outputs": [
           {
             "lockingBytecode": {
-              "script": "coupon_lock"
+              "script": "wallet_lock"
             },
-            "valueSatoshis": 9900
+            "valueSatoshis": 999
           },
           {
             "lockingBytecode": {
@@ -144,7 +144,7 @@
           "lockingBytecode": [
             "slot"
           ],
-          "valueSatoshis": 10000,
+          "valueSatoshis": 1000,
           "token": {
             "category": "dead00000000000000000000000000000000000000000000000000000000beef",
             "nft": {
@@ -157,7 +157,7 @@
           "lockingBytecode": {
             "script": "wallet_lock"
           },
-          "valueSatoshis": 1009900
+          "valueSatoshis": 1000000
         }
       ]
     },

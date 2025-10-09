@@ -2,12 +2,21 @@
 	import Readme from './README.md';
 	import type { PageProps } from './$types';
 	import Chat from '$lib/Chat.svelte';
+	import ChatPost from '$lib/ChatPost.svelte';
 
 	let { data }: PageProps = $props();
+	let topic = $derived(data.topic);
+	let postId = $derived(data.postId);
 </script>
-<Chat topic=""></Chat>
+
+{#if postId}
+	You are viewing an archived post
+	{postId}
+{:else}
+	<Chat {topic}></Chat>
+{/if}
+
 <Readme />
 
 <style>
-
 </style>
