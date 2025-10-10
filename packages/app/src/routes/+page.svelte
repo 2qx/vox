@@ -101,7 +101,6 @@
 	<title>vox</title>
 	<meta name="description" content="vox dot cash" />
 </svelte:head>
-<h1>Welcome!</h1>
 <section>
 	<div class="welcome">
 		{#each protocols as item}
