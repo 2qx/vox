@@ -22,7 +22,7 @@
 	} from '@unspent/tau';
 	import BlockPoint from '@unspent/blockpoint';
 	import { BPTS as bptCat, tBPTS as tbptCat } from '@unspent/blockpoint';
-
+	
 	import Readme from './README.md';
 	import BitauthLink from '$lib/BitauthLink.svelte';
 	import Transaction from '$lib/Transaction.svelte';

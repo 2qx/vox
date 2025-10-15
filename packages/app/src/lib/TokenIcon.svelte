@@ -4,7 +4,7 @@
 	import { CATEGORY_MAP as FUTURE_MAP } from '@fbch/lib';
 	import FbchIcon from './FbchIcon.svelte';
 
-	let { category } = $props();
+	let { category, size=64 } = $props();
 
 	let FIRST_CLASS = new Map([
 		['242f6ecedb404c743477e35b09733a56cacae34f3109d5cee1cbc1d5630affd7', '/badger.svg'],
@@ -18,10 +18,10 @@
 {#if FUTURE_MAP.has(category)}
 	<FbchIcon time={FUTURE_MAP.get(category)} size={64} />
 {:else if FIRST_CLASS.has(category)}
-	<img height="64px" src={FIRST_CLASS.get(category)} alt={FIRST_CLASS.get(category)} />
+	<img height={size} src={FIRST_CLASS.get(category)} alt={FIRST_CLASS.get(category)} />
 {:else}
 	<div class="fallback">
-		<img height="64px" src={blo(category, 16)} alt={category} />
+		<img height={size} src={blo(category, 16)} alt={category} />
 	</div>
 {/if}
 

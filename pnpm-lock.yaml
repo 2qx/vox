@@ -64,6 +64,9 @@ importers:
       '@mainnet-cash/indexeddb-storage':
         specifier: 2.7.8
         version: 2.7.8
+      '@unspent/badgers':
+        specifier: workspace:*
+        version: link:../badgers
       '@unspent/blockpoint':
         specifier: workspace:*
         version: link:../blockpoint

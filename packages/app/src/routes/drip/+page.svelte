@@ -132,6 +132,7 @@
 	onDestroy(async () => {
 		await electrumClient.disconnect();
 	});
+	
 </script>
 
 <svelte:head>
