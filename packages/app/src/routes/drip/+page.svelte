@@ -62,7 +62,7 @@
 		response as any[];
 	};
 
-	const processAllOutpus = function () {
+	const processAllOutputs = function () {
 		unspent
 			.filter((i: any) => i.height > 0)
 			.map((u, i) => {
@@ -151,7 +151,7 @@
 	</div>
 	<h1>Release the miner extractable value (MEV)!</h1>
 	<div class="header">
-		<button onclick={() => processAllOutpus()}>Release all Miner Extractable Value (MEV)</button>
+		<button onclick={() => processAllOutputs()}>Release all Miner Extractable Value (MEV)</button>
 	</div>
 	<h3>Unspent Transaction Outputs (utxos)</h3>
 	<div class="grid">
@@ -197,7 +197,7 @@
 									margin: 0.5em auto;
 									background-color: #fff;"
 	>
-		<img src={dripIcon} slot="icon" />
+		<img src={dripIcon} slot="icon" alt="drip MEV icon"/>
 	</qr-code>
 	<pre id="deposit">{Drip.getAddress(prefix)}</pre>
 </section>

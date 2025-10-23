@@ -22,7 +22,7 @@
 	} from '@unspent/tau';
 	import BlockPoint from '@unspent/blockpoint';
 	import { BPTS as bptCat, tBPTS as tbptCat } from '@unspent/blockpoint';
-	
+
 	import Readme from './README.md';
 	import BitauthLink from '$lib/BitauthLink.svelte';
 	import Transaction from '$lib/Transaction.svelte';
@@ -64,7 +64,7 @@
 	let timer: any = 0;
 	let amount = 0;
 	let wallet: any;
-	let transactionError: string | boolean = '';
+	let transactionError: string | boolean = $state('');
 
 	const handleNotifications = async function (data: any) {
 		if (data.method === 'blockchain.headers.subscribe') {
@@ -173,9 +173,9 @@
 		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
-		let lockcodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
-		if (typeof lockcodeResult == 'string') throw lockcodeResult;
-		walletScriptHash = getScriptHash(lockcodeResult.bytecode);
+		let lockingCodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
+		if (typeof lockingCodeResult == 'string') throw lockingCodeResult;
+		walletScriptHash = getScriptHash(lockingCodeResult.bytecode);
 
 		// Initialize an electrum client.
 		electrumClient = new ElectrumClient(BlockPoint.USER_AGENT, '1.4.1', server);

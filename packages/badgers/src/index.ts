@@ -113,7 +113,7 @@ export default class BadgerStake {
                 data: {
                     // "bytecode": {
                     //     "amount": bigIntToVmNumber(BigInt(amount)),
-                    //     "stake_blocks": numberToBinUint16BE(blocks),
+                    //     "stake": numberToBinUint16BE(blocks),
                     //     "user_pkh": userPkh
                     // }
                 },

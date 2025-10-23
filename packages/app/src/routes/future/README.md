@@ -3,7 +3,7 @@
 
 ### What is a *Future*?
 
-A *Future* is an financial instrument representing some good or service to be delivered at some future date. 
+A *Future* is a financial instrument representing some good or service to be delivered at some future date. 
 
 Futures are a way to hedge risk by allowing a commodity producer to agree on a future price and date of delivery with a buyer.  
 

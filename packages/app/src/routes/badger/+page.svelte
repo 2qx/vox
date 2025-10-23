@@ -111,9 +111,9 @@
 		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
-		let lockcodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
-		if (typeof lockcodeResult == 'string') throw lockcodeResult;
-		walletScriptHash = getScriptHash(lockcodeResult.bytecode);
+		let lockingCodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
+		if (typeof lockingCodeResult == 'string') throw lockingCodeResult;
+		walletScriptHash = getScriptHash(lockingCodeResult.bytecode);
 
 		// Initialize an electrum client.
 		electrumClient = new ElectrumClient(Badger.USER_AGENT, '1.4.1', server);

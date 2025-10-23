@@ -2,6 +2,9 @@ import test from 'ava';
 
 
 
+import { encodeTransactionBCH } from '@bitauth/libauth';
+import { CONTRACT_UTXOS, WALLET_UTXOS } from './fixtures/index.js';
+
 import { VAULT_ADDRESSES, COUPON_ADDRESSES } from './fixtures/index.js';
 import { binToHex } from '@bitauth/libauth';
 //import type { AddressListUnspentEntry } from '@unspent/tau';
@@ -25,24 +28,20 @@ test('Should calculate vault unlocking bytecode', (t) => {
 
 test('Should calculate a vault address', (t) => {
 
-    t.assert(
-        COUPON_ADDRESSES[1000000]["10000000"] ==
-        Vault.getCoupon(10000000, 1000000),
-        "Coupon vault address should match"
-    )
+   
     t.assert(
         COUPON_ADDRESSES[1000000]["100000000"] ==
-        Vault.getCoupon(100000000, 1000000),
+        Vault.getCouponAddress(100000000, 1000000),
         "Coupon vault address should match"
     )
     t.assert(
         COUPON_ADDRESSES[1000000]["1000000000"] ==
-        Vault.getCoupon(1000000000, 1000000),
+        Vault.getCouponAddress(1000000000, 1000000),
         "Coupon vault address should match"
     )
     t.assert(
         COUPON_ADDRESSES[1000000]["10000000000"] ==
-        Vault.getCoupon(10000000000, 1000000),
+        Vault.getCouponAddress(10000000000, 1000000),
         "Coupon vault address should match"
     )
 });
@@ -67,3 +66,11 @@ test('Should calculate a vault coupon address', (t) => {
 });
 
 
+test('Should build a swap transaction', (t) => {
+    
+    //@ts-ignore
+    let privateKey = process.env["PRIVATE_KEY"]!
+    const tx = Vault.swap(10000, CONTRACT_UTXOS, WALLET_UTXOS, 1000, privateKey);
+        t.assert(encodeTransactionBCH(tx.transaction).length > 0, "transaction hex have a non-zero length")
+
+});

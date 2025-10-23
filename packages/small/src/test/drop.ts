@@ -7,7 +7,7 @@ import { sleep } from "@unspent/tau";
 import SmallIndex from "../index.js";
 
 
-test.skip('test dropping function with index key', async t => {
+test('test dropping function with index key', async t => {
 
     const alice = await getAnAliceWallet(100_003_000)
     let provider = alice.provider!
