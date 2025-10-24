@@ -1,7 +1,7 @@
 {
-  "name": "@unspent/small",
+  "name": "@unspent/dutch",
   "version": "1.0.0",
-  "description": "Small Index: a distributed key-value database",
+  "description": "Dutch auction protocol for CashTokens",
   "type": "module",
   "exports": {
     ".": {
@@ -17,10 +17,12 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/2qx/vox.git",
-    "directory": "packages/small"
+    "directory": "packages/dutch"
   },
   "keywords": [
     "BCH",
+    "bitcoin",
+    "auction",
     "defi"
   ],
   "author": "2qx",

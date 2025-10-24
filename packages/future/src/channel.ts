@@ -212,6 +212,8 @@ export class Channel {
 
     static USER_AGENT = packageInfo.name;
 
+    static PROTOCOL_IDENTIFIER = "U3V"
+
     static tokenAware = true;
 
     static template = template;

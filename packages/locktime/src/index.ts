@@ -35,6 +35,8 @@ export default class Locktime {
 
     static USER_AGENT = packageInfo.name;
 
+    static PROTOCOL_IDENTIFIER = "U3L";
+
     static tokenAware = true;
 
     static template = template;
@@ -129,11 +131,7 @@ export default class Locktime {
 
         return {
             lockingBytecode: {
-                data: {
-                    // "bytecode": {
-                    //     "key": hexToBin(indexKey)
-                    // }
-                },
+                data: {},
                 compiler: this.compiler,
                 script: 'op_return'
             },

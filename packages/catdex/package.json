@@ -1,7 +1,7 @@
 {
-  "name": "@unspent/small",
+  "name": "@unspent/catdex",
   "version": "1.0.0",
-  "description": "Small Index: a distributed key-value database",
+  "description": "CatDex: a limit order CashToken exchange protocol",
   "type": "module",
   "exports": {
     ".": {
@@ -17,10 +17,13 @@
   "repository": {
     "type": "git",
     "url": "git+https://github.com/2qx/vox.git",
-    "directory": "packages/small"
+    "directory": "packages/catdex"
   },
   "keywords": [
     "BCH",
+    "Bitcoin Cash",
+    "bitcoin",
+    "dex",
     "defi"
   ],
   "author": "2qx",

@@ -12,8 +12,7 @@ import {
     OutputTemplate,
     Output,
     verifyTransactionTokens,
-    numberToBinUint16BE,
-    bigIntToVmNumber
+    binToNumberInt16LE
 } from '@bitauth/libauth';
 
 import {
@@ -21,25 +20,16 @@ import {
     type CashAddressNetworkPrefix,
     getLibauthCompiler,
     getScriptHash,
-    numToVm,
     UtxoI,
 } from '@unspent/tau';
 
-
-export interface SubscriptionData {
-    installment: number,
-    recipient: string,
-    period: number,
-    auth: string
-}
+export const BADGER = hexToBin('242f6ecedb404c743477e35b09733a56cacae34f3109d5cee1cbc1d5630affd7')
+export const tBADGER = hexToBin('0000000000000000000000000000000000000000000000000000000000000000')
 
 
+export default class FlashCash {
 
-export default class Subscription {
-    
     static USER_AGENT = packageInfo.name;
-
-    static PROTOCOL_IDENTIFIER = "U3S"
 
     static tokenAware = true;
 
@@ -49,24 +39,11 @@ export default class Subscription {
 
     static vm = createVirtualMachineBCH();
 
-    static dataToBytecode(data: SubscriptionData) {
-        return {
-            "installment": numToVm(data.installment),
-            "recipient": hexToBin(data.recipient),
-            "period": numToVm(data.period),
-            "auth": hexToBin(data.auth),
-        }
-    }
-
-    static getLockingBytecode(
-        data: SubscriptionData
-    ): Uint8Array {
+    static getLockingBytecode(): Uint8Array {
         const lockingBytecodeResult = this.compiler.generateBytecode(
             {
-                data: {
-                    "bytecode": this.dataToBytecode(data)
-                },
-                scriptId: 'lock'
+                data: {},
+                scriptId: 'flash_market_covenant'
             })
         if (!lockingBytecodeResult.success) throw new Error(
             'Failed to generate bytecode, script: , ' + JSON.stringify(lockingBytecodeResult, null, '  '
@@ -74,79 +51,72 @@ export default class Subscription {
         return lockingBytecodeResult.bytecode
     }
 
-    static getUnlockingBytecode(
-        data: SubscriptionData
-    ): Uint8Array {
-        const bytecodeResult = this.compiler.generateBytecode(
-            {
-                data: {
-                    "bytecode": this.dataToBytecode(data)
-                },
-                scriptId: 'step'
-            })
-        if (!bytecodeResult.success) throw new Error(
-            'Failed to generate bytecode, script: , ' + JSON.stringify(bytecodeResult, null, '  '
-            ));
-        return bytecodeResult.bytecode
-    }
-
     /**
      * Get cashaddress
      *
-     * @param data - the parameters of the subscription.
+     * @param indexKey - the key for the record.
      * @param reversed - whether to reverse the hash.
      * @throws {Error} if transaction generation fails.
      * @returns a cashaddress.
      */
-    static getScriptHash(
-        data: SubscriptionData,
-        reversed = true
-    ): string {
-        return getScriptHash(this.getLockingBytecode(data), reversed)
+    static getScriptHash(reversed = true): string {
+        return getScriptHash(this.getLockingBytecode(), reversed)
     }
 
     /**
      * Get cashaddress
      *
-     * @param data - the parameters of the subscription.
      * @param prefix - cashaddress prefix.
      * @throws {Error} if transaction generation fails.
      * @returns a cashaddress.
      */
-    static getAddress(
-        data: SubscriptionData,
-        prefix = "bitcoincash" as CashAddressNetworkPrefix
-    ): string {
-        return getAddress(this.getLockingBytecode(data), prefix, this.tokenAware)
+    static getAddress(prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
+        return getAddress(this.getLockingBytecode(), prefix, this.tokenAware)
     }
 
-    static getSourceOutput(
-        data: SubscriptionData,
-        utxo: UtxoI
-    ): Output {
+    static parseNFT(utxo: UtxoI) {
+
+        try {
+            return {
+                fee: binToNumberInt16LE(hexToBin(utxo.token_data?.nft?.commitment!)),
+            }
+        } catch (e) {
+            throw Error("Could not parse fee")
+        }
+
+
+
+
+    }
+
+    static getSourceOutput(utxo: UtxoI): Output {
 
         return {
-            lockingBytecode: this.getLockingBytecode(data),
+            lockingBytecode: this.getLockingBytecode(),
             valueSatoshis: BigInt(utxo.value)
         }
 
     }
 
-    static getInput(
-        data: SubscriptionData,
-        utxo: UtxoI
-    ): InputTemplate<CompilerBCH> {
+    //, amount: number, blocks: number, userPkh: Uint8Array
+    static getInput(utxo: UtxoI): InputTemplate<CompilerBCH> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
             sequenceNumber: utxo.value,
             unlockingBytecode: {
-                data: {
-                    "bytecode": this.dataToBytecode(data)
-                },
+                data: {},
                 compiler: this.compiler,
-                script: 'unlock',
+                script: 'flash_market_covenant',
                 valueSatoshis: BigInt(utxo.value),
+                token: utxo.token_data ? {
+                    category: hexToBin(utxo.token_data.category!),
+                    amount: BigInt(utxo.token_data.amount),
+                    nft: utxo.token_data.nft ? {
+                        commitment: hexToBin(utxo.token_data.nft.commitment!),
+                        capability: utxo.token_data.nft.capability,
+                    } : undefined
+                } : undefined
             },
         } as InputTemplate<CompilerBCH>
     }
@@ -155,15 +125,12 @@ export default class Subscription {
 
         return {
             lockingBytecode: {
-                data: {
-                    // "bytecode": {
-                    //     "key": hexToBin(indexKey)
-                    // }
-                },
+                data: {},
                 compiler: this.compiler,
-                script: 'op_return'
+                script: 'flash_market_covenant'
             },
-            valueSatoshis: BigInt(0)
+            valueSatoshis: BigInt(0),
+            
         }
 
     }
@@ -171,34 +138,31 @@ export default class Subscription {
     /**
      * Get source outputs, transform contract & wallet outpoints for spending verification.
      *
-     * @param data - the parameters of the subscription.
-     * @param valueUtxos - wallet outputs to use as input.
+     * @param contractUtxo - contract outputs to use as input.
+     * @param walletUtxo - wallet outputs to use as input.
      * @param key - private key to sign transaction wallet inputs.
      *
      * @returns a transaction template.
      */
 
     static getSourceOutputs(
-        data: SubscriptionData,
         valueUtxos: UtxoI[]
     ): Output[] {
         const sourceOutputs: Output[] = [];
-        sourceOutputs.push(...valueUtxos.map((u: UtxoI) => this.getSourceOutput(data, u)));
+        sourceOutputs.push(...valueUtxos.map((u: UtxoI) => this.getSourceOutput(u)));
         return sourceOutputs
     }
 
     /**
-     * Step expired records.
+     * Unlock completed stake.
      *
-     * @param data - The parameters of the subscription
-     * @param utxo - The output paying the installment
+     * @param utxo - unspent contract record to payout.
      *
      * @throws {Error} if transaction generation fails.
      * @returns a transaction template.
      */
 
-    static step(
-        data: SubscriptionData,
+    static unlock(
         utxo: UtxoI
     ): string {
 
@@ -212,13 +176,13 @@ export default class Subscription {
             outputs
         }
 
-        config.inputs.push(this.getInput(data, utxo));
+        config.inputs.push(this.getInput(utxo));
         config.outputs.push(this.getOutput());
 
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
-        const sourceOutputs = [this.getSourceOutput(data, utxo)];
+        const sourceOutputs = [this.getSourceOutput(utxo)];
 
         const transaction = result.transaction
         const tokenValidationResult = verifyTransactionTokens(

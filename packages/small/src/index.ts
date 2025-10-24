@@ -27,8 +27,9 @@ export default class SmallIndex {
 
     static USER_AGENT = packageInfo.name;
     
-    static VERSION = "1.0.0";
+    static PROTOCOL_IDENTIFIER = "U3R";
 
+    static VERSION = "1.0.0";
 
     static tokenAware = true;
 

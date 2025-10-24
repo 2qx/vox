@@ -176,6 +176,19 @@ importers:
         specifier: ^20.17.24
         version: 20.17.24
 
+  packages/catdex:
+    dependencies:
+      '@bitauth/libauth':
+        specifier: ^3.0.0
+        version: 3.0.0
+      '@unspent/tau':
+        specifier: workspace:*
+        version: link:../common
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.24
+        version: 20.17.24
+
   packages/cauldron:
     dependencies:
       '@bitauth/libauth':
@@ -207,6 +220,32 @@ importers:
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
+
+  packages/dutch:
+    dependencies:
+      '@bitauth/libauth':
+        specifier: ^3.0.0
+        version: 3.0.0
+      '@unspent/tau':
+        specifier: workspace:*
+        version: link:../common
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.24
+        version: 20.17.24
+
+  packages/flash:
+    dependencies:
+      '@bitauth/libauth':
+        specifier: ^3.0.0
+        version: 3.0.0
+      '@unspent/tau':
+        specifier: workspace:*
+        version: link:../common
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.24
+        version: 20.17.24
 
   packages/future:
     dependencies:
@@ -257,6 +296,19 @@ importers:
         version: 20.17.24
 
   packages/timeout:
+    dependencies:
+      '@bitauth/libauth':
+        specifier: ^3.0.0
+        version: 3.0.0
+      '@unspent/tau':
+        specifier: workspace:*
+        version: link:../common
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.24
+        version: 20.17.24
+
+  packages/trust:
     dependencies:
       '@bitauth/libauth':
         specifier: ^3.0.0
