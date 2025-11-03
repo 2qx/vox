@@ -16,6 +16,7 @@
 	import { BaseWallet, Wallet, TestNetWallet, hexToBin } from 'mainnet-js';
 
 	import {
+		getDefaultElectrum,
 		sumUtxoValue,
 		sumTokenAmounts,
 		getScriptHash,
@@ -60,7 +61,7 @@
 	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
 	const ticker = isMainnet ? 'BADGER' : 'tBADGER';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
-	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const server = getDefaultElectrum(isMainnet);
 
 	let spent = new Set();
 	let timer: any = 0;
