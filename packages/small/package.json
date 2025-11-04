@@ -1,7 +1,7 @@
 {
   "name": "@unspent/small",
   "version": "1.0.0",
-  "description": "Small Index: A distributed key-value database system.",
+  "description": "Small Index: a distributed key-value database",
   "type": "module",
   "exports": {
     ".": {
@@ -35,7 +35,7 @@
     "typedoc": "typedoc src/index.ts --out out/docs --options ../../config/typedoc.json"
   },
   "dependencies": {
-    "@bitauth/libauth": "^3.0.0",
+    "@bitauth/libauth": "^3.1.0-next.8",
     "@unspent/tau": "workspace:*"
   },
   "devDependencies": {

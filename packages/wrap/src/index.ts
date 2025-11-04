@@ -3,8 +3,8 @@ import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
-    CompilerBCH,
-    createVirtualMachineBCH,
+    CompilerBch,
+    createVirtualMachineBch,
     deriveHdPublicKey,
     generateTransaction,
     hdPrivateKeyToP2pkhLockingBytecode,
@@ -14,7 +14,7 @@ import {
     verifyTransactionTokens,
     Output,
     Transaction,
-    encodeTransactionBCH,
+    encodeTransactionBch,
     stringify
 } from '@bitauth/libauth';
 
@@ -41,9 +41,9 @@ export default class Wrap {
 
     static template = template;
 
-    static compiler: CompilerBCH = getLibauthCompiler(this.template);
+    static compiler: CompilerBch = getLibauthCompiler(this.template);
 
-    static vm = createVirtualMachineBCH();
+    static vm = createVirtualMachineBch();
 
     static getLockingBytecode(data = {}): Uint8Array {
         const lockingBytecodeResult = this.compiler.generateBytecode(
@@ -88,7 +88,7 @@ export default class Wrap {
     }
 
 
-    static getInput(utxo: UtxoI): InputTemplate<CompilerBCH> {
+    static getInput(utxo: UtxoI): InputTemplate<CompilerBch> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -97,10 +97,10 @@ export default class Wrap {
                 compiler: this.compiler,
                 script: 'unlock'
             },
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
-    static getOutput(utxo: UtxoI, amount: bigint): OutputTemplate<CompilerBCH> {
+    static getOutput(utxo: UtxoI, amount: bigint): OutputTemplate<CompilerBch> {
 
         return {
             lockingBytecode: {
@@ -136,7 +136,7 @@ export default class Wrap {
     }
 
 
-    static getWalletInput(utxo: UtxoI, privateKey?: string, addressIndex = 0): InputTemplate<CompilerBCH> {
+    static getWalletInput(utxo: UtxoI, privateKey?: string, addressIndex = 0): InputTemplate<CompilerBch> {
 
         let unlockingData = privateKey ? {
             compiler: this.compiler,
@@ -165,7 +165,7 @@ export default class Wrap {
             outpointTransactionHash: hexToBin(utxo.tx_hash),
             sequenceNumber: 0,
             unlockingBytecode: unlockingData,
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
     static getWrappedOutput(
@@ -173,7 +173,7 @@ export default class Wrap {
         privateKey?: any,
         addressIndex = 0,
         category = WBCH
-    ): OutputTemplate<CompilerBCH> {
+    ): OutputTemplate<CompilerBch> {
 
         const lockingBytecode = privateKey ? {
             compiler: this.compiler,
@@ -202,7 +202,7 @@ export default class Wrap {
         amount: bigint,
         privateKey?: any,
         addressIndex = 0
-    ): OutputTemplate<CompilerBCH> {
+    ): OutputTemplate<CompilerBch> {
 
         const lockingBytecode = privateKey ? {
             compiler: this.compiler,
@@ -251,13 +251,13 @@ export default class Wrap {
         category?: any,
         sourceOutputs: Output[] = []
     ): {
-        inputs: InputTemplate<CompilerBCH>[],
-        outputs: OutputTemplate<CompilerBCH>[],
+        inputs: InputTemplate<CompilerBch>[],
+        outputs: OutputTemplate<CompilerBch>[],
         sourceOutputs: Output[]
     } {
 
-        let inputs: InputTemplate<CompilerBCH>[] = [];
-        let outputs: OutputTemplate<CompilerBCH>[] = [];
+        let inputs: InputTemplate<CompilerBch>[] = [];
+        let outputs: OutputTemplate<CompilerBch>[] = [];
 
         utxos = utxos.filter(u => u.token_data?.category == binToHex(category))
         if (amount < 0) utxos = utxos.filter(u => u.value > 800)
@@ -274,7 +274,7 @@ export default class Wrap {
         sourceOutputs.push(this.getSourceOutput(randomUtxo));
 
         if (
-            // Redeeming WBCH for BCH and this thread can satisfy the swap
+            // Redeeming WBCH for Bch and this thread can satisfy the swap
             (amount < 0 && -(randomUtxo?.value) < amount) ||
             (amount > 0 && (BigInt(randomUtxo?.token_data?.amount!) > amount))
         ) {
@@ -302,15 +302,15 @@ export default class Wrap {
         category?: any,
         sourceOutputs: Output[] = []
     ): {
-        inputs: InputTemplate<CompilerBCH>[],
-        outputs: OutputTemplate<CompilerBCH>[],
+        inputs: InputTemplate<CompilerBch>[],
+        outputs: OutputTemplate<CompilerBch>[],
         sourceOutputs: Output[]
     } {
 
-        let inputs: InputTemplate<CompilerBCH>[] = [];
-        let outputs: OutputTemplate<CompilerBCH>[] = [];
+        let inputs: InputTemplate<CompilerBch>[] = [];
+        let outputs: OutputTemplate<CompilerBch>[] = [];
 
-        // Only use straight sat utxos if placing BCH
+        // Only use straight sat utxos if placing Bch
         if (amount > 0) utxos = utxos.filter(u => !u.token_data)
         if (amount < 0) utxos = utxos.filter(u => u.token_data?.category == binToHex(category))
         if (utxos.length == 0) throw Error("no wallet utxos left, maximum recursion depth reached.");
@@ -329,9 +329,9 @@ export default class Wrap {
         let sumSats = sumSourceOutputValue(sourceOutputs)
         let sumWSats = sumSourceOutputTokenAmounts(sourceOutputs, binToHex(category))
         if (
-            // Redeeming WBCH for BCH, and token amount is sufficient
+            // Redeeming WBCH for Bch, and token amount is sufficient
             (amount < 0 && sumWSats >= -amount) ||
-            // Or if placing BCH for WBCH, and utxo value is sufficient
+            // Or if placing Bch for WBCH, and utxo value is sufficient
             (amount > 0 && sumSats > amount)
         ) {
             // This utxo finally satisfied the swap 
@@ -393,8 +393,8 @@ export default class Wrap {
         verify: string | boolean
     } {
 
-        const inputs: InputTemplate<CompilerBCH>[] = [];
-        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
 
         let wbchCat = category ? hexToBin(category) : WBCH
 
@@ -405,7 +405,7 @@ export default class Wrap {
             outputs
         }
 
-        // if placing BCH for WBCH, don't use utxos with tokens
+        // if placing Bch for WBCH, don't use utxos with tokens
         walletUtxos = walletUtxos.filter(u => u.token_data?.category == category || !u.token_data)
 
 
@@ -434,7 +434,8 @@ export default class Wrap {
 
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
-            sourceOutputs
+            sourceOutputs,
+            { maximumTokenCommitmentLength: 40}
         );
         if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
 

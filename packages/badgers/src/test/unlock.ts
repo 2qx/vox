@@ -68,7 +68,7 @@ test.skip('test staking and unstaking badgers', async t => {
 });
 
 
-test.skip('test parsing NFTs', async t => {
+test('test parsing NFTs', async t => {
 
 
     let contract_address = BadgerStake.getAddress();
@@ -81,6 +81,8 @@ test.skip('test parsing NFTs', async t => {
         "include_tokens"
     )
     let stakes = badgerUtxos.map( (u:UtxoI) => BadgerStake.parseNFT(u))
-    t.assert(stakes.length>0)
+    
+    t.assert(stakes[0].amount>0)
+    t.assert(stakes[0].stake>0)
 
 });

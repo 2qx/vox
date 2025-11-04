@@ -322,7 +322,7 @@
 		{sequence}
 
 		<div style="flex: 2 2 auto;"></div>
-		<b><a href="/pop/">/pop</a>/{topic}</b>
+		<b><a onclick={() => (topic = "")} href="/pop/">pop</a> {topic}</b>
 		<div style="flex: 2 2 auto;"></div>
 		{#if contractBalance}
 			<a target="_blank" href="{explorer}{contractAddress}">

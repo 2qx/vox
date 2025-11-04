@@ -8,11 +8,11 @@
       "name": "Trust configuration",
       "scripts": [
         "lock",
-        "unlock_lock"
+        "unlock"
       ],
       "variables": {
         "recipient": {
-          "description": "Locking bytecode receiveing payments",
+          "description": "Locking bytecode receiving payments",
           "name": "recipientLockingBytecode",
           "type": "WalletData"
         }
@@ -62,7 +62,7 @@
     }
   },
   "scripts": {
-    "unlock_lock": {
+    "unlock": {
       "passes": [
         "installment"
       ],

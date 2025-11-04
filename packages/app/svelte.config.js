@@ -18,7 +18,7 @@ const config = {
 			fallback: '200.html'
 		}),
 		prerender:{
-			entries: ["*","/pop/btc"]
+			entries: ["*","/pop/"]
 		}
 	},
 	extensions: ['.svelte', '.svx', '.md']

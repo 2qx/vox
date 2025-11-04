@@ -3,10 +3,10 @@ import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
-    CompilerBCH,
-    createVirtualMachineBCH,
+    CompilerBch,
+    createVirtualMachineBch,
     encodeDataPush,
-    encodeTransactionBCH,
+    encodeTransactionBch,
     generateTransaction,
     hexToBin,
     InputTemplate,
@@ -42,9 +42,9 @@ export default class Timeout {
 
     static template = template;
 
-    static compiler: CompilerBCH = getLibauthCompiler(this.template);
+    static compiler: CompilerBch = getLibauthCompiler(this.template);
 
-    static vm = createVirtualMachineBCH();
+    static vm = createVirtualMachineBch();
 
     static dataToBytecode(data: TimeoutData) {
         return {
@@ -136,7 +136,7 @@ export default class Timeout {
 
     static getInput(
         data: TimeoutData,
-        utxo: UtxoI): InputTemplate<CompilerBCH> {
+        utxo: UtxoI): InputTemplate<CompilerBch> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -149,10 +149,10 @@ export default class Timeout {
                 script: 'unlock',
                 valueSatoshis: BigInt(utxo.value),
             },
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
-    static getOutput(): OutputTemplate<CompilerBCH> {
+    static getOutput(): OutputTemplate<CompilerBch> {
 
         return {
             lockingBytecode: {
@@ -203,8 +203,8 @@ export default class Timeout {
         utxo: UtxoI
     ): string {
 
-        const inputs: InputTemplate<CompilerBCH>[] = [];
-        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
 
         let config = {
             locktime: 0,
@@ -224,7 +224,8 @@ export default class Timeout {
         const transaction = result.transaction
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
-            sourceOutputs
+            sourceOutputs,
+            { maximumTokenCommitmentLength: 40 }
         );
         if (tokenValidationResult !== true) throw tokenValidationResult;
 
@@ -234,7 +235,7 @@ export default class Timeout {
         })
 
         if (typeof verify == "string") throw verify
-        return binToHex(encodeTransactionBCH(transaction))
+        return binToHex(encodeTransactionBch(transaction))
     }
 
 }

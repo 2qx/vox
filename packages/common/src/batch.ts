@@ -1,4 +1,5 @@
 import { DEFAULT_CONCURRENCY } from "./constant.js";
+import { UtxoI } from "./types.js";
 
 /**
  * Same as Promise.all(items.map(item => task(item))), but it waits for
@@ -29,4 +30,16 @@ export async function getTransactionWrap(args:any[]) {
 
 export async function getAllTransactions(electrumClient:any, tx_hashes:string[]) {
     return promiseAllInBatches(getTransactionWrap, tx_hashes.map(tx_hash => [electrumClient, tx_hash]))
+}
+
+export async function listUnspentWrap(args:any[]): Promise<UtxoI[]> {
+    let unspent = await args[0].request('blockchain.scripthash.listunspent', args[1]);
+    if (unspent instanceof Error) throw unspent
+    return unspent.map((utxo:any) => {
+        return {
+            ... utxo,
+            scripthash: args[1]
+        }
+
+    })
 }
