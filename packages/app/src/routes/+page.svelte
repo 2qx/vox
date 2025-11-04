@@ -42,7 +42,7 @@
 			description: 'Tokenized timelocked BCH',
 			image: '/FBCH.svg',
 			link: '/future',
-			disabled: false
+			disabled: true
 		},
 
 		{
