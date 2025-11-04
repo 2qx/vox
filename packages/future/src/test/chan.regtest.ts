@@ -1,6 +1,5 @@
 import test from 'ava';
 import { getHdPrivateKey, TransactionRequest, UtxoI } from "@unspent/tau";
-import { encodeTransactionBCH, binToHex } from "@bitauth/libauth";
 
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";

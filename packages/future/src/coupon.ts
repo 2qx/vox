@@ -5,7 +5,7 @@ import {
   bigIntToVmNumber,
   binToHex,
   CashAddressNetworkPrefix,
-  createVirtualMachineBCH,
+  createVirtualMachineBch,
   encodeDataPush,
   hash256,
   hexToBin,
@@ -23,7 +23,7 @@ export class Coupon {
 
   static template = template;
 
-  static vm = createVirtualMachineBCH();
+  static vm = createVirtualMachineBch();
 
   static compiler = Future.compiler;
 

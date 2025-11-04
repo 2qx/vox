@@ -3,9 +3,9 @@ import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
-    CompilerBCH,
-    createVirtualMachineBCH,
-    encodeTransactionBCH,
+    CompilerBch,
+    createVirtualMachineBch,
+    encodeTransactionBch,
     generateTransaction,
     hexToBin,
     InputTemplate,
@@ -35,9 +35,9 @@ export default class FlashCash {
 
     static template = template;
 
-    static compiler: CompilerBCH = getLibauthCompiler(this.template);
+    static compiler: CompilerBch = getLibauthCompiler(this.template);
 
-    static vm = createVirtualMachineBCH();
+    static vm = createVirtualMachineBch();
 
     static getLockingBytecode(): Uint8Array {
         const lockingBytecodeResult = this.compiler.generateBytecode(
@@ -99,7 +99,7 @@ export default class FlashCash {
     }
 
     //, amount: number, blocks: number, userPkh: Uint8Array
-    static getInput(utxo: UtxoI): InputTemplate<CompilerBCH> {
+    static getInput(utxo: UtxoI): InputTemplate<CompilerBch> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -118,10 +118,10 @@ export default class FlashCash {
                     } : undefined
                 } : undefined
             },
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
-    static getOutput(): OutputTemplate<CompilerBCH> {
+    static getOutput(): OutputTemplate<CompilerBch> {
 
         return {
             lockingBytecode: {
@@ -130,7 +130,7 @@ export default class FlashCash {
                 script: 'flash_market_covenant'
             },
             valueSatoshis: BigInt(0),
-            
+
         }
 
     }
@@ -166,8 +166,8 @@ export default class FlashCash {
         utxo: UtxoI
     ): string {
 
-        const inputs: InputTemplate<CompilerBCH>[] = [];
-        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
 
         let config = {
             locktime: 0,
@@ -187,7 +187,8 @@ export default class FlashCash {
         const transaction = result.transaction
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
-            sourceOutputs
+            sourceOutputs,
+            { maximumTokenCommitmentLength: 40 }
         );
         if (tokenValidationResult !== true) throw tokenValidationResult;
 
@@ -197,7 +198,7 @@ export default class FlashCash {
         })
 
         if (typeof verify == "string") throw verify
-        return binToHex(encodeTransactionBCH(transaction))
+        return binToHex(encodeTransactionBch(transaction))
     }
 
 }

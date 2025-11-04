@@ -5,10 +5,10 @@ import {
     bigIntToVmNumber,
     binToHex,
     binToUtf8,
-    CompilerBCH,
-    createVirtualMachineBCH,
+    CompilerBch,
+    createVirtualMachineBch,
     deriveHdPublicKey,
-    disassembleBytecodeBCH,
+    disassembleBytecodeBch,
     generateTransaction,
     hdPrivateKeyToP2pkhLockingBytecode,
     hexToBin,
@@ -18,7 +18,7 @@ import {
     swapEndianness,
     verifyTransactionTokens,
     hash256,
-    decodeTransactionBCH,
+    decodeTransactionBch,
     utf8ToBin,
     encodeDataPush,
     lockingBytecodeToCashAddress
@@ -79,7 +79,7 @@ export class Post {
 
 export function parseUsername(commitment: string) {
     const commitmentBin = hexToBin(commitment)
-    const commitmentAsm = disassembleBytecodeBCH(commitmentBin)
+    const commitmentAsm = disassembleBytecodeBch(commitmentBin)
     const unameHex = commitmentAsm.split(" ")!.pop()!.substring(2)
     return binToUtf8(hexToBin(unameHex))
 }
@@ -94,7 +94,7 @@ function parsePostTransaction(
 ): Post | undefined {
 
     if (!transaction) return
-    let tx = decodeTransactionBCH(hexToBin(transaction))
+    let tx = decodeTransactionBch(hexToBin(transaction))
     if (typeof tx == "string") return new Post({ height: height, hash: hash, error: tx })
     if (!tx.outputs[0]!.token) return
     if (!tx.outputs[0]!.token.nft) return new Post({ height: height, hash: hash, error: "no nft on first output" })
@@ -139,17 +139,17 @@ function parsePostTransaction(
     })
 }
 
-function chunks (arr:Uint8Array, len:number) {
+function chunks(arr: Uint8Array, len: number) {
 
-  var chunks = [],
-      i = 0,
-      n = arr.length;
+    var chunks = [],
+        i = 0,
+        n = arr.length;
 
-  while (i < n) {
-    chunks.push(arr.slice(i, i += len));
-  }
+    while (i < n) {
+        chunks.push(arr.slice(i, i += len));
+    }
 
-  return chunks;
+    return chunks;
 }
 
 const blockSort = (a: number, b: number): number => {
@@ -218,9 +218,9 @@ export class Channel {
 
     static template = template;
 
-    static compiler: CompilerBCH = getLibauthCompiler(this.template);
+    static compiler: CompilerBch = getLibauthCompiler(this.template);
 
-    static vm = createVirtualMachineBCH();
+    static vm = createVirtualMachineBch();
 
     static getLockingBytecode(channel?: string): Uint8Array {
         const lockingBytecodeResult = this.compiler.generateBytecode({
@@ -256,11 +256,11 @@ export class Channel {
     }
 
 
-    static getInputs(channel: string, utxos: UtxoI[], now: number, edit = false): InputTemplate<CompilerBCH>[] {
+    static getInputs(channel: string, utxos: UtxoI[], now: number, edit = false): InputTemplate<CompilerBch>[] {
         return utxos.map(u => this.getInput(channel, u, now, edit))
     }
 
-    static getInput(channel: string, utxo: UtxoI, now: number, edit = false): InputTemplate<CompilerBCH> {
+    static getInput(channel: string, utxo: UtxoI, now: number, edit = false): InputTemplate<CompilerBch> {
 
         let scriptId = edit ? 'edit_message' : 'process_message';
 
@@ -290,7 +290,7 @@ export class Channel {
                     } : undefined
                 } : undefined
             },
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
     static getSourceOutputs(channel: string, utxos: UtxoI[]): Output[] {
@@ -331,22 +331,22 @@ export class Channel {
         }
     }
 
-    static getCouponOutputs(utxos: UtxoI[], now: number): OutputTemplate<CompilerBCH>[] {
+    static getCouponOutputs(utxos: UtxoI[], now: number): OutputTemplate<CompilerBch>[] {
         return utxos.map(u => this.getCouponOutput(u, now)).filter(u => u !== undefined)
     }
 
-    static getCouponOutput(utxo: UtxoI, now: number): OutputTemplate<CompilerBCH> | undefined {
+    static getCouponOutput(utxo: UtxoI, now: number): OutputTemplate<CompilerBch> | undefined {
 
         let futureTime = Math.floor(utxo.value / 10) * 1000;
 
         // if the utxo was underfunded, clear it without generating a coupon.
-        let isSpam =  ((futureTime - utxo.height) < 1000);
+        let isSpam = ((futureTime - utxo.height) < 1000);
         let isPremature = (now - utxo.height) < 1000;
 
         let outputValue = isPremature ? utxo.value * 10 : utxo.value;
-        
+
         // A non matching output value indicates the message is spam
-        outputValue = isSpam ? utxo.value-1 : outputValue
+        outputValue = isSpam ? utxo.value - 1 : outputValue
         let couponThreshold = isPremature ? 100_000_000 : 10_000_000;
         couponThreshold = isSpam ? 10_000_000 : couponThreshold
         let bytecode = Vault.getCouponLockingBytecode(couponThreshold, futureTime)
@@ -360,12 +360,12 @@ export class Channel {
 
 
 
-    static getWalletInputs(utxos: UtxoI[], key?: string, sequence?: number): InputTemplate<CompilerBCH>[] {
+    static getWalletInputs(utxos: UtxoI[], key?: string, sequence?: number): InputTemplate<CompilerBch>[] {
         return utxos.map((u: UtxoI) => this.getWalletInput(u, key, sequence))
     }
 
 
-    static getWalletInput(utxo: UtxoI, privateKey?: string, sequence?: number, addressIndex = 0): InputTemplate<CompilerBCH> {
+    static getWalletInput(utxo: UtxoI, privateKey?: string, sequence?: number, addressIndex = 0): InputTemplate<CompilerBch> {
 
         let unlockingData = privateKey ? {
             compiler: this.compiler,
@@ -397,14 +397,14 @@ export class Channel {
             outpointTransactionHash: hexToBin(utxo.tx_hash),
             sequenceNumber: sequence ? sequence + BIP68_MASK : sequence,
             unlockingBytecode: unlockingData,
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
 
 
-    static getChannelMessageOutputs(channel: string, message: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBCH>[] {
+    static getChannelMessageOutputs(channel: string, message: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBch>[] {
         const binaryMessage = utf8ToBin(message)
-        let chunked = [ ... chunks(binaryMessage, 32).map((m) => "6a025630" + binToHex(encodeDataPush(m))) ]
+        let chunked = [...chunks(binaryMessage, 32).map((m) => "6a025630" + binToHex(encodeDataPush(m)))]
         return chunked.map((m) => {
             return {
                 lockingBytecode: this.getLockingBytecode(channel),
@@ -418,11 +418,11 @@ export class Channel {
                     }
                 }
             }
-        }) as OutputTemplate<CompilerBCH>[]
+        }) as OutputTemplate<CompilerBch>[]
 
     }
 
-    static getLikeOutput(channel: string, postId: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBCH> {
+    static getLikeOutput(channel: string, postId: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBch> {
         let m = "6a0256B2" + binToHex(encodeDataPush(hexToBin(postId)))
         return {
             lockingBytecode: this.getLockingBytecode(channel),
@@ -439,7 +439,7 @@ export class Channel {
     }
 
 
-    static getChangeOutput(auth: UtxoI, changeAmount: bigint, privateKey?: any, addressIndex = 0): OutputTemplate<CompilerBCH> {
+    static getChangeOutput(auth: UtxoI, changeAmount: bigint, privateKey?: any, addressIndex = 0): OutputTemplate<CompilerBch> {
 
         const lockingBytecode = privateKey ? {
             compiler: this.compiler,
@@ -493,8 +493,8 @@ export class Channel {
 
     static clear(channel: string, utxos: UtxoI[], auth: UtxoI, key: string, now: number, extraUtxos?: UtxoI[], fee = 1) {
 
-        const inputs: InputTemplate<CompilerBCH>[] = [];
-        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
         const sourceOutputs: Output[] = [];
 
         let config = {
@@ -540,8 +540,8 @@ export class Channel {
 
     static post(channel: string, message: string, auth: UtxoI, couponAmount: number, key?: string, sequence?: number, prevUtxos?: UtxoI[], fee = 1) {
 
-        const inputs: InputTemplate<CompilerBCH>[] = [];
-        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
         const sourceOutputs: Output[] = [];
 
         let config = {
@@ -581,8 +581,8 @@ export class Channel {
 
     static like(channel: string, postId: string, auth: UtxoI, couponAmount: number, key?: string, fee = 1) {
 
-        const inputs: InputTemplate<CompilerBCH>[] = [];
-        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
         const sourceOutputs: Output[] = [];
 
         let config = {
@@ -622,7 +622,8 @@ export class Channel {
 
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
-            sourceOutputs
+            sourceOutputs,
+            { maximumTokenCommitmentLength: 40 }
         );
         if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
 

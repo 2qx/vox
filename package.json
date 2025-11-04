@@ -14,7 +14,7 @@
   },
   "devDependencies": {
     "@ava/typescript": "^5.0.0",
-    "@bitauth/libauth": "^3.0.0",
+    "@bitauth/libauth": "3.1.0-next.8",
     "@types/node": "20.14.10",
     "@types/sharedworker": "0.0.164",
     "ava": "6.2.0",

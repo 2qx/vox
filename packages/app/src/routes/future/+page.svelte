@@ -6,6 +6,10 @@
 	import Loading from '$lib/Loading.svelte';
 	import Readme from './README.md';
 
+	import BitauthLink from '$lib/BitauthLink.svelte';
+	import CONNECTED from '$lib/images/connected.svg';
+	import DISCONNECTED from '$lib/images/disconnected.svg';
+
 	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBCH } from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
@@ -103,6 +107,16 @@
 </script>
 
 <section>
+
+	<div class="status">
+		<BitauthLink template={Vault.template} />
+		{#if connectionStatus == 'CONNECTED'}
+			<img src={CONNECTED} alt={connectionStatus} />
+		{:else}
+			<img src={DISCONNECTED} alt="Disconnected" />
+		{/if}
+	</div>
+
 	{#if coupons}
 		{#if coupons.length > 0}
 			<table class="couponTable">
@@ -187,6 +201,10 @@
 </section>
 
 <style>
+	.status {
+		text-align: end;
+	}
+
     .couponTable {
 		width: 100%;
 		border-collapse: collapse;

@@ -3,7 +3,7 @@ import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
-    CompilerBCH,
+    CompilerBch,
     createVirtualMachineBCH,
     encodeTransactionBCH,
     generateTransaction,
@@ -31,7 +31,7 @@ export default class Cauldron {
 
     static template = template;
 
-    static compiler: CompilerBCH = getLibauthCompiler(this.template);
+    static compiler: CompilerBch = getLibauthCompiler(this.template);
 
     static vm = createVirtualMachineBCH();
 

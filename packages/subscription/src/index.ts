@@ -3,9 +3,9 @@ import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
-    CompilerBCH,
-    createVirtualMachineBCH,
-    encodeTransactionBCH,
+    CompilerBch,
+    createVirtualMachineBch,
+    encodeTransactionBch,
     generateTransaction,
     hexToBin,
     InputTemplate,
@@ -36,7 +36,7 @@ export interface SubscriptionData {
 
 
 export default class Subscription {
-    
+
     static USER_AGENT = packageInfo.name;
 
     static PROTOCOL_IDENTIFIER = "U3S"
@@ -45,9 +45,9 @@ export default class Subscription {
 
     static template = template;
 
-    static compiler: CompilerBCH = getLibauthCompiler(this.template);
+    static compiler: CompilerBch = getLibauthCompiler(this.template);
 
-    static vm = createVirtualMachineBCH();
+    static vm = createVirtualMachineBch();
 
     static dataToBytecode(data: SubscriptionData) {
         return {
@@ -135,7 +135,7 @@ export default class Subscription {
     static getInput(
         data: SubscriptionData,
         utxo: UtxoI
-    ): InputTemplate<CompilerBCH> {
+    ): InputTemplate<CompilerBch> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -148,10 +148,10 @@ export default class Subscription {
                 script: 'unlock',
                 valueSatoshis: BigInt(utxo.value),
             },
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
-    static getOutput(): OutputTemplate<CompilerBCH> {
+    static getOutput(): OutputTemplate<CompilerBch> {
 
         return {
             lockingBytecode: {
@@ -202,8 +202,8 @@ export default class Subscription {
         utxo: UtxoI
     ): string {
 
-        const inputs: InputTemplate<CompilerBCH>[] = [];
-        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
 
         let config = {
             locktime: 0,
@@ -223,7 +223,8 @@ export default class Subscription {
         const transaction = result.transaction
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
-            sourceOutputs
+            sourceOutputs,
+            { maximumTokenCommitmentLength: 40 }
         );
         if (tokenValidationResult !== true) throw tokenValidationResult;
 
@@ -233,7 +234,7 @@ export default class Subscription {
         })
 
         if (typeof verify == "string") throw verify
-        return binToHex(encodeTransactionBCH(transaction))
+        return binToHex(encodeTransactionBch(transaction))
     }
 
 }

@@ -23,8 +23,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: 3.1.0-next.8
+        version: 3.1.0-next.8
       '@types/node':
         specifier: 20.14.10
         version: 20.14.10
@@ -53,8 +53,8 @@ importers:
   packages/app:
     dependencies:
       '@bitauth/libauth':
-        specifier: 3.0.0
-        version: 3.0.0
+        specifier: 3.1.0-next.8
+        version: 3.1.0-next.8
       '@electrum-cash/network':
         specifier: ^4.1.1
         version: 4.1.1(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)
@@ -73,12 +73,33 @@ importers:
       '@unspent/blockpoint':
         specifier: workspace:*
         version: link:../blockpoint
+      '@unspent/catdex':
+        specifier: workspace:*
+        version: link:../catdex
       '@unspent/drip':
         specifier: workspace:*
         version: link:../drip
+      '@unspent/dutch':
+        specifier: workspace:*
+        version: link:../dutch
+      '@unspent/locktime':
+        specifier: workspace:*
+        version: link:../locktime
+      '@unspent/small':
+        specifier: workspace:*
+        version: link:../small
+      '@unspent/subscription':
+        specifier: workspace:*
+        version: link:../subscription
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
+      '@unspent/timeout':
+        specifier: workspace:*
+        version: link:../timeout
+      '@unspent/trust':
+        specifier: workspace:*
+        version: link:../trust
       '@unspent/wrap':
         specifier: workspace:*
         version: link:../wrap
@@ -153,8 +174,8 @@ importers:
   packages/badgers:
     dependencies:
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -166,8 +187,8 @@ importers:
   packages/blockpoint:
     dependencies:
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -179,8 +200,8 @@ importers:
   packages/catdex:
     dependencies:
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: 3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -192,8 +213,8 @@ importers:
   packages/cauldron:
     dependencies:
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -205,8 +226,8 @@ importers:
   packages/common:
     dependencies:
       '@bitauth/libauth':
-        specifier: 3.0.0
-        version: 3.0.0
+        specifier: 3.1.0-next.8
+        version: 3.1.0-next.8
     devDependencies:
       '@types/node':
         specifier: ^20.14.10
@@ -215,8 +236,8 @@ importers:
   packages/drip:
     dependencies:
       '@bitauth/libauth':
-        specifier: 3.0.0
-        version: 3.0.0
+        specifier: 3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -224,8 +245,8 @@ importers:
   packages/dutch:
     dependencies:
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -237,8 +258,8 @@ importers:
   packages/flash:
     dependencies:
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -250,8 +271,8 @@ importers:
   packages/future:
     dependencies:
       '@bitauth/libauth':
-        specifier: 3.0.0
-        version: 3.0.0
+        specifier: 3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -259,8 +280,8 @@ importers:
   packages/locktime:
     dependencies:
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -272,8 +293,8 @@ importers:
   packages/small:
     dependencies:
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -285,8 +306,8 @@ importers:
   packages/subscription:
     dependencies:
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -298,8 +319,8 @@ importers:
   packages/timeout:
     dependencies:
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -311,8 +332,8 @@ importers:
   packages/trust:
     dependencies:
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -324,8 +345,8 @@ importers:
   packages/unspent:
     dependencies:
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -337,8 +358,8 @@ importers:
   packages/wrap:
     dependencies:
       '@bitauth/libauth':
-        specifier: ^3.0.0
-        version: 3.0.0
+        specifier: ^3.1.0-next.8
+        version: 3.1.0-next.8
       '@unspent/tau':
         specifier: workspace:*
         version: link:../common
@@ -371,12 +392,8 @@ packages:
     resolution: {integrity: sha512-6zABk/ECA/QYSCQ1NGiVwwbQerUCZ+TQbp64Q3AgmfNvurHH0j8TtXa1qbShXA6qqkpAj4V5W8pP6mLe1mcMqA==}
     engines: {node: '>=18'}
 
-  '@bitauth/libauth@3.0.0':
-    resolution: {integrity: sha512-3yoL31XpnhAnf5nDVMFk4xPqebxDwXrgYAwpa31ARJnV5A/eXWlpNYvCd6FTZPFM4VvKfjCBi+jRCrw1hOZ0Jg==}
-    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
-
-  '@bitauth/libauth@3.1.0-next.7':
-    resolution: {integrity: sha512-lJ+ZwDr5zIyO44XbHphdp/eEmIbd1D8gD6zbN8P2HLDDGSAE9rqUwXInWFGwaPKVR8cUbKK/MKSzbPCK+4hxDw==}
+  '@bitauth/libauth@3.1.0-next.8':
+    resolution: {integrity: sha512-Pm+Ju+YP3JeBLLTiVrBnia2wwE4G17r4XqpvPRMcklElJTe8J6x3JgKRg1by0Xm3ZY6UFxACkEAoSA+x419/zA==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   '@electrum-cash/debug-logs@1.0.0':
@@ -2317,19 +2334,17 @@ snapshots:
       escape-string-regexp: 5.0.0
       execa: 8.0.1
 
-  '@bch-wc2/interfaces@0.0.4(@bitauth/libauth@3.1.0-next.7)':
+  '@bch-wc2/interfaces@0.0.4(@bitauth/libauth@3.1.0-next.8)':
     dependencies:
-      '@bitauth/libauth': 3.1.0-next.7
+      '@bitauth/libauth': 3.1.0-next.8
 
-  '@bch-wc2/interfaces@0.0.7(@bitauth/libauth@3.1.0-next.7)':
+  '@bch-wc2/interfaces@0.0.7(@bitauth/libauth@3.1.0-next.8)':
     dependencies:
-      '@bitauth/libauth': 3.1.0-next.7
+      '@bitauth/libauth': 3.1.0-next.8
 
   '@bcoe/v8-coverage@1.0.2': {}
 
-  '@bitauth/libauth@3.0.0': {}
-
-  '@bitauth/libauth@3.1.0-next.7': {}
+  '@bitauth/libauth@3.1.0-next.8': {}
 
   '@electrum-cash/debug-logs@1.0.0':
     dependencies:
@@ -3604,8 +3619,8 @@ snapshots:
 
   mainnet-js@2.7.10(patch_hash=1c110debbbfe2a5a80ebdd0416978b0430930787cac48135993c9b526348eac8):
     dependencies:
-      '@bch-wc2/interfaces': 0.0.7(@bitauth/libauth@3.1.0-next.7)
-      '@bitauth/libauth': 3.1.0-next.7
+      '@bch-wc2/interfaces': 0.0.7(@bitauth/libauth@3.1.0-next.8)
+      '@bitauth/libauth': 3.1.0-next.8
       '@electrum-cash/network': 4.1.3(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)
       '@scure/bip39': 1.6.0
       buffer: 6.0.3
@@ -3618,8 +3633,8 @@ snapshots:
 
   mainnet-js@2.7.8(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523):
     dependencies:
-      '@bch-wc2/interfaces': 0.0.4(@bitauth/libauth@3.1.0-next.7)
-      '@bitauth/libauth': 3.1.0-next.7
+      '@bch-wc2/interfaces': 0.0.4(@bitauth/libauth@3.1.0-next.8)
+      '@bitauth/libauth': 3.1.0-next.8
       '@electrum-cash/network': 4.1.1-development.10647307155(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)
       '@scure/bip39': 1.6.0
       buffer: 6.0.3

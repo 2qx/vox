@@ -8,7 +8,7 @@
       "name": "Trust configuration",
       "scripts": [
         "lock",
-        "unlock_lock"
+        "unlock"
       ],
       "variables": {
         "recipient": {

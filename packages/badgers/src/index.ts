@@ -3,7 +3,7 @@ import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
-    CompilerBCH,
+    CompilerBch,
     createVirtualMachineBCH,
     encodeTransactionBCH,
     generateTransaction,
@@ -35,7 +35,7 @@ export default class BadgerStake {
 
     static template = template;
 
-    static compiler: CompilerBCH = getLibauthCompiler(this.template);
+    static compiler: CompilerBch = getLibauthCompiler(this.template);
 
     static vm = createVirtualMachineBCH();
 
@@ -75,20 +75,20 @@ export default class BadgerStake {
     }
 
     static parseNFT(utxo: UtxoI) {
-        
+
         if (utxo.token_data?.nft?.capability == "mutable") {
             return {
                 amount: parseInt(utxo.token_data?.amount!),
                 stake: binToNumberInt16LE(hexToBin(utxo.token_data?.nft?.commitment.slice(-4)!)),
                 user_pkh: utxo.token_data?.nft?.commitment.slice(0, 40)
             }
-        } else if (utxo.token_data?.nft?.capability == "minting"){
+        } else if (utxo.token_data?.nft?.capability == "minting") {
             return {
                 amount: parseInt(utxo.token_data?.amount!),
-                stake: binToNumberInt16LE(hexToBin(utxo.token_data?.nft?.commitment.slice(0,4)!)),
+                stake: binToNumberInt16LE(hexToBin(utxo.token_data?.nft?.commitment.slice(0, 4)!)),
                 user_pkh: utxo.token_data?.nft?.commitment.slice(-40)
             }
-        }else{
+        } else {
             throw Error("Nft was not minting nor mutable")
         }
 
@@ -104,7 +104,7 @@ export default class BadgerStake {
     }
 
     //, amount: number, blocks: number, userPkh: Uint8Array
-    static getInput(utxo: UtxoI): InputTemplate<CompilerBCH> {
+    static getInput(utxo: UtxoI): InputTemplate<CompilerBch> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -121,10 +121,10 @@ export default class BadgerStake {
                 script: 'unlock',
                 valueSatoshis: BigInt(utxo.value),
             },
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
-    static getOutput(): OutputTemplate<CompilerBCH> {
+    static getOutput(): OutputTemplate<CompilerBch> {
 
         return {
             lockingBytecode: {
@@ -172,8 +172,8 @@ export default class BadgerStake {
         utxo: UtxoI
     ): string {
 
-        const inputs: InputTemplate<CompilerBCH>[] = [];
-        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
 
         let config = {
             locktime: 0,
@@ -193,7 +193,8 @@ export default class BadgerStake {
         const transaction = result.transaction
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
-            sourceOutputs
+            sourceOutputs,
+            { maximumTokenCommitmentLength: 40 }
         );
         if (tokenValidationResult !== true) throw tokenValidationResult;
 

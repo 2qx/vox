@@ -16,6 +16,7 @@
         "cashaddress",
         "cashc",
         "cashscript",
+        "catdex",
         "CHECKLOCKTIMEVERIFY",
         "CHECKSEQUENCEVERIFY",
         "CHECKSIG",

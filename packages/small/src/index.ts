@@ -3,9 +3,9 @@ import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
-    CompilerBCH,
-    createVirtualMachineBCH,
-    encodeTransactionBCH,
+    CompilerBch,
+    createVirtualMachineBch,
+    encodeTransactionBch,
     generateTransaction,
     hexToBin,
     InputTemplate,
@@ -26,7 +26,7 @@ import {
 export default class SmallIndex {
 
     static USER_AGENT = packageInfo.name;
-    
+
     static PROTOCOL_IDENTIFIER = "U3R";
 
     static VERSION = "1.0.0";
@@ -35,9 +35,9 @@ export default class SmallIndex {
 
     static template = template;
 
-    static compiler: CompilerBCH = getLibauthCompiler(this.template);
+    static compiler: CompilerBch = getLibauthCompiler(this.template);
 
-    static vm = createVirtualMachineBCH();
+    static vm = createVirtualMachineBch();
 
     static getLockingBytecode(indexKey: string): Uint8Array {
         const lockingBytecodeResult = this.compiler.generateBytecode(
@@ -88,7 +88,7 @@ export default class SmallIndex {
 
     }
 
-    static getInput(indexKey: string, utxo: UtxoI): InputTemplate<CompilerBCH> {
+    static getInput(indexKey: string, utxo: UtxoI): InputTemplate<CompilerBch> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -103,10 +103,10 @@ export default class SmallIndex {
                 script: 'unlock',
                 valueSatoshis: BigInt(utxo.value),
             },
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
-    static getOutput(): OutputTemplate<CompilerBCH> {
+    static getOutput(): OutputTemplate<CompilerBch> {
 
         return {
             lockingBytecode: {
@@ -138,8 +138,8 @@ export default class SmallIndex {
         utxo: UtxoI
     ): string {
 
-        const inputs: InputTemplate<CompilerBCH>[] = [];
-        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
 
         let config = {
             locktime: 0,
@@ -149,7 +149,7 @@ export default class SmallIndex {
         }
 
         config.inputs.push(this.getInput(indexKey, utxo));
-        config.outputs.push(this.getOutput() );
+        config.outputs.push(this.getOutput());
 
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
@@ -159,7 +159,8 @@ export default class SmallIndex {
         const transaction = result.transaction
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
-            sourceOutputs
+            sourceOutputs,
+            { maximumTokenCommitmentLength: 40 }
         );
         if (tokenValidationResult !== true) throw tokenValidationResult;
 
@@ -169,7 +170,7 @@ export default class SmallIndex {
         })
 
         if (typeof verify == "string") throw verify
-        return binToHex(encodeTransactionBCH(transaction))
+        return binToHex(encodeTransactionBch(transaction))
     }
 
 }

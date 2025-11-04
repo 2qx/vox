@@ -38,7 +38,7 @@
     "typedoc": "typedoc src/index.ts --out out/docs --options ../../config/typedoc.json"
   },
   "dependencies": {
-    "@bitauth/libauth": "^3.0.0",
+    "@bitauth/libauth": "3.1.0-next.8",
     "@unspent/tau": "workspace:*"
   },
   "devDependencies": {

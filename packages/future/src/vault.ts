@@ -3,8 +3,8 @@ import packageInfo from '../package.json' with { type: "json" };
 import {
     bigIntToVmNumber,
     binToHex,
-    CompilerBCH,
-    createVirtualMachineBCH,
+    CompilerBch,
+    createVirtualMachineBch,
     deriveHdPublicKey,
     generateTransaction,
     hdPrivateKeyToP2pkhLockingBytecode,
@@ -28,6 +28,8 @@ import {
 
 import { COUPON_SERIES, VAULT_SERIES, TIMELOCK_MAP } from "./constant.js";
 
+import template from './template.v2.json' with { type: "json" };
+
 import { getAllUnspentCoupons, getRates, getRateLocale, getFutureBlockDateLocale } from "./util.js";
 import { CouponDataI } from "./interface.js";
 import { Coupon } from './coupon.js'
@@ -41,7 +43,9 @@ export class Vault {
 
     static compiler = Future.compiler;
 
-    static vm = createVirtualMachineBCH();
+    static template = template;
+
+    static vm = createVirtualMachineBch();
 
     locktime: number = 0;
     //static unlockingScript = "c0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77"
@@ -254,7 +258,7 @@ export class Vault {
         }
     }
 
-    static getInput(utxo: UtxoI, time: number): InputTemplate<CompilerBCH> {
+    static getInput(utxo: UtxoI, time: number): InputTemplate<CompilerBch> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -277,10 +281,10 @@ export class Vault {
                     } : undefined
                 } : undefined
             },
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
-    static getCouponInput(utxo: UtxoI, amount: number, time: number): InputTemplate<CompilerBCH> {
+    static getCouponInput(utxo: UtxoI, amount: number, time: number): InputTemplate<CompilerBch> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -296,10 +300,10 @@ export class Vault {
                 script: 'coupon_unlock',
                 valueSatoshis: BigInt(utxo.value),
             },
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
-    static getOutput(utxo: UtxoI, amount: bigint, time: number): OutputTemplate<CompilerBCH> {
+    static getOutput(utxo: UtxoI, amount: bigint, time: number): OutputTemplate<CompilerBch> {
 
         return {
             lockingBytecode: {
@@ -339,7 +343,7 @@ export class Vault {
 
     }
 
-    static getWalletInput(utxo: UtxoI, privateKey?: string, addressIndex = 0): InputTemplate<CompilerBCH> {
+    static getWalletInput(utxo: UtxoI, privateKey?: string, addressIndex = 0): InputTemplate<CompilerBch> {
 
         let unlockingData = privateKey ? {
             compiler: this.compiler,
@@ -368,7 +372,7 @@ export class Vault {
             outpointTransactionHash: hexToBin(utxo.tx_hash),
             sequenceNumber: 0,
             unlockingBytecode: unlockingData,
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
     static getFutureOutput(
@@ -377,7 +381,7 @@ export class Vault {
         privateKey?: any,
         addressIndex = 0,
 
-    ): OutputTemplate<CompilerBCH> {
+    ): OutputTemplate<CompilerBch> {
 
         const lockingBytecode = privateKey ? {
             compiler: this.compiler,
@@ -406,7 +410,7 @@ export class Vault {
         amount: bigint,
         privateKey?: any,
         addressIndex = 0
-    ): OutputTemplate<CompilerBCH> {
+    ): OutputTemplate<CompilerBch> {
 
         const lockingBytecode = privateKey ? {
             compiler: this.compiler,
@@ -437,13 +441,13 @@ export class Vault {
         category?: any,
         sourceOutputs: Output[] = []
     ): {
-        inputs: InputTemplate<CompilerBCH>[],
-        outputs: OutputTemplate<CompilerBCH>[],
+        inputs: InputTemplate<CompilerBch>[],
+        outputs: OutputTemplate<CompilerBch>[],
         sourceOutputs: Output[]
     } {
 
-        let inputs: InputTemplate<CompilerBCH>[] = [];
-        let outputs: OutputTemplate<CompilerBCH>[] = [];
+        let inputs: InputTemplate<CompilerBch>[] = [];
+        let outputs: OutputTemplate<CompilerBch>[] = [];
 
         utxos = utxos.filter(u => u.token_data?.category == binToHex(category))
         if (amount < 0) utxos = utxos.filter(u => u.value > 800)
@@ -460,7 +464,7 @@ export class Vault {
         sourceOutputs.push(this.getSourceOutput(randomUtxo, time));
 
         if (
-            // Redeeming FBCH for BCH and this thread can satisfy the swap
+            // Redeeming FBch for Bch and this thread can satisfy the swap
             (amount < 0 && -(randomUtxo?.value) < amount) ||
             (amount > 0 && (BigInt(randomUtxo?.token_data?.amount!) > amount))
         ) {
@@ -487,13 +491,13 @@ export class Vault {
         time: number,
         sourceOutputs: Output[] = []
     ): {
-        inputs: InputTemplate<CompilerBCH>[],
-        outputs: OutputTemplate<CompilerBCH>[],
+        inputs: InputTemplate<CompilerBch>[],
+        outputs: OutputTemplate<CompilerBch>[],
         sourceOutputs: Output[]
     } {
 
-        let inputs: InputTemplate<CompilerBCH>[] = [];
-        let outputs: OutputTemplate<CompilerBCH>[] = [];
+        let inputs: InputTemplate<CompilerBch>[] = [];
+        let outputs: OutputTemplate<CompilerBch>[] = [];
 
 
         // Try to satisfy the swap with another utxos
@@ -509,15 +513,15 @@ export class Vault {
         category?: any,
         sourceOutputs: Output[] = []
     ): {
-        inputs: InputTemplate<CompilerBCH>[],
-        outputs: OutputTemplate<CompilerBCH>[],
+        inputs: InputTemplate<CompilerBch>[],
+        outputs: OutputTemplate<CompilerBch>[],
         sourceOutputs: Output[]
     } {
 
-        let inputs: InputTemplate<CompilerBCH>[] = [];
-        let outputs: OutputTemplate<CompilerBCH>[] = [];
+        let inputs: InputTemplate<CompilerBch>[] = [];
+        let outputs: OutputTemplate<CompilerBch>[] = [];
 
-        // Only use straight sat utxos if placing BCH
+        // Only use straight sat utxos if placing Bch
         if (amount > 0) utxos = utxos.filter(u => !u.token_data)
         if (amount < 0) utxos = utxos.filter(u => u.token_data?.category == binToHex(category))
         if (utxos.length == 0) throw Error("no wallet utxos left, maximum recursion depth reached.");
@@ -536,13 +540,13 @@ export class Vault {
         let sumSats = sumSourceOutputValue(sourceOutputs)
         let sumWSats = sumSourceOutputTokenAmounts(sourceOutputs, binToHex(category))
         if (
-            // Redeeming WBCH for BCH, and token amount is sufficient
+            // Redeeming WBch for Bch, and token amount is sufficient
             (amount < 0 && sumWSats >= -amount) ||
-            // Or if placing BCH for WBCH, and utxo value is sufficient
+            // Or if placing Bch for WBch, and utxo value is sufficient
             (amount > 0 && sumSats > amount)
         ) {
             // This utxo finally satisfied the swap 
-            // There is FBCH placed
+            // There is FBch placed
             if (amount > 0) {
                 outputs.push(this.getFutureOutput(amount, category, privateKey, 0))
             }
@@ -575,7 +579,7 @@ export class Vault {
     }
 
     /**
-     * Place (+) or redeem (-) some amount of Future BCH.
+     * Place (+) or redeem (-) some amount of Future Bch.
      *
      * @param amount     - amount to swap (satoshis), negative to redeem.
      * @param contractUtxo - all contract outputs to use as input.
@@ -602,8 +606,8 @@ export class Vault {
         verify: string | boolean
     } {
 
-        const inputs: InputTemplate<CompilerBCH>[] = [];
-        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
 
 
         let unique = [...new Set(contractUtxos.map(u => u.token_data?.category))]
@@ -642,14 +646,14 @@ export class Vault {
             sourceOutputs.push(...couponLayer.sourceOutputs);
             config.outputs[lastOutputIdx]!.valueSatoshis = config.outputs[lastOutputIdx]!.valueSatoshis + BigInt(couponUtxo.value)
         }
-        
+
 
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
         const estimatedFee = getTransactionFees(result.transaction, fee)
 
-        
+
         config.outputs[lastOutputIdx]!.valueSatoshis = config.outputs[lastOutputIdx]!.valueSatoshis - estimatedFee
 
         result = generateTransaction(config);
@@ -659,8 +663,10 @@ export class Vault {
 
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
-            sourceOutputs
+            sourceOutputs,
+            { maximumTokenCommitmentLength: 40 }
         );
+
         if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
 
         let verify = this.vm.verify({

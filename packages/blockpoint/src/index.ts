@@ -4,7 +4,7 @@ import packageInfo from '../package.json' with { type: "json" };
 import {
     bigIntToVmNumber,
     binToHex,
-    CompilerBCH,
+    CompilerBch,
     createVirtualMachineBCH,
     deriveHdPublicKey,
     encodeTransactionBCH,
@@ -43,7 +43,7 @@ export default class BlockPoint {
 
     static template = template;
 
-    static compiler: CompilerBCH = getLibauthCompiler(this.template);
+    static compiler: CompilerBch = getLibauthCompiler(this.template);
 
     static vm = createVirtualMachineBCH();
 
@@ -88,7 +88,7 @@ export default class BlockPoint {
 
     }
 
-    static getInput(utxo: UtxoI, age: number): InputTemplate<CompilerBCH> {
+    static getInput(utxo: UtxoI, age: number): InputTemplate<CompilerBch> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -103,10 +103,10 @@ export default class BlockPoint {
                 script: 'unlock',
                 valueSatoshis: BigInt(utxo.value),
             },
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
-    static getOutput(utxo: UtxoI, amount: number, age: number): OutputTemplate<CompilerBCH> {
+    static getOutput(utxo: UtxoI, amount: number, age: number): OutputTemplate<CompilerBch> {
 
         return {
             lockingBytecode: {
@@ -147,7 +147,7 @@ export default class BlockPoint {
     }
 
 
-    static getWalletInput(utxo: UtxoI, age: number, privateKey?: string, addressIndex = 0): InputTemplate<CompilerBCH> {
+    static getWalletInput(utxo: UtxoI, age: number, privateKey?: string, addressIndex = 0): InputTemplate<CompilerBch> {
         const unlockingData = privateKey ? {
             compiler: this.compiler,
             data: {
@@ -167,10 +167,10 @@ export default class BlockPoint {
             outpointTransactionHash: hexToBin(utxo.tx_hash),
             sequenceNumber: age,
             unlockingBytecode: unlockingData,
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
-    static getTokenOutput(amount: number, privateKey?: any, addressIndex = 0, category = BPTS): OutputTemplate<CompilerBCH> {
+    static getTokenOutput(amount: number, privateKey?: any, addressIndex = 0, category = BPTS): OutputTemplate<CompilerBch> {
 
         const lockingBytecode = privateKey ? {
             compiler: this.compiler,
@@ -196,7 +196,7 @@ export default class BlockPoint {
 
     }
 
-     static getChangeOutput(utxo: UtxoI, privateKey?: any, addressIndex = 0): OutputTemplate<CompilerBCH> {
+    static getChangeOutput(utxo: UtxoI, privateKey?: any, addressIndex = 0): OutputTemplate<CompilerBch> {
 
 
         const lockingBytecode = privateKey ? {
@@ -214,7 +214,7 @@ export default class BlockPoint {
 
         return {
             lockingBytecode: lockingBytecode,
-            valueSatoshis: BigInt(utxo.value)-800n
+            valueSatoshis: BigInt(utxo.value) - 800n
         }
 
     }
@@ -266,8 +266,8 @@ export default class BlockPoint {
         verify: string | boolean
     } {
 
-        const inputs: InputTemplate<CompilerBCH>[] = [];
-        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
 
         let bptCat = category ? hexToBin(category) : BPTS
 
@@ -308,7 +308,8 @@ export default class BlockPoint {
 
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
-            sourceOutputs
+            sourceOutputs,
+            { maximumTokenCommitmentLength: 40 }
         );
         if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
 

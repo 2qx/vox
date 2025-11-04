@@ -3,9 +3,9 @@ import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
-    CompilerBCH,
-    createVirtualMachineBCH,
-    encodeTransactionBCH,
+    CompilerBch,
+    createVirtualMachineBch,
+    encodeTransactionBch,
     generateTransaction,
     hexToBin,
     InputTemplate,
@@ -41,9 +41,9 @@ export default class Dutch {
 
     static template = template;
 
-    static compiler: CompilerBCH = getLibauthCompiler(this.template);
+    static compiler: CompilerBch = getLibauthCompiler(this.template);
 
-    static vm = createVirtualMachineBCH();
+    static vm = createVirtualMachineBch();
 
     static dataToBytecode(data: LocktimeData) {
         return {
@@ -120,7 +120,7 @@ export default class Dutch {
     static getInput(
         open: number,
         recipient: Uint8Array | string,
-        utxo: UtxoI): InputTemplate<CompilerBCH> {
+        utxo: UtxoI): InputTemplate<CompilerBch> {
         if (typeof recipient == "string") recipient = hexToBin(recipient)
         return {
             outpointIndex: utxo.tx_pos,
@@ -137,7 +137,7 @@ export default class Dutch {
                 script: 'unlock',
                 valueSatoshis: BigInt(utxo.value),
             },
-        } as InputTemplate<CompilerBCH>
+        } as InputTemplate<CompilerBch>
     }
 
 
@@ -178,8 +178,8 @@ export default class Dutch {
         utxo: UtxoI
     ): string {
 
-        const inputs: InputTemplate<CompilerBCH>[] = [];
-        const outputs: OutputTemplate<CompilerBCH>[] = [];
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
 
         let config = {
             locktime: 0,
@@ -199,7 +199,8 @@ export default class Dutch {
         const transaction = result.transaction
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
-            sourceOutputs
+            sourceOutputs,
+            { maximumTokenCommitmentLength: 40 }
         );
         if (tokenValidationResult !== true) throw tokenValidationResult;
 
@@ -209,7 +210,7 @@ export default class Dutch {
         })
 
         if (typeof verify == "string") throw verify
-        return binToHex(encodeTransactionBCH(transaction))
+        return binToHex(encodeTransactionBch(transaction))
     }
 
 }
