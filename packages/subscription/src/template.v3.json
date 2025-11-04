@@ -51,7 +51,7 @@
     "release": {
       "data": {
         "bytecode": {
-          "locktime": "10",
+          "locktime": "144",
           "recipient": "0xa914e78564d75c446f8c00c757a2bd783d30c4f0819a87"
         }
       },
@@ -64,7 +64,7 @@
             "unlockingBytecode": [
               "slot"
             ],
-            "sequenceNumber": 10
+            "sequenceNumber": 144
           }
         ],
         "outputs": [

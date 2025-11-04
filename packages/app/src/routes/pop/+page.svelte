@@ -2,6 +2,7 @@
 	import Readme from './README.md';
 	import type { PageProps } from './$types';
 	import Chat from '$lib/Chat.svelte';
+	import ChatPost from '$lib/ChatPost.svelte';
 
 	let { data }: PageProps = $props();
 	let topic = $derived(data.topic);

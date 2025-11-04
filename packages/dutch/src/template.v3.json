@@ -3,11 +3,11 @@
   "description": "Dutch: A descending ask token auction contract.",
   "name": "Dutch",
   "entities": {
-    "dutch_auction_covenant": {
+    "lock": {
       "description": "Allow anyone to spend tokens held by the contract, provided the consignor is paid in the same transaction and a minimum ask descending price is met",
       "name": "Dutch Auction Covenant",
       "scripts": [
-        "buy_spending_path"
+        "unlock"
       ],
       "variables": {
         "recipient": {
@@ -110,16 +110,16 @@
     }
   },
   "scripts": {
-    "buy_spending_path": {
+    "unlock": {
       "passes": [
         "buy"
       ],
       "name": "Buy Lot",
       "script": "// ",
       "timeLockType": "height",
-      "unlocks": "dutch_auction_lock"
+      "unlocks": "lock"
     },
-    "dutch_auction_lock": {
+    "lock": {
       "lockingType": "p2sh32",
       "name": "Dutch Auction Lock Script",
       "script": "<recipient> <open> \n\n// contract DutchAuction(\n\n//   // Opening bid \n//   int open,\n\n//   // LockingBytecode of the consigner, the address receiving proceeds\n//   bytes recipientLockingBytecode\n\n// ) {\n\n// Require version 2 for BIP68 support\nOP_TXVERSION OP_2 OP_NUMEQUALVERIFY \n// require(tx.version == 2);\n\n// The asking price is the opening bid divided by the utxo age in blocks.\nOP_INPUTINDEX OP_OUTPUTVALUE OP_DIV \n// int requiredAge = open/tx.outputs[this.activeInputIndex].value;\n\n// Require the active input nSequence number is provided in blocks.\n<65535> OP_OVER OP_GREATERTHAN OP_VERIFY \n// require(65535 > requiredAge);\n\n// Enforce the minium ask given the age of the input. \n  OP_CHECKSEQUENCEVERIFY OP_DROP \n// require(tx.age >= requiredAge);\n\n// Check that each output sends to the consignor\nOP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUAL\n// require(tx.outputs[this.activeInputIndex].lockingBytecode == \n//       recipientLockingBytecode,);\n\n//  }\n//}"

@@ -1,0 +1,17 @@
+<svg width="400" height="400" version="1.1" viewBox="0 0 105.8 105.8" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <linearGradient id="b" x1="46.1" x2="40.83" y1="54.93" y2="54.61" gradientUnits="userSpaceOnUse">
+   <stop stop-color="#f3eaaa" offset="0"/>
+   <stop stop-color="#f3eaaa" stop-opacity="0" offset="1"/>
+  </linearGradient>
+  <linearGradient id="a" x1="45.63" x2="40.83" y1="52.65" y2="52.43" gradientUnits="userSpaceOnUse">
+   <stop stop-color="#f3eaaa" offset="0"/>
+   <stop stop-color="#f3eaaa" stop-opacity="0" offset="1"/>
+  </linearGradient>
+ </defs>
+ <g stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-width=".5292">
+  <path d="m40.83 48.47v14.86h0.0025a12.57 4.786 0 0 0-0.0025 0.09209 12.57 4.786 0 0 0 12.57 4.787 12.57 4.786 0 0 0 12.57-4.787 12.57 4.786 0 0 0-0.0025-0.09209h0.0025v-14.86z" fill="url(#b)"/>
+  <path d="m40.83 47.12v7.91h0.0025c-0.0016 0.03069-0.0024 0.06139-0.0025 0.09209-9.08e-4 2.643 5.627 4.786 12.57 4.787 6.943 1.24e-4 12.57-2.143 12.57-4.787-5.8e-5 -0.03069-8.91e-4 -0.06139-0.0025-0.09209h0.0025v-7.91z" fill="url(#a)"/>
+  <ellipse cx="53.4" cy="47.06" rx="12.57" ry="4.786" fill="#f3eaaa"/>
+ </g>
+</svg>

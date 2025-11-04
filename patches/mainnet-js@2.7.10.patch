@@ -1,0 +1,19 @@
+diff --git a/src/util/balanceObjectFromSatoshi.ts b/src/util/balanceObjectFromSatoshi.ts
+index d69f7803e79a518afc5d2c5671b601afa4bff318..e70b6bcecee88e0c17c5994176e308fd5daf6d1a 100644
+--- a/src/util/balanceObjectFromSatoshi.ts
++++ b/src/util/balanceObjectFromSatoshi.ts
+@@ -19,10 +19,10 @@ export async function balanceResponseFromSatoshi(
+ 
+   response.bch = value / bchParam.subUnits;
+   response.sat = value;
+-  const currencyValue =
+-    (value / bchParam.subUnits) *
+-    (await ExchangeRate.get(Config.DefaultCurrency, priceCache));
+-  response[Config.DefaultCurrency] = floor(currencyValue, 2);
++  // const currencyValue =
++  //   (value / bchParam.subUnits) *
++  //   (await ExchangeRate.get(Config.DefaultCurrency, priceCache));
++  // response[Config.DefaultCurrency] = floor(currencyValue, 2);
+   return response;
+ }
+ 

@@ -45,6 +45,19 @@ Small index records, if not intended for a virtual machine, should be prefixed w
 
 All records must pay miners a rate of 1 sat/block. It is up to user software to assure records persist for long enough to accomplish their intended purpose. 
 
+### Market Identifiers
+
+Markets may be denoted on a small index or vox contract like so:
+
+| Protocol      | Identifier                                             |
+| ------------- | ------------------------------------------------------ |
+| CatDex        | OP_RETURN <"U3X"> <liquidity_provider_pkh>             |
+| Cauldron AMM  | OP_RETURN <"CQ1"> <liquidity_provider_pkh>             |
+| Dutch Auction | OP_RETURN <"U3A"> <liquidity_provider_pkh>             |
+| TapSwap Ask   | OP_RETURN <"TAP"> <liquidity_provider_pkh> <ask_price> |
+
+If not otherwise provided, all fees and missing parameters are assumed to match the defaults for the related exchange. 
+
 ### Vox 
 
 A Vox channel may be announced on a small index or in another vox channel with a vox record:
@@ -59,6 +72,7 @@ The following actions are available:
 | -------- | --------------------------------- |
 | message  | OP_RETURN <"V0"> <"a message">    |
 | like     | OP_RETURN <"V+"> <transaction_id> |
+| dislike  | OP_RETURN <"V-"> <transaction_id> |
 | reply    | OP_RETURN <"VR"> <transaction_id> |
 
 The above action templates may be sent to a Vox Channel as immutable NFT commitments of the author's NFT category. Message order is specified by the order of transaction outputs.
@@ -66,15 +80,3 @@ The above action templates may be sent to a Vox Channel as immutable NFT commitm
 A post is comprised of message packets. All the message packets of one transaction shall be concatenated together (without spaces) and rendered as a single post. 
 
 A reply or like may be followed by an unlimited messages, but MUST be specific to one proceeding message.
-
-
-### External Market Identifiers
-
-External markets may be denoted on a tokens small or vox contract like so:
-
-| Protocol     | Identifier                                              |
-| ------------ | ------------------------------------------------------- |
-| TapSwap Ask  | OP_RETURN <"TAP"> <liquidity_provider_pkh> \<ask_price> |
-| Cauldron AMM | OP_RETURN <"CQ1"> \<liquidity_provider_pkh>             |
-
-If not otherwise provided, all fees and missing parameters are assumed to match the defaults for the related exchange. 

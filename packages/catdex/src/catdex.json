@@ -1,0 +1,78 @@
+{
+  "contractName": "CatDex",
+  "constructorInputs": [
+    {
+      "name": "authCat",
+      "type": "bytes32"
+    },
+    {
+      "name": "assetCat",
+      "type": "bytes32"
+    }
+  ],
+  "abi": [
+    {
+      "name": "swap",
+      "inputs": []
+    }
+  ],
+  "bytecode": "OP_INPUTINDEX OP_INPUTINDEX OP_2 OP_MOD OP_SUB OP_DUP OP_UTXOTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUAL OP_IF OP_DUP OP_OUTPUTTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUALVERIFY OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_UTXOBYTECODE OP_EQUALVERIFY OP_DUP OP_1ADD OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_OUTPUTBYTECODE OP_EQUALVERIFY OP_DUP OP_OUTPUTTOKENAMOUNT OP_0 OP_GREATERTHAN OP_IF OP_DUP OP_OUTPUTTOKENCATEGORY OP_4 OP_PICK OP_EQUALVERIFY OP_ENDIF OP_OVER OP_UTXOTOKENCOMMITMENT OP_16 OP_SPLIT OP_OVER OP_BIN2NUM OP_OVER OP_BIN2NUM OP_4 OP_PICK OP_OUTPUTTOKENAMOUNT OP_5 OP_PICK OP_UTXOTOKENAMOUNT OP_SUB OP_2 OP_PICK OP_OVER OP_SUB OP_16 OP_NUM2BIN OP_2 OP_PICK OP_16 OP_NUM2BIN OP_CAT OP_7 OP_PICK OP_OUTPUTTOKENCOMMITMENT OP_OVER OP_EQUALVERIFY OP_OVER OP_0 OP_GREATERTHAN OP_4 OP_PICK OP_0 OP_LESSTHAN OP_BOOLAND OP_NOT OP_VERIFY OP_OVER OP_ABS OP_4 OP_PICK OP_ABS OP_LESSTHANOREQUAL OP_VERIFY OP_7 OP_PICK OP_OUTPUTVALUE OP_8 OP_PICK OP_UTXOVALUE OP_SUB OP_2OVER OP_SWAP OP_MUL 00e1f505 OP_DIV OP_NEGATE OP_NUMEQUALVERIFY OP_2DROP OP_2DROP OP_2DROP OP_DROP OP_ELSE OP_0 OP_UTXOTOKENCATEGORY OP_2 OP_PICK OP_2 OP_CAT OP_EQUALVERIFY OP_ENDIF OP_2DROP OP_DROP OP_1",
+  "source": "//   \n// CatDex - WIP 20250115, Mock tested\n//\n//   Parameters:\n//\n//     authCat - the token category authorizing trades or transfers (owner's NFT)\n//     assetCat - the category of the fungible token being traded\n//\n\ncontract CatDex(bytes32 authCat, bytes32 assetCat){\n\n\n    function swap(){\n    \n        // Set the index of the order baton related to this trade\n        // OP_INPUTINDEX OP_INPUTINDEX OP_2 OP_MOD OP_SUB\n        int orderIndex = this.activeInputIndex - (this.activeInputIndex % 2);   \n\n        // If the order input (even input) is a mutable auth Baton ... \n        // OP_DUP OP_UTXOTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUAL OP_IF       \n        if(tx.inputs[orderIndex].tokenCategory == authCat + 0x01){\n\n            // Require the baton is passed back in an output of the same index with mutable capability\n            // OP_DUP OP_OUTPUTTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUALVERIFY\n            require(tx.outputs[orderIndex].tokenCategory == authCat + 0x01,\n            \"order baton must be returned intact\");\n\n            // Require the order baton be passed back to the contract\n            // OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_UTXOBYTECODE OP_EQUALVERIFY\n            require(tx.outputs[orderIndex].lockingBytecode == \n                     tx.inputs[orderIndex].lockingBytecode,\n                     \"order baton must be returned to the dex\");\n\n            // Get the next index of the asset thread\n            // OP_DUP OP_1ADD\n            int assetIndex = orderIndex + 1; \n\n            // Require the asset thread be sent at the current contract\n            // OP_DUP OP_OUTPUTBYTECODE OP_2 OP_PICK OP_OUTPUTBYTECODE OP_EQUALVERIFY\n            require(tx.outputs[assetIndex].lockingBytecode == \n                    tx.outputs[assetIndex].lockingBytecode,\n                     \"token output be returned to the dex\");                 \n                        \n            // if the amount of tokens is greater than zero,\n            // OP_DUP OP_OUTPUTTOKENAMOUNT OP_0 OP_GREATERTHAN OP_IF\n            if(tx.outputs[assetIndex].tokenAmount > 0){\n              // require the asset output contain token category specified by the order\n              // OP_DUP OP_OUTPUTTOKENCATEGORY OP_4 OP_PICK OP_EQUALVERIFY\n              require(tx.outputs[assetIndex].tokenCategory == assetCat,\n                \"wrong token passed as the return asset\");\n            } // OP_ENDIF\n\n            // Parse the order data from the NFT commitment\n            // OP_OVER OP_UTXOTOKENCOMMITMENT OP_16 OP_SPLIT\n            bytes quantityBin, bytes priceBin = \n                          tx.inputs[orderIndex].nftCommitment.split(16);\n\n            // OP_OVER OP_BIN2NUM\n            int orderQuantity = int(quantityBin);  \n\n            // OP_OVER OP_BIN2NUM\n            int price = int(priceBin);\n\n            // Get the amount of the token traded\n            // OP_4 OP_PICK OP_OUTPUTTOKENAMOUNT \n            // OP_5 OP_PICK OP_UTXOTOKENAMOUNT OP_SUB\n            int tradeQuantity = tx.outputs[assetIndex].tokenAmount - \n                                 tx.inputs[assetIndex].tokenAmount;\n\n            // Verify new authCat order baton NFT commitment\n            // OP_2 OP_PICK OP_OVER OP_SUB OP_16 OP_NUM2BIN \n            // OP_2 OP_PICK OP_16 OP_NUM2BIN OP_CAT\n            bytes32 nextCommitment = bytes16(orderQuantity-tradeQuantity) + bytes16(price);\n\n\n            // OP_7 OP_PICK OP_OUTPUTTOKENCOMMITMENT OP_OVER OP_EQUALVERIFY\n            require(tx.outputs[orderIndex].nftCommitment == nextCommitment,\n                \"order baton data was not updated to reflect trade\");\n\n            // require the sign of the quantity traded is matches the order sign  \n            // OP_OVER OP_0 OP_GREATERTHAN OP_4 OP_PICK OP_0 OP_GREATERTHAN OP_EQUALVERIFY\n            require(!(tradeQuantity > 0 && orderQuantity < 0),\n                \"conflicting trade & order direction\"); \n\n            // require the amount traded be less than (or equal to) the quantity available\n            // OP_OVER OP_ABS OP_4 OP_PICK OP_ABS OP_LESSTHANOREQUAL OP_VERIFY\n            require(\n                abs(tradeQuantity) <= abs(orderQuantity),\n                \"trade must be less than or equal to order quantity available\"\n                );\n\n\n            // Verify the value returned with the order exceeds the quantity traded times the price.\n            // OP_7 OP_PICK OP_OUTPUTVALUE OP_8 OP_PICK OP_UTXOVALUE OP_SUB \n            // OP_2OVER OP_SWAP OP_MUL 00e1f505 OP_DIV OP_NEGATE OP_GREATERTHANOREQUAL OP_VERIFY\n            require(\n                (tx.outputs[orderIndex].value - tx.inputs[orderIndex].value) == -(tradeQuantity*price/100_000_000),\n                \"Payment for order too low\"\n            );\n            //\n        } // OP_2DROP OP_2DROP OP_2DROP OP_DROP\n        //\n        // otherwise, if the zeroth input contains the minting baton \n        // OP_ELSE\n        else{\n            // Authentication failed, script fails.\n            // OP_0 OP_UTXOTOKENCATEGORY OP_2 OP_PICK OP_2 OP_CAT OP_EQUALVERIFY\n            require(tx.inputs[0].tokenCategory == authCat + 0x02,\n                \"Authorizing order baton NFT must be passed with each trade on an even input.\");\n        } // OP_ENDIF\n    } \n} // OP_2DROP OP_2DROP OP_1",
+  "debug": {
+    "bytecode": "c0c05297940079ce5279517e87630079d15279517e87690079cd5179c78769007951930079cd5179cd87690079d300a0630079d154798769685179cf607f5179815179815479d35579d09452795179946080527960807e5779d251798769517900a05479009f9a9169517990547990a1695779cc5879c69452795479950400e1f505968f9c69757575757575756700ce5279527e87696851777777",
+    "sourceMap": "17:25:17:46;:50::71;:74::75;:50:::1;:25::76;21:21:21:31:0;;:11::46:1;:50::57:0;;:60::64;:50:::1;:11;:65:101:9:0;25:31:25:41;;:20::56:1;:60::67:0;;:70::74;:60:::1;:20;:12:26:51;30:31:30:41:0;;:20::58:1;31:31:31:41:0;;:21::58:1;30:20;:12:32:64;36:29:36:39:0;;:42::43;:29:::1;40:31:40:41:0;;:20::58:1;41:31:41:41:0;;:20::58:1;40;:12:42:60;46:26:46:36:0;;:15::49:1;:52::53:0;:15:::1;:54:51:13:0;49:33:49:43;;:22::58:1;:62::70:0;;:22:::1;:14:50:58;46:54:51:13;56:36:56:46:0;;:26::61:1;:68::70:0;:26::71:1;59:36:59:47:0;;:32::48:1;62:28:62:36:0;;:24::37:1;67:43:67:53:0;;:32::66:1;68:43:68:53:0;;:33::66:1;67:32;73:45:73:58:0;;:59::72;;:45:::1;:37::73;;:84::89:0;;:76::90:1;;:37;77:31:77:41:0;;:20::56:1;:60::74:0;;:20:::1;:12:78:69;82:22:82:35:0;;:38::39;:22:::1;:43::56:0;;:59::60;:43:::1;:22;:20::61;:12:83:55;88:20:88:33:0;;:16::34:1;:42::55:0;;:38::56:1;:16;87:12:90:18;97:28:97:38:0;;:17::45:1;:58::68:0;;:48::75:1;:17;:82::95:0;;:96::101;;:82:::1;:102::113:0;:82:::1;:80::114;:16;96:12:99:14;21:65:101:9;;;;;;;105:12:110::0;108:30:108:31;:20::46:1;:50::57:0;;:60::64;:50:::1;:20;:12:109:96;105::110:9;13:4:111:5;;;",
+    "logs": [],
+    "requires": [
+      {
+        "ip": 24,
+        "line": 25,
+        "message": "order baton must be returned intact"
+      },
+      {
+        "ip": 32,
+        "line": 30,
+        "message": "order baton must be returned to the dex"
+      },
+      {
+        "ip": 44,
+        "line": 40,
+        "message": "token output be returned to the dex"
+      },
+      {
+        "ip": 57,
+        "line": 49,
+        "message": "wrong token passed as the return asset"
+      },
+      {
+        "ip": 95,
+        "line": 77,
+        "message": "order baton data was not updated to reflect trade"
+      },
+      {
+        "ip": 106,
+        "line": 82,
+        "message": "conflicting trade & order direction"
+      },
+      {
+        "ip": 114,
+        "line": 87,
+        "message": "trade must be less than or equal to order quantity available"
+      },
+      {
+        "ip": 131,
+        "line": 96,
+        "message": "Payment for order too low"
+      },
+      {
+        "ip": 147,
+        "line": 108,
+        "message": "Authorizing order baton NFT must be passed with each trade on an even input."
+      }
+    ]
+  },
+  "compiler": {
+    "name": "cashc",
+    "version": "0.10.5"
+  },
+  "updatedAt": "2025-11-02T01:12:19.375Z"
+}

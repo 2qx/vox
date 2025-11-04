@@ -1,5 +1,5 @@
-export const BATON = 'fbc0b001313509454331f23f4b1891a8d9a284421efcc33187f1a1cdd37ccb46'
-export const TESTNET_BATON = 'fbce0009ccce339e3398688d20fc60fce1c9316182c6680fe65e074e2fa046d2'
+export const BATON = 'fbc0b001313509454331f23f4b1891a8d9a284421efcc33187f1a1cdd37ccb46';
+export const TESTNET_BATON = 'fbce0009ccce339e3398688d20fc60fce1c9316182c6680fe65e074e2fa046d2';
 
 export const VAULT_SERIES = [3, 4, 5, 6]
 export const COUPON_SERIES = [-1, 0, 1, 2]

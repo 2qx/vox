@@ -4,7 +4,7 @@ import packageInfo from '../package.json' with { type: "json" };
 import {
   binToHex,
   hexToBin,
-  CompilerBCH,
+  CompilerBch,
   generateTransaction,
   encodeTransaction,
   InputTemplate,
@@ -35,7 +35,7 @@ export default class Drip {
   
   static template = templateV3
 
-  static compiler: CompilerBCH = getLibauthCompiler(this.template)
+  static compiler: CompilerBch = getLibauthCompiler(this.template)
 
   static getLockingBytecode(data = {}): Uint8Array {
     const lockingBytecodeResult = this.compiler.generateBytecode({
@@ -58,7 +58,7 @@ export default class Drip {
     return getAddress(this.getLockingBytecode(), prefix as CashAddressNetworkPrefix)
   }
 
-  static getOutput(utxo: UtxoI): OutputTemplate<CompilerBCH> {
+  static getOutput(utxo: UtxoI): OutputTemplate<CompilerBch> {
 
     let fee = Math.round((utxo.value * DECAY_NUMERATOR) / DECAY_DENOMINATOR) - 1
     fee = fee < MIN_PAYOUT ? MIN_PAYOUT : fee
@@ -80,7 +80,7 @@ export default class Drip {
     }
   }
 
-  static getInput(utxo: UtxoI): InputTemplate<CompilerBCH> {
+  static getInput(utxo: UtxoI): InputTemplate<CompilerBch> {
     let unlockingScript = utxo.value > BigInt(DUST_LIMIT + MIN_PAYOUT) ? 'unlock_return' : 'unlock_burn'
     return {
       outpointIndex: utxo.tx_pos,
@@ -91,13 +91,13 @@ export default class Drip {
         script: unlockingScript,
         valueSatoshis: BigInt(utxo.value),
       },
-    } as InputTemplate<CompilerBCH>
+    } as InputTemplate<CompilerBch>
   }
 
   static processOutpoint(utxo: UtxoI): string {
 
-    const inputs: InputTemplate<CompilerBCH>[] = [];
-    const outputs: OutputTemplate<CompilerBCH>[] = [];
+    const inputs: InputTemplate<CompilerBch>[] = [];
+    const outputs: OutputTemplate<CompilerBch>[] = [];
 
     outputs.push(this.getOutput(utxo));
     inputs.push(this.getInput(utxo));

@@ -6,6 +6,10 @@ import { vectors, error_vectors } from './fixtures/bip21.fixtures.js';
 
 import { decode } from "../bip21.js";
 
+    test.skip("skip, no op", (t) => {
+
+        t.assert(true)
+    });
 
 // for (const vector of vectors) {
 //     test.skip(vector.description, (t) => {
