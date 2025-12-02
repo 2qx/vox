@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 
-	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBCH } from '@bitauth/libauth';
+	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch } from '@bitauth/libauth';
 
 	import Readme from './README.md';
 
@@ -55,10 +55,10 @@
 
 	scripthash = Badger.getScriptHash();
 
-	const isMainnet = page.url.hostname == 'vox.cash';
+	const isMainnet = true; //page.url.hostname == 'vox.cash';
 	const icon = isMainnet ? BADGER : tBADGER;
 	const category = isMainnet ? binToHex(badgerCat) : binToHex(tBadgerCat);
-	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
+	const baseTicker = isMainnet ? 'Bch' : 'tBch';
 	const ticker = isMainnet ? 'BADGER' : 'tBADGER';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const server = getDefaultElectrum(isMainnet);
@@ -86,6 +86,15 @@
 		}
 	};
 
+	const broadcast = async function (raw_tx: string) {
+		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
+		if (response instanceof Error) {
+			connectionStatus = ConnectionStatus[electrumClient.status];
+			throw response;
+		}
+		response as any[];
+	};
+
 	const updateUnspent = async function () {
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
@@ -105,6 +114,13 @@
 					};
 				});
 		}
+	};
+
+	const unlock = async function (utxo: UtxoI) {
+		let unlockResponse = BadgerStake.unlock(utxo);
+
+		let raw_tx = binToHex(encodeTransactionBch(unlockResponse.transaction));
+		await broadcast(raw_tx);
 	};
 
 	onMount(async () => {
@@ -163,12 +179,12 @@
 	</div> -->
 
 	{#if unspent.length}
-		<h3>Current Stakes</h3>
+ 		<h3>Current Stakes</h3>
 		<div class="grid">
 			{#if unspent.filter((i: any) => i.height > 0).length > 0}
 				{#each unspent.filter((i: any) => i.height > 0) as item, index}
 					<div class="row">
-						<BadgerStakeButton {...item} />
+						<BadgerStakeButton { unlock} {...item} />
 					</div>
 				{/each}
 			{:else}

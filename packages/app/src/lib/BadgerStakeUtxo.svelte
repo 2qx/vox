@@ -22,8 +22,7 @@
 		now
 	} = $props();
 
-	let hasMatured = $derived((height + stake) < now);
-	
+	let hasMatured = $derived(height + stake < now);
 </script>
 
 <div class="container">
@@ -47,7 +46,12 @@
 					{#if hasMatured}
 						<button
 							onclick={() => {
-								unlock({ tx_hash: tx_hash, tx_pos: tx_pos });
+								unlock({
+									tx_hash: tx_hash,
+									tx_pos: tx_pos,
+									value: value,
+									token_data: token_data
+								});
 							}}
 						>
 							release

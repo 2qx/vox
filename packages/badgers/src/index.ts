@@ -4,13 +4,14 @@ import packageInfo from '../package.json' with { type: "json" };
 import {
     binToHex,
     CompilerBch,
-    createVirtualMachineBCH,
-    encodeTransactionBCH,
+    createVirtualMachineBch,
+    encodeTransactionBch,
     generateTransaction,
     hexToBin,
     InputTemplate,
     OutputTemplate,
     Output,
+    Transaction,
     verifyTransactionTokens,
     binToNumberInt16LE
 } from '@bitauth/libauth';
@@ -37,7 +38,7 @@ export default class BadgerStake {
 
     static compiler: CompilerBch = getLibauthCompiler(this.template);
 
-    static vm = createVirtualMachineBCH();
+    static vm = createVirtualMachineBch();
 
     static getLockingBytecode(): Uint8Array {
         const lockingBytecodeResult = this.compiler.generateBytecode(
@@ -170,7 +171,11 @@ export default class BadgerStake {
 
     static unlock(
         utxo: UtxoI
-    ): string {
+    ): {
+        transaction: Transaction,
+        sourceOutputs: Output[],
+        verify: string | boolean
+    } {
 
         const inputs: InputTemplate<CompilerBch>[] = [];
         const outputs: OutputTemplate<CompilerBch>[] = [];
@@ -203,8 +208,13 @@ export default class BadgerStake {
             transaction: transaction,
         })
 
+
         if (typeof verify == "string") throw verify
-        return binToHex(encodeTransactionBCH(transaction))
+        return {
+            sourceOutputs: sourceOutputs,
+            transaction: transaction,
+            verify: verify
+        }
     }
 
 }

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
-	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBCH } from '@bitauth/libauth';
+	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch } from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
@@ -100,7 +100,7 @@
 			key
 		);
 
-		let raw_tx = binToHex(encodeTransactionBCH(likePostTx.transaction));
+		let raw_tx = binToHex(encodeTransactionBch(likePostTx.transaction));
 		await broadcast(raw_tx);
 	};
 
@@ -134,10 +134,10 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		let old = response.filter((u: UtxoI) => u.height > 0 && now - u.height > 1000);
+		let old = response.filter((u: UtxoI) => u.height > 0 && now - u.height > 1000).slice(0,300);
 		if (old.length > 0) {
 			let clearPostTx = Channel.clear(topic, old, walletUnspent[0], key, now);
-			let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
+			let raw_tx = binToHex(encodeTransactionBch(clearPostTx.transaction));
 			console.log(raw_tx);
 			await broadcast(raw_tx);
 		}
@@ -154,7 +154,7 @@
 		let spam = response.filter((u: UtxoI) => Math.floor(u.value / 10) * 1000 - u.height < 1000);
 		if (spam.length > 0) {
 			let clearPostTx = Channel.clear(topic, spam, walletUnspent[0], key, now);
-			let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
+			let raw_tx = binToHex(encodeTransactionBch(clearPostTx.transaction));
 			console.log(raw_tx);
 			await broadcast(raw_tx);
 		}
@@ -207,7 +207,7 @@
 
 		let utxos = response.filter((u: UtxoI) => u.tx_hash == post.hash);
 		let clearPostTx = Channel.clear(topic, utxos, walletUnspent[0], key, now);
-		let raw_tx = binToHex(encodeTransactionBCH(clearPostTx.transaction));
+		let raw_tx = binToHex(encodeTransactionBch(clearPostTx.transaction));
 		await broadcast(raw_tx);
 	};
 
@@ -240,7 +240,7 @@
 
 		let post = Channel.post(topic, msg, walletUnspent[0], minValue, key, sequence);
 
-		let raw_tx = binToHex(encodeTransactionBCH(post.transaction));
+		let raw_tx = binToHex(encodeTransactionBch(post.transaction));
 		await broadcast(raw_tx);
 		message = '';
 	};

@@ -1,0 +1,122 @@
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "Block Tops: A minable CashToken",
+  "name": "Block Tops",
+  "entities": {
+    "covenant": {
+      "description": "Emit tokens if a transaction hash is low enough.",
+      "name": "Block Top Vault",
+      "scripts": [
+        "lock",
+        "unlock"
+      ],
+      "variables": {
+        "age": {
+          "description": "The input age (as a number of blocks) claimed to withdraw tokens. The maximum age that can be used to claim tokens is the lessor of covenant thread age or user coins age being used to release tokens.",
+          "name": "Age",
+          "type": "WalletData"
+        }
+      }
+    },
+    "wallet": {
+      "description": "",
+      "name": "Unnamed Entity",
+      "scripts": [
+        "wallet_unlock",
+        "wallet_lock"
+      ],
+      "variables": {
+        "key": {
+          "description": "The private key that controls this wallet.",
+          "name": "Key",
+          "type": "HdKey"
+        }
+      }
+    }
+  },
+  "scenarios": {
+    "release": {
+      "data": {
+        "bytecode": {
+          "age": "10"
+        }
+      },
+      "description": "",
+      "name": "Release Tokens",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "0e09765ada34fa0bd94ef9df8497173e8aefc560f3eb7c9e0e88b345c4cccb36",
+            "outpointIndex": 0,
+            "unlockingBytecode": [
+              "slot"
+            ],
+            "sequenceNumber": 10
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 800,
+            "token": {
+              "amount": "922337203685477580",
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
+              "nft": {
+                "capability": "mutable",
+                "commitment": "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+              }
+            }
+          }
+        ],
+        "locktime": 0,
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 800,
+          "token": {
+            "amount": "922337203685477580",
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "nft": {
+              "capability": "mutable",
+              "commitment": "0000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "unlock": {
+      "passes": [
+        "release"
+      ],
+      "name": "Unlock Tokens",
+      "script": "<age> // ",
+      "unlocks": "lock"
+    },
+    "wallet_unlock": {
+      "name": "Wallet Unlock",
+      "script": "<key.schnorr_signature.all_outputs> <key.public_key>",
+      "unlocks": "wallet_lock"
+    },
+    "lock": {
+      "lockingType": "p2sh32",
+      "name": "Block Top Covenant",
+      "script": "  // pragma cashscript >= 0.12.0;\n\n  // v20251130\n\n  // A token faucet with proof of work.\n  // contract Mine() {\n\n    // function execute(int age) {\n\n        // Force a version two transaction\n        OP_TXVERSION OP_2 OP_NUMEQUALVERIFY \n        // require(tx.version == 2);\n        \n        // Check the purported time has passed and that time locks are enabled\n        OP_DUP OP_CHECKSEQUENCEVERIFY OP_DROP \n        // require(this.age >= age);\n\n        // Require the thread lives on\n        OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY \n        // require(tx.outputs[this.activeInputIndex].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);\n\n        // Require the same token lives on\n        OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY \n        // require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);\n\n        // If the baton is being used as an oracle ...\n        OP_TXINPUTCOUNT OP_1 OP_GREATERTHAN OP_IF \n        // if(tx.inputs.length > 1){\n\n            // Require the oracle user pays an 8000 sat fee \n            OP_INPUTINDEX OP_OUTPUTVALUE <8000> OP_ADD \n            OP_INPUTINDEX OP_UTXOVALUE OP_GREATERTHANOREQUAL OP_VERIFY \n            // require(tx.outputs[this.activeInputIndex].value + 8000 >= tx.inputs[this.activeInputIndex].value);\n\n            // The NFT commitment (difficulty+nonce) must not change\n            OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT \n            OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_EQUALVERIFY \n            // require(tx.outputs[this.activeInputIndex].nftCommitment == tx.inputs[this.activeInputIndex].nftCommitment);\n\n            // The number of fungible tokens must not changed\n            OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT \n            OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_NUMEQUALVERIFY \n            // require(tx.outputs[this.activeInputIndex].tokenAmount == tx.inputs[this.activeInputIndex].tokenAmount);\n\n        // }\n\n        // else (tx.inputs.length == 1)\n        OP_ELSE \n        // else{\n\n            // require exactly two outputs\n            OP_TXOUTPUTCOUNT OP_2 OP_NUMEQUALVERIFY \n            // require(tx.outputs.length == 2);\n\n            // Allow miner to take 800 token dust, plus 400 network fee allowance \n            OP_INPUTINDEX OP_OUTPUTVALUE \n            OP_INPUTINDEX OP_UTXOVALUE <1200> OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY \n            // require(tx.outputs[this.activeInputIndex].value >= tx.inputs[this.activeInputIndex].value - 1200);\n\n            // The value on the miner output is enforced by the network \n            // require(tx.outputs[1].value == 800);\n\n            // Emission schedule\n            // Allow a fraction of running token balance (plus one) to be withdrawn.\n            // Target a four year half life. \n            OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT \n            OP_INPUTINDEX OP_UTXOTOKENAMOUNT \n            OP_INPUTINDEX OP_UTXOTOKENAMOUNT <420768> OP_DIV OP_SUB OP_1ADD \n            OP_GREATERTHANOREQUAL OP_VERIFY\n            // require(\n            //   tx.outputs[this.activeInputIndex].tokenAmount >= \n            //   (tx.inputs[this.activeInputIndex].tokenAmount - \n            //   (tx.inputs[this.activeInputIndex].tokenAmount/420768)) + 1);\n\n            // Miners may claim or implicitly burn their tokens\n            // ~~require(tx.outputs[0].tokenAmount == (tx.inputs[this.activeInputIndex].tokenAmount/420768)+1)~~  \n        \n            // Pop the previous difficulty\n\n            OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_8 OP_SPLIT OP_DROP OP_BIN2NUM \n            // int prevTarget = int(tx.inputs[this.activeInputIndex].nftCommitment.split(8)[0]);\n            \n            OP_TXVERSION OP_8 OP_NUM2BIN \n            OP_TXINPUTCOUNT OP_CAT \n            OP_0 OP_OUTPOINTTXHASH OP_CAT \n            OP_0 OP_OUTPOINTINDEX OP_CAT \n            OP_0 OP_INPUTBYTECODE OP_SIZE OP_NIP OP_CAT \n            OP_0 OP_INPUTBYTECODE OP_CAT \n            OP_0 OP_INPUTSEQUENCENUMBER OP_CAT \n            OP_TXOUTPUTCOUNT OP_CAT \n            OP_0 OP_OUTPUTVALUE OP_CAT \n            <0xef> OP_CAT \n            OP_0 OP_OUTPUTTOKENCOMMITMENT OP_CAT \n            OP_0 OP_OUTPUTTOKENAMOUNT OP_CAT \n            OP_0 OP_OUTPUTBYTECODE OP_CAT \n            OP_1 OP_OUTPUTVALUE OP_CAT \n            <0xef> OP_CAT \n            OP_1 OP_OUTPUTTOKENCOMMITMENT OP_CAT \n            OP_1 OP_OUTPUTTOKENAMOUNT OP_CAT \n            OP_1 OP_OUTPUTBYTECODE OP_CAT \n            OP_0 OP_4 OP_NUM2BIN OP_CAT \n            OP_DUP OP_HASH256 \n            // bytes preimage = bytes8(tx.version) + \n            //                  bytes(tx.inputs.length) + \n            //                  tx.inputs[0].outpointTransactionHash +\n            //                  bytes(tx.inputs[0].outpointIndex) +\n            //                  bytes(tx.inputs[0].unlockingBytecode.length) + \n            //                  tx.inputs[0].unlockingBytecode +\n            //                  bytes(tx.inputs[0].sequenceNumber)  +\n            //                  bytes(tx.outputs.length) + \n            //                  bytes(tx.outputs[0].value) +  \n            //                  0xef +\n            //                  bytes(tx.outputs[0].nftCommitment) + \n            //                  bytes(tx.outputs[0].tokenAmount) + \n            //                  tx.outputs[0].lockingBytecode +\n            //                  bytes(tx.outputs[1].value) +  \n            //                  0xef +\n            //                  bytes(tx.outputs[1].nftCommitment) + \n            //                  bytes(tx.outputs[1].tokenAmount) + \n            //                  tx.outputs[1].lockingBytecode +\n            //                  bytes4(0);\n\n            OP_8 OP_SPLIT OP_DROP OP_BIN2NUM \n            // int nextHash = int(hash256(preimage).split(8)[0]);\n\n            // Target a once per block emission schedule\n            // If the age is 0, lower the difficulty threshold 1%\n            // If the age is 1, keep the present difficulty\n            // else, increase difficulty proportional to the age\n            OP_DUP OP_3 OP_PICK OP_1 OP_6 OP_PICK OP_1 <100> OP_DIV OP_SUB OP_ADD OP_MUL OP_LESSTHAN OP_VERIFY \n            // require(nextHash < prevTarget * (1 + (age - 1 /100)));\n\n            // Require the output carries the next target.\n            // The nonce and nonce length is unrestricted.\n            OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_8 OP_SPLIT OP_DROP OP_BIN2NUM \n            // int nextTarget = int(tx.outputs[this.activeInputIndex].nftCommitment.split(8)[0]);\n\n            // The difficulty calculated is below the required target\n            OP_2DUP OP_LESSTHAN OP_VERIFY \n            // require(nextHash < nextTarget);\n        OP_2DROP OP_2DROP \n        //}   \n    //}\n    OP_ENDIF OP_DROP OP_1\n\n  //}"
+    },
+    "wallet_lock": {
+      "lockingType": "standard",
+      "name": "Wallet Lock",
+      "script": "OP_DUP OP_HASH160 <$(<key.public_key> OP_HASH160)> OP_EQUALVERIFY OP_CHECKSIG"
+    }
+  },
+  "supported": [
+    "BCH_2026_05"
+  ]
+}

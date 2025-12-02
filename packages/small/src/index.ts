@@ -110,11 +110,7 @@ export default class SmallIndex {
 
         return {
             lockingBytecode: {
-                data: {
-                    // "bytecode": {
-                    //     "key": hexToBin(indexKey)
-                    // }
-                },
+                data: {},
                 compiler: this.compiler,
                 script: 'op_return'
             },

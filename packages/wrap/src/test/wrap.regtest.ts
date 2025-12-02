@@ -8,7 +8,7 @@ import Wrap from "../index.js";
 import {
   binToHex,
   cashAddressToLockingBytecode,
-  encodeTransactionBCH,
+  encodeTransactionBch,
   swapEndianness
 } from '@bitauth/libauth';
 
@@ -23,7 +23,6 @@ test('test wrap covenant address', async t => {
   t.not(Wrap.getAddress("bchreg"), "bchreg:r0ujgnc9jnyurzv99678fgac3fdrq8x3py9rlrg6dlnz96qxrdl02t6jek3sw")
   t.is(Wrap.getAddress("bchreg"), "bchreg:r0ujgnc9jnyurzv99678fgac3fdrq8x3py9rlrg6dlnz96qxrdl02ah3df4j5")
   t.is(Wrap.getAddress("bchtest"), "bchtest:r0ujgnc9jnyurzv99678fgac3fdrq8x3py9rlrg6dlnz96qxrdl02gar8wz9u")
-
 
 });
 
@@ -72,7 +71,7 @@ test('test wrap function with key', async t => {
     key,
     tWBCH
   )
-  await provider.sendRawTransaction(binToHex(encodeTransactionBCH(tx.transaction)))
+  await provider.sendRawTransaction(binToHex(encodeTransactionBch(tx.transaction)))
 });
 
 

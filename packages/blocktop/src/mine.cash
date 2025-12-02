@@ -1,0 +1,100 @@
+  pragma cashscript >= 0.12.0;
+
+  // v20251130
+
+  // A token faucet with proof of work.
+  contract Mine() {
+
+    function execute(int age) {
+
+        // Force a version two transaction
+        require(tx.version == 2);
+        
+        // Check the purported time has passed and that time locks are enabled
+        require(this.age >= age);
+
+        // Require the thread lives on
+        require(tx.outputs[this.activeInputIndex].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);
+
+        // Require the same token lives on
+        require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);
+
+        // If the baton is being used as an oracle ...
+        if(tx.inputs.length > 1){
+
+            // Require the oracle user pays an 8000 sat fee 
+            require(tx.outputs[this.activeInputIndex].value + 8000 >= tx.inputs[this.activeInputIndex].value);
+
+            // The NFT commitment (difficulty+nonce) must not change
+            require(tx.outputs[this.activeInputIndex].nftCommitment == tx.inputs[this.activeInputIndex].nftCommitment);
+
+            // The number of fungible tokens must not changed
+            require(tx.outputs[this.activeInputIndex].tokenAmount == tx.inputs[this.activeInputIndex].tokenAmount);
+
+        }
+
+        // else (tx.inputs.length == 1)
+        else{
+
+            // require exactly two outputs
+            require(tx.outputs.length == 2);
+
+            // Allow miner to take 800 token dust, plus 400 network fee allowance 
+            require(tx.outputs[this.activeInputIndex].value >= tx.inputs[this.activeInputIndex].value - 1200);
+
+            // The value on the miner output is enforced by the network 
+            // require(tx.outputs[1].value == 800);
+
+            // Emission schedule
+            // Allow a fraction of running token balance (plus one) to be withdrawn.
+            // Target a four year half life. 
+            require(
+                tx.outputs[this.activeInputIndex].tokenAmount >= 
+                (tx.inputs[this.activeInputIndex].tokenAmount - 
+                (tx.inputs[this.activeInputIndex].tokenAmount/420768)) + 1);
+
+            // Miners may claim or implicitly burn their tokens
+            // ~~require(tx.outputs[0].tokenAmount == (tx.inputs[this.activeInputIndex].tokenAmount/420768)+1)~~  
+        
+            // Pop the previous difficulty
+            int prevTarget = int(tx.inputs[this.activeInputIndex].nftCommitment.split(8)[0]);
+            
+            bytes preimage = bytes8(tx.version) + 
+                             bytes(tx.inputs.length) + 
+                             tx.inputs[0].outpointTransactionHash +
+                             bytes(tx.inputs[0].outpointIndex) +
+                             bytes(tx.inputs[0].unlockingBytecode.length) + 
+                             tx.inputs[0].unlockingBytecode +
+                             bytes(tx.inputs[0].sequenceNumber)  +
+                             bytes(tx.outputs.length) + 
+                             bytes(tx.outputs[0].value) +  
+                             0xef +
+                             bytes(tx.outputs[0].nftCommitment) + 
+                             bytes(tx.outputs[0].tokenAmount) + 
+                             tx.outputs[0].lockingBytecode +
+                             bytes(tx.outputs[1].value) +  
+                             0xef +
+                             bytes(tx.outputs[1].nftCommitment) + 
+                             bytes(tx.outputs[1].tokenAmount) + 
+                             tx.outputs[1].lockingBytecode +
+                             bytes4(0);
+
+            int nextHash = int(hash256(preimage).split(8)[0]);
+
+            // Target a once per block emission schedule
+            // If the age is 0, lower the difficulty threshold 1%
+            // If the age is 1, keep the present difficulty
+            // else, increase difficulty proportional to the age
+            require(nextHash < prevTarget * (1 + (age - 1 /100)));
+
+            // Require the output carries the next target.
+            // The nonce and nonce length is unrestricted.
+            int nextTarget = int(tx.outputs[this.activeInputIndex].nftCommitment.split(8)[0]);
+
+            // The difficulty calculated is below the required target
+            require(nextHash < nextTarget);
+            
+        }   
+    }
+
+  }

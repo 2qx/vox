@@ -319,7 +319,6 @@ export class Vault {
             token: {
                 category: hexToBin(utxo.token_data!.category!),
                 amount: BigInt(utxo.token_data?.amount!) - BigInt(amount)
-
             }
         }
 

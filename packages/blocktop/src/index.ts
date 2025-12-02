@@ -3,38 +3,33 @@ import packageInfo from '../package.json' with { type: "json" };
 
 import {
     bigIntToVmNumber,
-    binToHex,
     CompilerBch,
     createVirtualMachineBch,
     deriveHdPublicKey,
     generateTransaction,
-    hdPrivateKeyToP2pkhLockingBytecode,
     hexToBin,
     InputTemplate,
     OutputTemplate,
     Output,
-    stringify,
     Transaction,
     verifyTransactionTokens
 } from '@bitauth/libauth';
 
 import {
-    getTransactionFees,
     getAddress,
     type CashAddressNetworkPrefix,
     getLibauthCompiler,
     getScriptHash,
     UtxoI,
-    sumTokenAmounts,
     sumSourceOutputValue,
     sumSourceOutputTokenAmounts
 } from '@unspent/tau';
 
-export const BPTS = hexToBin('7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c')
-export const tBPTS = hexToBin('ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271')
+export const BTOP = hexToBin('7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c')
+export const tBTOP = hexToBin('ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271')
 
 
-export default class BlockPoint {
+export default class BlockTop {
 
     static USER_AGENT = packageInfo.name;
 
@@ -79,15 +74,20 @@ export default class BlockPoint {
         return {
             lockingBytecode: this.getLockingBytecode(),
             valueSatoshis: BigInt(utxo.value),
-            token: {
-                category: hexToBin(utxo.token_data!.category!),
-                amount: BigInt(utxo.token_data?.amount!)
-            }
+            token: utxo.token_data ? {
+                category: hexToBin(utxo.token_data.category!),
+                amount: BigInt(utxo.token_data.amount),
+                nft: utxo.token_data.nft ? {
+                    commitment: hexToBin(utxo.token_data.nft.commitment!),
+                    capability: utxo.token_data.nft.capability,
+                } : undefined
+            } : undefined
         }
 
     }
 
     static getInput(utxo: UtxoI, age: number): InputTemplate<CompilerBch> {
+
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -101,6 +101,14 @@ export default class BlockPoint {
                 compiler: this.compiler,
                 script: 'unlock',
                 valueSatoshis: BigInt(utxo.value),
+                token: utxo.token_data ? {
+                    category: hexToBin(utxo.token_data!.category!),
+                    amount: BigInt(utxo.token_data!.amount),
+                    nft: utxo.token_data.nft ? {
+                        commitment: hexToBin(utxo.token_data.nft.commitment!),
+                        capability: utxo.token_data.nft.capability,
+                    } : undefined
+                } : undefined
             },
         } as InputTemplate<CompilerBch>
     }
@@ -117,59 +125,20 @@ export default class BlockPoint {
                 compiler: this.compiler,
                 script: 'lock'
             },
-            valueSatoshis: BigInt(utxo.value),
+            valueSatoshis: 800n,
             token: {
                 category: hexToBin(utxo.token_data!.category!),
-                amount: BigInt(utxo.token_data?.amount!) - BigInt(amount)
-
+                amount: BigInt(utxo.token_data?.amount!) - BigInt(amount),
+                nft: {
+                    capability: "mutable",
+                    commitment: hexToBin(utxo.token_data?.nft?.commitment!)
+                }
             }
         }
 
     }
 
-    static getWalletSourceOutput(utxo: UtxoI, key?: string): Output {
-
-        const lockingBytecode = key ? hdPrivateKeyToP2pkhLockingBytecode({
-            addressIndex: 0,
-            hdPrivateKey: key
-        }) : Uint8Array.from(Array(33))
-
-        return {
-            lockingBytecode: lockingBytecode,
-            valueSatoshis: BigInt(utxo.value),
-            token: utxo.token_data ? {
-                category: hexToBin(utxo.token_data!.category!),
-                amount: BigInt(utxo.token_data?.amount!)
-            } : undefined
-        }
-
-    }
-
-
-    static getWalletInput(utxo: UtxoI, age: number, privateKey?: string, addressIndex = 0): InputTemplate<CompilerBch> {
-        const unlockingData = privateKey ? {
-            compiler: this.compiler,
-            data: {
-                hdKeys: {
-                    addressIndex: addressIndex,
-                    hdPrivateKeys: {
-                        'wallet': privateKey
-                    },
-                }
-            },
-            script: 'wallet_unlock',
-            valueSatoshis: BigInt(utxo.value)
-        } : Uint8Array.from(Array())
-
-        return {
-            outpointIndex: utxo.tx_pos,
-            outpointTransactionHash: hexToBin(utxo.tx_hash),
-            sequenceNumber: age,
-            unlockingBytecode: unlockingData,
-        } as InputTemplate<CompilerBch>
-    }
-
-    static getTokenOutput(amount: number, privateKey?: any, addressIndex = 0, category = BPTS): OutputTemplate<CompilerBch> {
+    static getRewardOutput(amount: number, privateKey?: any, addressIndex = 0, category = BTOP): OutputTemplate<CompilerBch> {
 
         const lockingBytecode = privateKey ? {
             compiler: this.compiler,
@@ -195,52 +164,9 @@ export default class BlockPoint {
 
     }
 
-    static getChangeOutput(utxo: UtxoI, privateKey?: any, addressIndex = 0): OutputTemplate<CompilerBch> {
-
-
-        const lockingBytecode = privateKey ? {
-            compiler: this.compiler,
-            data: {
-                hdKeys: {
-                    addressIndex: addressIndex,
-                    hdPublicKeys: {
-                        'wallet': deriveHdPublicKey(privateKey).hdPublicKey
-                    },
-                },
-            },
-            script: 'wallet_lock'
-        } : Uint8Array.from(Array(33))
-
-        return {
-            lockingBytecode: lockingBytecode,
-            valueSatoshis: BigInt(utxo.value) - 800n
-        }
-
-    }
 
     /**
-     * Get source outputs, transform contract & wallet outpoints for spending verification.
-     *
-     * @param contractUtxo - contract outputs to use as input.
-     * @param walletUtxo - wallet outputs to use as input.
-     * @param key - private key to sign transaction wallet inputs.
-     *
-     * @returns a transaction template.
-     */
-
-    static getSourceOutputs(
-        contractUtxo: UtxoI,
-        walletUtxo: UtxoI,
-        key?: string
-    ): Output[] {
-        const sourceOutputs: Output[] = [];
-        sourceOutputs.push(this.getWalletSourceOutput(walletUtxo, key));
-        sourceOutputs.push(this.getSourceOutput(contractUtxo));
-        return sourceOutputs
-    }
-
-    /**
-     * Claim some Block Points.
+     * Claim some Block Tops.
      *
      * @param now - The current bitcoin block height timestamp (expressed in blocks).
      * @param contractUtxo - contract outputs to use as input.
@@ -255,7 +181,6 @@ export default class BlockPoint {
     static claim(
         now: number,
         contractUtxo: UtxoI,
-        walletUtxo: UtxoI,
         key?: string,
         category?: string,
         fee = 1
@@ -268,12 +193,12 @@ export default class BlockPoint {
         const inputs: InputTemplate<CompilerBch>[] = [];
         const outputs: OutputTemplate<CompilerBch>[] = [];
 
-        let bptCat = category ? hexToBin(category) : BPTS
+        let btopCat = category ? hexToBin(category) : BTOP
 
-        const youngerUtxo = walletUtxo.height > contractUtxo.height ? walletUtxo.height : contractUtxo.height
+        const youngerUtxo =  contractUtxo.height
 
         const age = now - youngerUtxo;
-        const amount = Math.floor(age * walletUtxo.value / 100000000)
+        const amount = Math.floor(contractUtxo.value / 420768)
 
         let config = {
             locktime: 0,
@@ -282,26 +207,25 @@ export default class BlockPoint {
             outputs
         }
 
-        config.inputs.push(this.getWalletInput(walletUtxo, age, key));
-        config.outputs.push(this.getTokenOutput(amount, key, 0, bptCat));
-
         config.inputs.push(this.getInput(contractUtxo, age));
         config.outputs.push(this.getOutput(contractUtxo, amount, age));
+        config.outputs.push(this.getRewardOutput(amount, key, 0, btopCat));
 
-        config.outputs.push(this.getChangeOutput(walletUtxo, key, 0));
 
         let result = generateTransaction(config);
+        
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
-
-        const estimatedFee = getTransactionFees(result.transaction, fee)
+        
+        //const estimatedFee = getTransactionFees(result.transaction, fee)
 
         // subtract fees off the change output
-        config.outputs[2]!.valueSatoshis = config.outputs[2]!.valueSatoshis - estimatedFee
+        // config.outputs[2]!.valueSatoshis = config.outputs[2]!.valueSatoshis - estimatedFee
 
         result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
-        const sourceOutputs = this.getSourceOutputs(contractUtxo, walletUtxo, key);
+
+        const sourceOutputs = [ this.getSourceOutput(contractUtxo) ];
 
         const transaction = result.transaction
 

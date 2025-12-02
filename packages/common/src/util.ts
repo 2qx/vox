@@ -5,13 +5,13 @@ import {
   // CashAddressNetworkPrefix,
   cashAddressTypeBitsToType,
   cashAssemblyToBin,
-  CompilerBCH,
+  CompilerBch,
   decodeCashAddressFormat,
   decodeCashAddressFormatWithoutPrefix,
   decodeCashAddressVersionByte,
-  encodeTransactionBCH,
+  encodeTransactionBch,
   // hexToBin,
-  // CompilerBCH,
+  // CompilerBch,
   // generateTransaction,
   // InputTemplate,
   lockingBytecodeToCashAddress,
@@ -94,6 +94,7 @@ export function sumUtxoValue(utxos: UtxoI[], subTokenDust = false) {
 }
 
 export function sumTokenAmounts(utxos: UtxoI[], tokenId: string): bigint {
+  if (tokenId && typeof tokenId !== "string") tokenId = binToHex(tokenId)
   if (utxos.length > 0) {
     const tokenArray: (string | bigint)[] = utxos
       .filter((utxo) => utxo.token_data?.category === tokenId)
@@ -119,9 +120,9 @@ export function sumSourceOutputValue(source: Output[], subTokenDust = false) {
   }
 }
 
-export function sumOutputValue(outputs: OutputTemplate<CompilerBCH>[], subTokenDust = false) {
+export function sumOutputValue(outputs: OutputTemplate<CompilerBch>[], subTokenDust = false) {
   if (outputs.length > 0) {
-    const balanceArray: bigint[] = outputs.map((o: OutputTemplate<CompilerBCH>) => {
+    const balanceArray: bigint[] = outputs.map((o: OutputTemplate<CompilerBch>) => {
       return o.valueSatoshis;
     });
     const balance = balanceArray.reduce((a: bigint, b: bigint) => a + b - (subTokenDust ? 800n : 0n), 0n);
@@ -131,8 +132,27 @@ export function sumOutputValue(outputs: OutputTemplate<CompilerBCH>[], subTokenD
   }
 }
 
+export function sumOutputTokenAmounts(
+  outputs: OutputTemplate<CompilerBch>[],
+  tokenId: string | Uint8Array) {
+  if (tokenId && typeof tokenId !== "string") tokenId = binToHex(tokenId)
+  if (outputs.length > 0) {
+    const tokenArray: (string | bigint)[] = outputs
+      .filter((o) => o.token && binToHex(o.token?.category) === tokenId)
+      .map((o: OutputTemplate<CompilerBch>) => {
+        return BigInt(o.token?.amount!) || 0n;
+      });
+    const balance = tokenArray.reduce((a: any, b: any) => BigInt(a) + BigInt(b), 0n);
+    return BigInt(balance);
+  } else {
+    return 0n;
+  }
+}
 
-export function sumSourceOutputTokenAmounts(source: Output[], tokenId?: string): bigint {
+
+
+export function sumSourceOutputTokenAmounts(source: Output[], tokenId?: string | Uint8Array): bigint {
+  if (tokenId && typeof tokenId !== "string") tokenId = binToHex(tokenId)
   if (source.length > 0) {
     const tokenArray: (string | bigint)[] = source
       .filter((source) => source.token && binToHex(source.token?.category) === tokenId)
@@ -148,7 +168,7 @@ export function sumSourceOutputTokenAmounts(source: Output[], tokenId?: string):
 
 
 export function getTransactionFees(tx: Transaction, rate = 1): bigint {
-  return BigInt(encodeTransactionBCH(tx).length * rate)
+  return BigInt(encodeTransactionBch(tx).length * rate)
 }
 
 

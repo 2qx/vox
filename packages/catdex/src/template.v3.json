@@ -1,754 +1,1017 @@
-    {
-      "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
-      "description": "CatDex: a limit order CashToken exchange.",
-      "name": "CatDex",
-      "entities": {
-        "covenant": {
-          "description": "A blackboard lists limit orders and authorizes trade for a Category Decentralized Exchange.",
-          "name": "CatDex Blackboard",
-          "scripts": [
-            "sell",
-            "buy",
-            "catdex_blackboard",
-            "administer"
-          ],
-          "variables": {
-            "auth_category": {
-              "description": "Stake amount.",
-              "name": "Authentication Token Category",
-              "type": "WalletData"
-            },
-            "asset_category": {
-              "description": "The CashToken Category Token ID of the asset being traded",
-              "name": "Asset Token Category",
-              "type": "WalletData"
-            },
-            "key": {
-              "description": "The private key that controls this wallet.",
-              "name": "Key",
-              "type": "HdKey"
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "CatDex: a bi-directional limit order CashToken exchange.",
+  "name": "CatDex",
+  "entities": {
+    "covenant": {
+      "description": "A CatDex blackboard contract holds limit orders and token treads for trading. \n\n\nAnyone may spend a mutable order NFT to trade some or all of the quantity specified from any output held by the exchange.  \n\n\nFeatures:\n\n\n  - Bidirectional limit order exchange.\n  - ZERO commission trades*.\n  - Partial order fulfillment.\n  - Cash bids for assets not held.\n  - Allows total liquidation of token assets.\n  - Minting NFT holder may easily withdraw, cancel, or rebalance orders.\n  - Many orders may be written in a single transaction. \n  - All orders are discoverable via electrumX\/smallIndex\n  - *Transactions must pay standard fees to miners.\n\n\nOrder Commitments:\n\n\n  Orders are listed on mutable NFT commitments like so\n   \n     byte16(LE)<quantity>   number of tokens remaining in order\n     byte16(LE)<price>      price in token units per coin\n\n\n  - Buy orders are positive (+)\n  - Sell orders are negative (-)\n  - Price MUST be expressed in raw token units per coin (100,000,000 sats)\n  - CatDex has no concept of display decimal metadata \n \nTransaction Building Modes:\n\n\n  Administration Mode\n  \n     Transactions with a minting NFT may withdraw all outputs from the contract.\n  \n     Auth Baton    input[0] -> output[0]     - Authenticating NFT (minting)\n                   input[i] -> output[*]     - Unrestricted spending\n\n\n  Order Mode\n  \n    In \"Order mode\" outputs are submitted in pairs, with both the record for the order\n    and the cash value moving on the even \"foot\" and the tokens trading on the odd \"foot\".\n    \n    orderThread    input[even] -> output[even]  - Order NFT of category (mutable)\n    assetThread    input[odd]  -> output[odd]   - Tread for asset traded.\n\n\nNote: \n\n\n  The exchange owner(s) holds the minting NFT baton(s), which authorizes spending funds from the exchange.\n",
+      "name": "CatDex Blackboard",
+      "scripts": [
+        "unlock",
+        "lock"
+      ],
+      "variables": {
+        "auth_category": {
+          "description": "The CashToken Category for orders and authentication.",
+          "name": "Authentication Token Category",
+          "type": "WalletData"
+        },
+        "asset_category": {
+          "description": "The CashToken Category Token ID of the asset being traded",
+          "name": "Asset Token Category",
+          "type": "WalletData"
+        }
+      }
+    },
+    "wallet": {
+      "description": "Standard p2pkh wallet controlling the exchange minting NFT baton",
+      "name": "Exchange Owner",
+      "scripts": [
+        "wallet_unlock",
+        "wallet_lock"
+      ],
+      "variables": {
+        "key": {
+          "description": "The private key that controls this wallet.",
+          "name": "Key",
+          "type": "HdKey"
+        }
+      }
+    }
+  },
+  "scenarios": {
+    "base": {
+      "data": {
+        "bytecode": {
+          "auth_category": "0xefbe00000000000000000000000000000000000000000000000000000000efbe",
+          "asset_category": "0x2c06f3b2565d0818a8e41f58beff5918d5dbdc64b11ee8ad474e499751cde07f"
+        }
+      },
+      "description": "",
+      "name": "Base Scenario"
+    },
+    "excise_sell_order_baton": {
+      "description": "Buy using a sell order.",
+      "extends": "base",
+      "name": "Use sell order (baton tread)",
+      "transaction": {
+        "inputs": [
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          },
+          {},
+          {
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
             }
           }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 10400,
+            "token": {
+              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "nft": {
+                "capability": "mutable",
+                "commitment": "0000000000000000000000000000000000943577000000000000000000000000"
+              }
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 800,
+            "token": {
+              "amount": 0,
+              "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "valueSatoshis": 9600,
+            "token": {
+              "amount": 20,
+              "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
+            }
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 10000,
+          "token": {
+            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "nft": {
+              "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
+              "capability": "mutable"
+            }
+          }
+        },
+        {
+          "valueSatoshis": 800,
+          "token": {
+            "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+            "amount": 20
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
+          "valueSatoshis": 10000
+        }
+      ]
+    },
+    "excise_sell_order_asset": {
+      "description": "Test buying an asset using a sell order.",
+      "extends": "base",
+      "name": "Use sell order to buy (asset tread)",
+      "transaction": {
+        "inputs": [
+          {},
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          },
+          {
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 10400,
+            "token": {
+              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "nft": {
+                "capability": "mutable",
+                "commitment": "0000000000000000000000000000000000943577000000000000000000000000"
+              }
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 800,
+            "token": {
+              "amount": 0,
+              "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "valueSatoshis": 9600,
+            "token": {
+              "amount": 20,
+              "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
+            }
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "valueSatoshis": 10000,
+          "token": {
+            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "nft": {
+              "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
+              "capability": "mutable"
+            }
+          }
+        },
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 800,
+          "token": {
+            "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+            "amount": 20
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
+          "valueSatoshis": 10000
+        }
+      ]
+    },
+    "overbuy_order_baton": {
+      "description": "Test that overbuying a sell order should fail.",
+      "extends": "base",
+      "name": "FAIL: overbuy sell order (baton tread)",
+      "transaction": {
+        "inputs": [
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          },
+          {},
+          {
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 10800,
+            "token": {
+              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "nft": {
+                "capability": "mutable",
+                "commitment": "1400000000000000000000000000000000943577000000000000000000000000"
+              }
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 800,
+            "token": {
+              "amount": 0,
+              "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "valueSatoshis": 9200,
+            "token": {
+              "amount": 40,
+              "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
+            }
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 10000,
+          "token": {
+            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "nft": {
+              "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
+              "capability": "mutable"
+            }
+          }
+        },
+        {
+          "valueSatoshis": 800,
+          "token": {
+            "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+            "amount": 40
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
+          "valueSatoshis": 10000
+        }
+      ]
+    },
+    "overbuy_order_asset": {
+      "description": "Test that overbuying a sell order should fail.",
+      "extends": "base",
+      "name": "FAIL: overbuy sell order (asset tread)",
+      "transaction": {
+        "inputs": [
+          {},
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          },
+          {
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 10800,
+            "token": {
+              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "nft": {
+                "capability": "mutable",
+                "commitment": "1400000000000000000000000000000000943577000000000000000000000000"
+              }
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 800,
+            "token": {
+              "amount": 0,
+              "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "valueSatoshis": 9200,
+            "token": {
+              "amount": 40,
+              "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
+            }
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "valueSatoshis": 10000,
+          "token": {
+            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "nft": {
+              "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
+              "capability": "mutable"
+            }
+          }
+        },
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 800,
+          "token": {
+            "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+            "amount": 40
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
+          "valueSatoshis": 10000
+        }
+      ]
+    },
+    "misexcise_sell_order_asset": {
+      "description": "Test that selling to a sell order should fail.",
+      "extends": "base",
+      "name": "FAIL: selling into sell order (asset tread)",
+      "transaction": {
+        "inputs": [
+          {},
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          },
+          {
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 10800,
+            "token": {
+              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "nft": {
+                "capability": "mutable",
+                "commitment": "3c00000000000000000000000000008000943577000000000000000000000000"
+              }
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 800,
+            "token": {
+              "amount": 60,
+              "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "valueSatoshis": 10800
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "valueSatoshis": 10000,
+          "token": {
+            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "nft": {
+              "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
+              "capability": "mutable"
+            }
+          }
+        },
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 800,
+          "token": {
+            "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+            "amount": 20
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
+          "valueSatoshis": 10000,
+          "token": {
+            "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+            "amount": 40
+          }
+        }
+      ]
+    },
+    "excise_buy_order_baton": {
+      "description": "Test selling an asset using a buy order.",
+      "extends": "base",
+      "name": "Use buy order to sell tokens",
+      "transaction": {
+        "inputs": [
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          },
+          {},
+          {
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 10000,
+            "token": {
+              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "nft": {
+                "capability": "mutable",
+                "commitment": "0000000000000000000000000000000000943577000000000000000000000000"
+              }
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 800,
+            "token": {
+              "amount": 20,
+              "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "valueSatoshis": 10400
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 10400,
+          "token": {
+            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "nft": {
+              "commitment": "1400000000000000000000000000000000943577000000000000000000000000",
+              "capability": "mutable"
+            }
+          }
+        },
+        {
+          "valueSatoshis": 800,
+          "token": {
+            "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+            "amount": 0
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
+          "valueSatoshis": 10000,
+          "token": {
+            "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+            "amount": 20
+          }
+        }
+      ]
+    },
+    "excise_buy_order_asset": {
+      "description": "Test selling an asset to a buy order.",
+      "extends": "base",
+      "name": "Use buy order to sell tokens",
+      "transaction": {
+        "inputs": [
+          {},
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          },
+          {
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 10000,
+            "token": {
+              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "nft": {
+                "capability": "mutable",
+                "commitment": "0000000000000000000000000000000000943577000000000000000000000000"
+              }
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 800,
+            "token": {
+              "amount": 20,
+              "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "valueSatoshis": 10400
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "valueSatoshis": 10400,
+          "token": {
+            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "nft": {
+              "commitment": "1400000000000000000000000000000000943577000000000000000000000000",
+              "capability": "mutable"
+            }
+          }
+        },
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 800,
+          "token": {
+            "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+            "amount": 0
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
+          "valueSatoshis": 10000,
+          "token": {
+            "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+            "amount": 20
+          }
+        }
+      ]
+    },
+    "create": {
+      "description": "Create an order book",
+      "name": "Create Orderbook",
+      "transaction": {
+        "inputs": [
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          },
+          {},
+          {}
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": "76a9141cb0e414e168062d46cc0e5799c71e3e4b3028cf88ac",
+            "token": {
+              "category": "4ebdbcc129f3cd5759a5d3b76b908bf91f86666cd19793b1a48807fc7f11016c",
+              "amount": 0,
+              "nft": {
+                "commitment": "0adf",
+                "capability": "minting"
+              }
+            },
+            "valueSatoshis": 1000
+          },
+          {
+            "lockingBytecode": "aa202e84afbcdb5951e8d159969a2325f72abe0d62f686793e8283118d6e1fdd96e987",
+            "token": {
+              "category": "4ebdbcc129f3cd5759a5d3b76b908bf91f86666cd19793b1a48807fc7f11016c",
+              "amount": 0,
+              "nft": {
+                "commitment": "20a1070000000000000000000000008014000000000000000000000000000000",
+                "capability": "mutable"
+              }
+            },
+            "valueSatoshis": 800
+          },
+          {
+            "lockingBytecode": "aa202e84afbcdb5951e8d159969a2325f72abe0d62f686793e8283118d6e1fdd96e987",
+            "token": {
+              "category": "35c5f1fe73b627b70e11f8297eea49a0f074f33b201c37e7c21ff6027a84a795",
+              "amount": 0
+            },
+            "valueSatoshis": 800
+          },
+          {
+            "lockingBytecode": "aa202e84afbcdb5951e8d159969a2325f72abe0d62f686793e8283118d6e1fdd96e987",
+            "token": {
+              "category": "4ebdbcc129f3cd5759a5d3b76b908bf91f86666cd19793b1a48807fc7f11016c",
+              "amount": 0,
+              "nft": {
+                "commitment": "a086010000000000000000000000000014000000000000000000000000000000",
+                "capability": "mutable"
+              }
+            },
+            "valueSatoshis": 800
+          },
+          {
+            "lockingBytecode": "aa202e84afbcdb5951e8d159969a2325f72abe0d62f686793e8283118d6e1fdd96e987",
+            "token": {
+              "category": "35c5f1fe73b627b70e11f8297eea49a0f074f33b201c37e7c21ff6027a84a795",
+              "amount": 100000
+            },
+            "valueSatoshis": 800
+          },
+          {
+            "lockingBytecode": "76a9141cb0e414e168062d46cc0e5799c71e3e4b3028cf88ac",
+            "token": {
+              "category": "35c5f1fe73b627b70e11f8297eea49a0f074f33b201c37e7c21ff6027a84a795",
+              "amount": 2099999999900000
+            },
+            "valueSatoshis": 800
+          },
+          {
+            "lockingBytecode": "76a9141cb0e414e168062d46cc0e5799c71e3e4b3028cf88ac",
+            "valueSatoshis": 100093052
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 1000,
+          "token": {
+            "category": "4ebdbcc129f3cd5759a5d3b76b908bf91f86666cd19793b1a48807fc7f11016c",
+            "nft": {
+              "commitment": "0x0adf",
+              "capability": "minting"
+            }
+          }
+        },
+        {
+          "lockingBytecode": "76a9141cb0e414e168062d46cc0e5799c71e3e4b3028cf88ac",
+          "valueSatoshis": 100097016
+        },
+        {
+          "lockingBytecode": "76a9141cb0e414e168062d46cc0e5799c71e3e4b3028cf88ac",
+          "valueSatoshis": 1000,
+          "token": {
+            "category": "35c5f1fe73b627b70e11f8297eea49a0f074f33b201c37e7c21ff6027a84a795",
+            "amount": 2100000000000000
+          }
+        }
+      ]
+    },
+    "withdraw": {
+      "description": "Withdraw accumulated principal and tokens",
+      "extends": "base",
+      "name": "Withdraw",
+      "transaction": {
+        "inputs": [
+          {
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
+            }
+          },
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "valueSatoshis": 800,
+            "token": {
+              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "nft": {
+                "capability": "minting"
+              }
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "valueSatoshis": 100000000,
+            "token": {
+              "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+              "amount": 100000000
+            }
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
+          "valueSatoshis": 800,
+          "token": {
+            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "nft": {
+              "capability": "minting"
+            }
+          }
+        },
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 100000000,
+          "token": {
+            "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+            "amount": 100000000
+          }
+        }
+      ]
+    },
+    "clear": {
+      "data": {
+        "bytecode": {
+          "auth_category": "0x5263006eccd92d7dadbdced311b08e08f940c9c09fe09445d5789d8bd3d6c9aa",
+          "asset_category": "0xe9556bdf407a8bb7122ea1a04c8acfeb9ab9c2cb3682288114263ad2237851c6"
         }
       },
-      "scenarios": {
-        "base": {
-          "data": {
-            "bytecode": {
-              "auth_category": "0xefbe00000000000000000000000000000000000000000000000000000000efbe",
-              "asset_category": "0x2c06f3b2565d0818a8e41f58beff5918d5dbdc64b11ee8ad474e499751cde07f"
+      "description": "Clear an order book",
+      "name": "Clear Orderbook",
+      "transaction": {
+        "inputs": [
+          {
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
             }
           },
-          "description": "",
-          "name": "Base Scenario"
-        },
-        "excise_sell_order_baton": {
-          "description": "Buy using a sell order.",
-          "extends": "base",
-          "name": "Use sell order (baton tread)",
-          "transaction": {
-            "inputs": [
-              {
-                "unlockingBytecode": [
-                  "slot"
-                ]
-              },
-              {},
-              {
-                "unlockingBytecode": {
-                  "script": "wallet_unlock"
-                }
-              }
-            ],
-            "outputs": [
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 10400,
-                "token": {
-                  "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                  "nft": {
-                    "capability": "mutable",
-                    "commitment": "0000000000000000000000000000000000943577000000000000000000000000"
-                  }
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 800,
-                "token": {
-                  "amount": 0,
-                  "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "wallet_lock"
-                },
-                "valueSatoshis": 9600,
-                "token": {
-                  "amount": 20,
-                  "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
-                }
-              }
-            ],
-            "version": 2
-          },
-          "sourceOutputs": [
-            {
-              "lockingBytecode": [
-                "slot"
-              ],
-              "valueSatoshis": 10000,
-              "token": {
-                "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                "nft": {
-                  "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
-                  "capability": "mutable"
-                }
-              }
-            },
-            {
-              "valueSatoshis": 800,
-              "token": {
-                "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
-                "amount": 20
-              }
-            },
-            {
-              "lockingBytecode": {
-                "script": "wallet_lock"
-              },
-              "valueSatoshis": 10000
+          {
+            "unlockingBytecode": {
+              "script": "unlock"
             }
-          ]
-        },
-        "excise_sell_order_asset": {
-          "description": "Test buying an asset using a sell order.",
-          "extends": "base",
-          "name": "Use sell order to buy (asset tread)",
-          "transaction": {
-            "inputs": [
-              {},
-              {
-                "unlockingBytecode": [
-                  "slot"
-                ]
-              },
-              {
-                "unlockingBytecode": {
-                  "script": "wallet_unlock"
-                }
-              }
-            ],
-            "outputs": [
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 10400,
-                "token": {
-                  "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                  "nft": {
-                    "capability": "mutable",
-                    "commitment": "0000000000000000000000000000000000943577000000000000000000000000"
-                  }
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 800,
-                "token": {
-                  "amount": 0,
-                  "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "wallet_lock"
-                },
-                "valueSatoshis": 9600,
-                "token": {
-                  "amount": 20,
-                  "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
-                }
-              }
-            ],
-            "version": 2
           },
-          "sourceOutputs": [
-            {
-              "valueSatoshis": 10000,
-              "token": {
-                "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                "nft": {
-                  "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
-                  "capability": "mutable"
-                }
-              }
-            },
-            {
-              "lockingBytecode": [
-                "slot"
-              ],
-              "valueSatoshis": 800,
-              "token": {
-                "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
-                "amount": 20
-              }
-            },
-            {
-              "lockingBytecode": {
-                "script": "wallet_lock"
-              },
-              "valueSatoshis": 10000
-            }
-          ]
-        },
-        "overbuy_order_baton": {
-          "description": "Test that overbuying a sell order should fail.",
-          "extends": "base",
-          "name": "FAIL: overbuy sell order (baton tread)",
-          "transaction": {
-            "inputs": [
-              {
-                "unlockingBytecode": [
-                  "slot"
-                ]
-              },
-              {},
-              {
-                "unlockingBytecode": {
-                  "script": "wallet_unlock"
-                }
-              }
-            ],
-            "outputs": [
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 10800,
-                "token": {
-                  "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                  "nft": {
-                    "capability": "mutable",
-                    "commitment": "1400000000000000000000000000000000943577000000000000000000000000"
-                  }
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 800,
-                "token": {
-                  "amount": 0,
-                  "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "wallet_lock"
-                },
-                "valueSatoshis": 9200,
-                "token": {
-                  "amount": 40,
-                  "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
-                }
-              }
-            ],
-            "version": 2
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
           },
-          "sourceOutputs": [
-            {
-              "lockingBytecode": [
-                "slot"
-              ],
-              "valueSatoshis": 10000,
-              "token": {
-                "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                "nft": {
-                  "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
-                  "capability": "mutable"
-                }
-              }
-            },
-            {
-              "valueSatoshis": 800,
-              "token": {
-                "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
-                "amount": 40
-              }
-            },
-            {
-              "lockingBytecode": {
-                "script": "wallet_lock"
-              },
-              "valueSatoshis": 10000
+          {
+            "unlockingBytecode": {
+              "script": "unlock"
             }
-          ]
-        },
-        "overbuy_order_asset": {
-          "description": "Test that overbuying a sell order should fail.",
-          "extends": "base",
-          "name": "FAIL: overbuy sell order (asset tread)",
-          "transaction": {
-            "inputs": [
-              {},
-              {
-                "unlockingBytecode": [
-                  "slot"
-                ]
-              },
-              {
-                "unlockingBytecode": {
-                  "script": "wallet_unlock"
-                }
-              }
-            ],
-            "outputs": [
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 10800,
-                "token": {
-                  "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                  "nft": {
-                    "capability": "mutable",
-                    "commitment": "1400000000000000000000000000000000943577000000000000000000000000"
-                  }
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 800,
-                "token": {
-                  "amount": 0,
-                  "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "wallet_lock"
-                },
-                "valueSatoshis": 9200,
-                "token": {
-                  "amount": 40,
-                  "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
-                }
-              }
-            ],
-            "version": 2
           },
-          "sourceOutputs": [
-            {
-              "valueSatoshis": 10000,
-              "token": {
-                "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                "nft": {
-                  "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
-                  "capability": "mutable"
-                }
-              }
-            },
-            {
-              "lockingBytecode": [
-                "slot"
-              ],
-              "valueSatoshis": 800,
-              "token": {
-                "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
-                "amount": 40
-              }
-            },
-            {
-              "lockingBytecode": {
-                "script": "wallet_lock"
-              },
-              "valueSatoshis": 10000
+          {
+            "unlockingBytecode": {
+              "script": "unlock"
             }
-          ]
-        },
-        "misexcise_sell_order_asset": {
-          "description": "Test that selling to a sell order should fail.",
-          "extends": "base",
-          "name": "FAIL: selling into sell order (asset tread)",
-          "transaction": {
-            "inputs": [
-              {},
-              {
-                "unlockingBytecode": [
-                  "slot"
-                ]
-              },
-              {
-                "unlockingBytecode": {
-                  "script": "wallet_unlock"
-                }
-              }
-            ],
-            "outputs": [
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 10800,
-                "token": {
-                  "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                  "nft": {
-                    "capability": "mutable",
-                    "commitment": "3c00000000000000000000000000008000943577000000000000000000000000"
-                  }
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 800,
-                "token": {
-                  "amount": 60,
-                  "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "wallet_lock"
-                },
-                "valueSatoshis": 10800
-              }
-            ],
-            "version": 2
           },
-          "sourceOutputs": [
-            {
-              "valueSatoshis": 10000,
-              "token": {
-                "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                "nft": {
-                  "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
-                  "capability": "mutable"
-                }
-              }
-            },
-            {
-              "lockingBytecode": [
-                "slot"
-              ],
-              "valueSatoshis": 800,
-              "token": {
-                "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
-                "amount": 20
-              }
-            },
-            {
-              "lockingBytecode": {
-                "script": "wallet_lock"
-              },
-              "valueSatoshis": 10000,
-              "token": {
-                "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
-                "amount": 40
-              }
+          {
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
             }
-          ]
-        },
-        "excise_buy_order_baton": {
-          "description": "Test selling an asset using a buy order.",
-          "extends": "base",
-          "name": "Use buy order to sell tokens",
-          "transaction": {
-            "inputs": [
-              {
-                "unlockingBytecode": [
-                  "slot"
-                ]
-              },
-              {},
-              {
-                "unlockingBytecode": {
-                  "script": "wallet_unlock"
-                }
-              }
-            ],
-            "outputs": [
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 10000,
-                "token": {
-                  "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                  "nft": {
-                    "capability": "mutable",
-                    "commitment": "0000000000000000000000000000000000943577000000000000000000000000"
-                  }
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 800,
-                "token": {
-                  "amount": 20,
-                  "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "wallet_lock"
-                },
-                "valueSatoshis": 10400
-              }
-            ],
-            "version": 2
           },
-          "sourceOutputs": [
-            {
-              "lockingBytecode": [
-                "slot"
-              ],
-              "valueSatoshis": 10400,
-              "token": {
-                "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                "nft": {
-                  "commitment": "1400000000000000000000000000000000943577000000000000000000000000",
-                  "capability": "mutable"
-                }
-              }
-            },
-            {
-              "valueSatoshis": 800,
-              "token": {
-                "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
-                "amount": 0
-              }
-            },
-            {
-              "lockingBytecode": {
-                "script": "wallet_lock"
-              },
-              "valueSatoshis": 10000,
-              "token": {
-                "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
-                "amount": 20
-              }
+          {
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
             }
-          ]
-        },
-        "excise_buy_order_asset": {
-          "description": "Test selling an asset to a buy order.",
-          "extends": "base",
-          "name": "Use buy order to sell tokens",
-          "transaction": {
-            "inputs": [
-              {},
-              {
-                "unlockingBytecode": [
-                  "slot"
-                ]
-              },
-              {
-                "unlockingBytecode": {
-                  "script": "wallet_unlock"
-                }
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "token": {
+              "category": "aac9d6d38b9d78d54594e09fc0c940f9088eb011d3cebdad7d2dd9cc6e006352",
+              "amount": 0,
+              "nft": {
+                "commitment": "0x1234",
+                "capability": "minting"
               }
-            ],
-            "outputs": [
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 10000,
-                "token": {
-                  "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                  "nft": {
-                    "capability": "mutable",
-                    "commitment": "0000000000000000000000000000000000943577000000000000000000000000"
-                  }
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "catdex_blackboard"
-                },
-                "valueSatoshis": 800,
-                "token": {
-                  "amount": 20,
-                  "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "wallet_lock"
-                },
-                "valueSatoshis": 10400
-              }
-            ],
-            "version": 2
+            },
+            "valueSatoshis": 1000
           },
-          "sourceOutputs": [
-            {
-              "valueSatoshis": 10400,
-              "token": {
-                "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                "nft": {
-                  "commitment": "1400000000000000000000000000000000943577000000000000000000000000",
-                  "capability": "mutable"
-                }
-              }
+          {
+            "lockingBytecode": {
+              "script": [
+                "copy"
+              ]
             },
-            {
-              "lockingBytecode": [
-                "slot"
-              ],
-              "valueSatoshis": 800,
-              "token": {
-                "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
-                "amount": 0
-              }
+            "token": {
+              "category": "c6517823d23a261481288236cbc2b99aebcf8a4ca0a12e12b78b7a40df6b55e9",
+              "amount": 2100000000000000
             },
-            {
-              "lockingBytecode": {
-                "script": "wallet_lock"
-              },
-              "valueSatoshis": 10000,
-              "token": {
-                "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
-                "amount": 20
-              }
-            }
-          ]
-        },
-        "withdraw": {
-          "description": "Withdraw accumulated principal and tokens",
-          "extends": "base",
-          "name": "Withdraw",
-          "transaction": {
-            "inputs": [
-              {
-                "unlockingBytecode": {
-                  "script": "wallet_unlock"
-                }
-              },
-              {
-                "unlockingBytecode": [
-                  "slot"
-                ]
-              }
-            ],
-            "outputs": [
-              {
-                "lockingBytecode": {
-                  "script": "wallet_lock"
-                },
-                "valueSatoshis": 800,
-                "token": {
-                  "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                  "nft": {
-                    "capability": "minting"
-                  }
-                }
-              },
-              {
-                "lockingBytecode": {
-                  "script": "wallet_lock"
-                },
-                "valueSatoshis": 100000000,
-                "token": {
-                  "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
-                  "amount": 100000000
-                }
-              }
-            ],
-            "version": 2
+            "valueSatoshis": 800
           },
-          "sourceOutputs": [
-            {
-              "lockingBytecode": {
-                "script": "wallet_lock"
-              },
-              "valueSatoshis": 800,
-              "token": {
-                "category": "beef00000000000000000000000000000000000000000000000000000000beef",
-                "nft": {
-                  "capability": "minting"
-                }
-              }
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
             },
-            {
-              "lockingBytecode": [
-                "slot"
-              ],
-              "valueSatoshis": 100000000,
-              "token": {
-                "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
-                "amount": 100000000
-              }
-            }
-          ]
-        }
+            "valueSatoshis": 100094709
+          }
+        ]
       },
-      "scripts": {
-        "sell": {
-          "passes": [
-            "excise_buy_order_baton",
-            "excise_buy_order_asset"
+      "sourceOutputs": [
+        {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
+          "valueSatoshis": 1000,
+          "token": {
+            "category": "aac9d6d38b9d78d54594e09fc0c940f9088eb011d3cebdad7d2dd9cc6e006352",
+            "amount": 0,
+            "nft": {
+              "commitment": "1234",
+              "capability": "minting"
+            }
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "lock"
+          },
+          "valueSatoshis": 10000800,
+          "token": {
+            "category": "aac9d6d38b9d78d54594e09fc0c940f9088eb011d3cebdad7d2dd9cc6e006352",
+            "amount": 0,
+            "nft": {
+              "commitment": "20a1070000000000000000000000008014000000000000000000000000000000",
+              "capability": "mutable"
+            }
+          }
+        },
+        {
+          "lockingBytecode": [
+            "slot"
           ],
-          "name": "Sell assets",
-          "script": "",
-          "unlocks": "catdex_blackboard"
+          "valueSatoshis": 800
         },
-        "buy": {
-          "passes": [
-            "excise_sell_order_baton",
-            "excise_sell_order_asset"
-          ],
-          "fails": [
-            "overbuy_order_baton",
-            "overbuy_order_asset",
-            "misexcise_sell_order_asset"
-          ],
-          "name": "Buy assets",
-          "script": "",
-          "unlocks": "catdex_blackboard"
+        {
+          "valueSatoshis": 800,
+          "token": {
+            "category": "aac9d6d38b9d78d54594e09fc0c940f9088eb011d3cebdad7d2dd9cc6e006352",
+            "amount": 0,
+            "nft": {
+              "commitment": "a086010000000000000000000000000014000000000000000000000000000000",
+              "capability": "mutable"
+            }
+          }
         },
-        "administer": {
-          "passes": [
-            "withdraw"
-          ],
-          "name": "Administer",
-          "script": "",
-          "unlocks": "catdex_blackboard"
+        {
+          "lockingBytecode": {
+            "script": "lock"
+          },
+          "valueSatoshis": 800,
+          "token": {
+            "category": "c6517823d23a261481288236cbc2b99aebcf8a4ca0a12e12b78b7a40df6b55e9",
+            "amount": 100000
+          }
         },
-        "wallet_unlock": {
-          "name": "Wallet Unlock",
-          "script": "<key.schnorr_signature.all_outputs> <key.public_key>",
-          "unlocks": "wallet_lock"
+        {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
+          "valueSatoshis": 90093052
         },
-        "wallet_lock": {
-          "lockingType": "standard",
-          "name": "P2PKH Lock",
-          "script": "OP_DUP\nOP_HASH160 <$(<key.public_key> OP_HASH160\n)> OP_EQUALVERIFY\nOP_CHECKSIG"
-        },
-        "catdex_blackboard": {
-          "lockingType": "p2sh32",
-          "name": "CatDex Blackboard",
-          "script": "// pragma cashscript ^0.10.0;\n\n//\n// CatDex - A token category authorized decentralized exchange\n//\n// Trade fungible tokens at fixed prices based on orders expressed in NFT commitments\n\n//   Features:\n//   - Allow for partial order fulfillment at a fixed price,\n//   - Allow contracts with zero (0) of a specific token to acquire a position in that token\n//   - Allow contracts with some number of tokens to liquidate that position completely\n//   - Allow a minting Baton holder to withdraw, or cancel any open order, by spending/burning utxos.\n//   - Zero commission trades, although order takers pay standard transaction fees to miners.\n//   - Given a known token category, orders are discoverable with the exchange token category.\n//   - Given an exchange category, orders are indexed and retrieved by getting the NFT balance of the exchange.\n\n// Usage:\n\n//   The exchange \"owner\" creates an NFT category with a minting baton to open trade orders on their own behalf.\n\n//   An order to Bid, or Buy, an asset is created by:\n//    creating a mutable NFT with the order in the commitment\n//    where the order quantity to be bought is *positive*, and\n//    the output contains sufficient value to fulfill the entire order,\n//    then sending that output to the dex contract.\n\n//   An Ask order, or Sell, is created as above:\n//     creating a mutable NFT identical to a buy, where,\n//     the quantity available for sale is *negative*,\n//     and the order utxo will accumulate any funds from the sale of the token,\n//     after the owner sends both: the order and the tokens to the contract as two utxos.\n\n//   Order Commitments: mutable NFT commitment to trade fungible token\n  \n//      byte16(LE)<quantity>   number of tokens remaining in order)\n//      byte16(LE)<price>      price per token in sats\n//      TODO: multiplier   pre-multiply the token price by some fixed constant (i.e. decimals)\n//      ===\n//      32 length\n\n//   Transaction Building Modes:\n\n//    Order Mode:\n  \n//      In \"Order mode\" outputs are submitted in pairs, with both the record for the order\n//      and the cash value moving on the even \"foot\" and the tokens trading on the odd \"foot\".\n    \n//      orderAuth     input[even] -> output[even]  - An order NFT of category AuthCat (mutable)\n//      assetVault    input[odd]  -> output[odd]   - An input or output of category AssetCat.\n\n//    Withdraw Mode:\n  \n//      Transactions with a minting NFT may withdraw all outputs from the contract.\n  \n//      Auth             input[0] -> output[0]     - Authenticating NFT of category AuthCat (minting)\n//                       input[i] -> output[*]     - Unrestricted spending\n\n//   Note: \n\n//   The exchange owner(s) holds the minting NFT baton(s), which authorizes spending funds from the exchange.\n\n//   \n// CatDex - WIP 20250115\n//\n//   Parameters:\n//\n//     authCat - the token category authorizing trades or transfers (owner's NFT)\n//     assetCat - the category of the fungible token being traded\n//\n\n<asset_category> <auth_category> \n// contract CatDex(bytes32 authCat, bytes32 assetCat){\n\n//     function swap(){\n    \n        // Set the index of the order baton related to this trade\n        OP_INPUTINDEX OP_INPUTINDEX OP_2 OP_MOD OP_SUB\n        // int orderIndex = this.activeInputIndex - (this.activeInputIndex % 2);   \n\n        // If the order input (even input) is a mutable auth Baton ... \n        OP_DUP OP_UTXOTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUAL OP_IF        \n        // if(tx.inputs[orderIndex].tokenCategory == authCat + 0x01){\n\n            // Require the baton is passed back in an output of the same index with mutable capability\n            OP_DUP OP_OUTPUTTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUALVERIFY\n            // require(tx.outputs[orderIndex].tokenCategory == authCat + 0x01);\n\n            // Require the order baton be passed back to the contract\n            OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_UTXOBYTECODE OP_EQUALVERIFY\n            // require(tx.outputs[orderIndex].lockingBytecode == \n            //          tx.inputs[orderIndex].lockingBytecode);\n\n            // verify asset thread:\n            // - output\n            // - categoryId\n            // - qty\n            //\n\n            // Get the next index of the asset thread\n            OP_DUP OP_1ADD\n            // int assetIndex = orderIndex + 1; \n\n            // Require the asset thread be sent at the current contract\n            OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_OUTPUTBYTECODE OP_EQUALVERIFY\n            // require(tx.outputs[assetIndex].lockingBytecode == \n            //         tx.outputs[assetIndex].lockingBytecode);                 \n                        \n            // if the amount of tokens is greater than zero,\n            OP_DUP OP_OUTPUTTOKENAMOUNT OP_0 OP_GREATERTHAN OP_IF\n            // if(tx.outputs[assetIndex].tokenAmount > 0){\n              // require the asset output contain token category specified by the order\n              OP_DUP OP_OUTPUTTOKENCATEGORY OP_4 OP_PICK OP_EQUALVERIFY\n            //   require(tx.outputs[assetIndex].tokenCategory == assetCat);\n            // } \n            OP_ENDIF\n\n            // Parse the order data from the NFT commitment\n            OP_OVER OP_UTXOTOKENCOMMITMENT OP_16 OP_SPLIT\n            // bytes quantityBin, bytes priceBin = \n            //               tx.inputs[orderIndex].nftCommitment.split(16);\n\n            OP_OVER OP_BIN2NUM\n            // int orderQuantity = int(quantityBin);  \n\n            OP_OVER OP_BIN2NUM\n            // int price = int(priceBin);\n\n            // Get the amount of the token traded\n            OP_4 OP_PICK OP_OUTPUTTOKENAMOUNT \n            OP_5 OP_PICK OP_UTXOTOKENAMOUNT OP_SUB\n            // int tradeQuantity = tx.outputs[assetIndex].tokenAmount - \n            //                      tx.inputs[assetIndex].tokenAmount;\n\n            // Verify new authCat order baton NFT commitment\n            OP_2 OP_PICK OP_OVER OP_SUB OP_16 OP_NUM2BIN \n            OP_2 OP_PICK OP_16 OP_NUM2BIN OP_CAT\n            // bytes32 nextCommitment = bytes16(orderQuantity+tradeQuantity) + bytes16(price);\n\n\n            OP_7 OP_PICK OP_OUTPUTTOKENCOMMITMENT OP_OVER OP_EQUALVERIFY\n            // require(tx.outputs[orderIndex].nftCommitment == nextCommitment);\n\n            // require the sign of the quantity traded matches order  \n            OP_OVER OP_0 OP_GREATERTHAN OP_4 OP_PICK OP_0 OP_LESSTHAN OP_BOOLAND OP_NOT OP_VERIFY\n            // require(!(tradeQuantity > 0 && orderQuantity > 0)); \n\n            // require the amount traded be less than (or equal to) the quantity available\n            OP_OVER OP_ABS OP_4 OP_PICK OP_ABS OP_LESSTHANOREQUAL OP_VERIFY\n            // require(\n            //     abs(tradeQuantity) <= abs(orderQuantity),\n            //     \"trade must be less than or equal to order quantity available\"\n            //     );\n\n\n            // Verify the value returned with the order exceeds the quantity traded times the price.\n            //\n            // Examples:\n            // 0 - 10,000 sats  ->  534 sats  \n            //        |-> Buy -1000 @ 10 sat\n            // 1 -      0 ft    -> 10,000 ft          534-10,000 >= -1000*10 OK\n            //\n            // 2 -  800 sats     -> 10,800 sats\n            //       |-> Sell 1000 @ 10 sat/ft\n            // 3 -  1,000 ft    -> 0 ft                   10,000 >= 1000*10 OK\n            //\n            OP_7 OP_PICK OP_OUTPUTVALUE OP_8 OP_PICK OP_UTXOVALUE OP_SUB \n            OP_2OVER OP_SWAP OP_MUL <100000000> OP_DIV OP_NEGATE OP_NUMEQUALVERIFY\n            // require((tx.outputs[orderIndex].value - tx.inputs[orderIndex].value) >= -(tradeQuantity*price/100_000_000));\n            //\n      //   } \n        OP_2DROP OP_2DROP OP_2DROP OP_DROP\n        //\n        // otherwise, if the zeroth input contains the minting baton \n        OP_ELSE\n      //   else{\n            // Authentication failed, script fails.\n            OP_0 OP_UTXOTOKENCATEGORY OP_2 OP_PICK OP_2 OP_CAT OP_EQUALVERIFY\n            // require(tx.inputs[0].tokenCategory == authCat + 0x02);\n      //   } \n        OP_ENDIF\n//     }\n    \n// } \nOP_2DROP OP_DROP OP_1"
+        {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
+          "valueSatoshis": 800,
+          "token": {
+            "category": "c6517823d23a261481288236cbc2b99aebcf8a4ca0a12e12b78b7a40df6b55e9",
+            "amount": 2099999999900000
+          }
         }
-      },
-      "supported": [
-        "BCH_2024_05",
-        "BCH_2025_05"
       ]
     }
+  },
+  "scripts": {
+    "unlock": {
+      "fails": [
+        "overbuy_order_asset",
+        "overbuy_order_baton",
+        "misexcise_sell_order_asset"
+      ],
+      "passes": [
+        "clear",
+        "excise_buy_order_baton",
+        "excise_buy_order_asset",
+        "excise_sell_order_baton",
+        "excise_sell_order_asset",
+        "withdraw"
+      ],
+      "name": "Swap or Administer",
+      "script": "",
+      "unlocks": "lock"
+    },
+    "wallet_unlock": {
+      "passes": [
+        "create"
+      ],
+      "name": "Wallet Unlock",
+      "script": "<key.schnorr_signature.all_outputs> <key.public_key>",
+      "unlocks": "wallet_lock"
+    },
+    "wallet_lock": {
+      "lockingType": "standard",
+      "name": "Wallet Lock",
+      "script": "OP_DUP OP_HASH160 <$(<key.public_key> OP_HASH160)> OP_EQUALVERIFY OP_CHECKSIG"
+    },
+    "lock": {
+      "lockingType": "p2sh32",
+      "name": "CatDex Blackboard",
+      "script": "// CatDex - A token category authorized decentralized exchange\n//\n// 2025-11-22 Pre-alpha, pre-audit\n//\n// Trade fungible tokens at fixed prices based on orders expressed in NFT commitments\n\n<asset_category> <auth_category>\n\n// pragma cashscript ^0.10.0;\n// contract CatDex(bytes32 authCat, bytes32 assetCat){\n\n    // function swap(){\n    \n        // If the first input has a minting baton (owner),\n        //   the spending of outputs is unrestricted. \n        OP_0 OP_UTXOTOKENCATEGORY OP_OVER OP_2 OP_CAT OP_EQUAL OP_IF \n        // if(tx.inputs[0].tokenCategory == authCat + 0x02){\n            // pass \n        // }\n\n        // If the order input (even input) is a mutable auth Baton ... \n        OP_ELSE    \n        // else{\n            // Push the index of this order baton to the stack\n            OP_INPUTINDEX OP_INPUTINDEX OP_2 OP_MOD OP_SUB \n            // int orderIndex = this.activeInputIndex - (this.activeInputIndex % 2);  \n\n            // Require the order is mutable\n            OP_DUP OP_UTXOTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUALVERIFY \n            // require(tx.inputs[orderIndex].tokenCategory == authCat + 0x01 );\n\n            // Require the mutable baton returns\n            OP_DUP OP_OUTPUTTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUALVERIFY \n            // require(tx.outputs[orderIndex].tokenCategory == authCat + 0x01);\n\n            // Require the order baton be passed back to the contract\n            OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_UTXOBYTECODE OP_EQUALVERIFY \n            // require(tx.outputs[orderIndex].lockingBytecode == \n            //          tx.inputs[orderIndex].lockingBytecode);\n\n            // Get the next index of the asset thread\n            OP_DUP OP_1ADD \n            // int assetIndex = orderIndex + 1; \n\n            // Require the asset thread be sent at the current contract\n            OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_OUTPUTBYTECODE OP_EQUALVERIFY \n            // require(tx.outputs[assetIndex].lockingBytecode == \n            //         tx.outputs[assetIndex].lockingBytecode);                 \n                        \n            // if the amount of tokens is greater than zero,\n            OP_DUP OP_OUTPUTTOKENAMOUNT OP_0 OP_GREATERTHAN OP_IF \n            // if(tx.outputs[assetIndex].tokenAmount > 0){\n              // require the asset output contain token category specified by the order\n              OP_DUP OP_OUTPUTTOKENCATEGORY OP_4 OP_PICK OP_EQUALVERIFY \n            //   require(tx.outputs[assetIndex].tokenCategory == assetCat);\n            // } \n            OP_ENDIF \n\n            // Parse the order data from the NFT commitment\n            OP_OVER OP_UTXOTOKENCOMMITMENT OP_16 OP_SPLIT \n            // bytes quantityBin, bytes priceBin = \n            //               tx.inputs[orderIndex].nftCommitment.split(16);\n\n            OP_OVER OP_BIN2NUM \n            // int orderQuantity = int(quantityBin);  \n\n            OP_OVER OP_BIN2NUM \n            // int price = int(priceBin);\n\n            // Get the amount of the token traded\n            OP_4 OP_PICK OP_OUTPUTTOKENAMOUNT OP_5 OP_PICK OP_UTXOTOKENAMOUNT OP_SUB \n            // int tradeQuantity = tx.outputs[assetIndex].tokenAmount - \n            //                      tx.inputs[assetIndex].tokenAmount;\n\n            // Verify new authCat order baton NFT commitment\n            OP_2 OP_PICK OP_OVER OP_SUB OP_16 OP_NUM2BIN OP_2 OP_PICK OP_16 OP_NUM2BIN OP_CAT \n            // bytes32 nextCommitment = bytes16(orderQuantity-tradeQuantity) + bytes16(price);\n\n            // Require updating order baton\n            OP_7 OP_PICK OP_OUTPUTTOKENCOMMITMENT OP_OVER OP_EQUALVERIFY \n            // require(tx.outputs[orderIndex].nftCommitment == nextCommitment);\n\n            // require the sign of the quantity traded is matches the order sign  \n            OP_OVER OP_0 OP_GREATERTHAN OP_4 OP_PICK OP_0 OP_GREATERTHAN OP_EQUAL OP_VERIFY\n            // require((tradeQuantity > 0 == orderQuantity > 0)); \n\n            // require the amount traded be less than (or equal to) the quantity available\n            OP_OVER OP_ABS OP_4 OP_PICK OP_ABS OP_LESSTHANOREQUAL OP_VERIFY \n            // require(abs(tradeQuantity) <= abs(orderQuantity));\n\n            // Verify the value returned with the order exceeds the quantity traded times the price.\n            OP_7 OP_PICK OP_OUTPUTVALUE OP_8 OP_PICK OP_UTXOVALUE OP_SUB\n            OP_2OVER OP_SWAP OP_MUL <100_000_000> OP_DIV OP_NEGATE OP_NUMEQUALVERIFY \n            // require((tx.outputs[orderIndex].value - tx.inputs[orderIndex].value) == -(tradeQuantity*price/100_000_000));\n            //\n        // } \n        OP_2DROP OP_2DROP OP_2DROP OP_2DROP \n    // } \n    OP_ENDIF \n// } \nOP_2DROP OP_1"
+    }
+  },
+  "supported": [
+    "BCH_2024_05",
+    "BCH_2025_05"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "contractName": "Mine",
+  "constructorInputs": [],
+  "abi": [
+    {
+      "name": "execute",
+      "inputs": [
+        {
+          "name": "age",
+          "type": "int"
+        }
+      ]
+    }
+  ],
+  "bytecode": "OP_TXVERSION OP_2 OP_NUMEQUALVERIFY OP_DUP OP_CHECKSEQUENCEVERIFY OP_DROP OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY OP_TXINPUTCOUNT OP_1 OP_GREATERTHAN OP_IF OP_INPUTINDEX OP_OUTPUTVALUE 401f OP_ADD OP_INPUTINDEX OP_UTXOVALUE OP_GREATERTHANOREQUAL OP_VERIFY OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_EQUALVERIFY OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_NUMEQUALVERIFY OP_ELSE OP_TXOUTPUTCOUNT OP_2 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE b004 OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT a06b06 OP_DIV OP_SUB OP_1ADD OP_GREATERTHANOREQUAL OP_VERIFY OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_8 OP_SPLIT OP_DROP OP_BIN2NUM OP_TXVERSION OP_8 OP_NUM2BIN OP_TXINPUTCOUNT OP_CAT OP_0 OP_OUTPOINTTXHASH OP_CAT OP_0 OP_OUTPOINTINDEX OP_CAT OP_0 OP_INPUTBYTECODE OP_SIZE OP_NIP OP_CAT OP_0 OP_INPUTBYTECODE OP_CAT OP_0 OP_INPUTSEQUENCENUMBER OP_CAT OP_TXOUTPUTCOUNT OP_CAT OP_0 OP_OUTPUTVALUE OP_CAT ef OP_CAT OP_0 OP_OUTPUTTOKENCOMMITMENT OP_CAT OP_0 OP_OUTPUTTOKENAMOUNT OP_CAT OP_0 OP_OUTPUTBYTECODE OP_CAT OP_1 OP_OUTPUTVALUE OP_CAT ef OP_CAT OP_1 OP_OUTPUTTOKENCOMMITMENT OP_CAT OP_1 OP_OUTPUTTOKENAMOUNT OP_CAT OP_1 OP_OUTPUTBYTECODE OP_CAT OP_0 OP_4 OP_NUM2BIN OP_CAT OP_DUP OP_HASH256 OP_8 OP_SPLIT OP_DROP OP_BIN2NUM OP_DUP OP_3 OP_PICK OP_1 OP_6 OP_PICK OP_1 64 OP_DIV OP_SUB OP_ADD OP_MUL OP_LESSTHAN OP_VERIFY OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_8 OP_SPLIT OP_DROP OP_BIN2NUM OP_2DUP OP_LESSTHAN OP_VERIFY OP_2DROP OP_2DROP OP_ENDIF OP_DROP OP_1",
+  "source": "  pragma cashscript >= 0.12.0;\n\n  // v20251130\n\n  // A token faucet with proof of work.\n  contract Mine() {\n\n    function execute(int age) {\n\n        // Force a version two transaction\n        require(tx.version == 2);\n        \n        // Check the purported time has passed and that time locks are enabled\n        require(this.age >= age);\n\n        // Require the thread lives on\n        require(tx.outputs[this.activeInputIndex].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);\n\n        // Require the same token lives on\n        require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);\n\n        // If the baton is being used as an oracle ...\n        if(tx.inputs.length > 1){\n\n            // Require the oracle user pays an 8000 sat fee \n            require(tx.outputs[this.activeInputIndex].value + 8000 >= tx.inputs[this.activeInputIndex].value);\n\n            // The NFT commitment (difficulty+nonce) must not change\n            require(tx.outputs[this.activeInputIndex].nftCommitment == tx.inputs[this.activeInputIndex].nftCommitment);\n\n            // The number of fungible tokens must not changed\n            require(tx.outputs[this.activeInputIndex].tokenAmount == tx.inputs[this.activeInputIndex].tokenAmount);\n\n        }\n\n        // else (tx.inputs.length == 1)\n        else{\n\n            // require exactly two outputs\n            require(tx.outputs.length == 2);\n\n            // Allow miner to take 800 token dust, plus 400 network fee allowance \n            require(tx.outputs[this.activeInputIndex].value >= tx.inputs[this.activeInputIndex].value - 1200);\n\n            // The value on the miner output is enforced by the network \n            // require(tx.outputs[1].value == 800);\n\n            // Emission schedule\n            // Allow a fraction of running token balance (plus one) to be withdrawn.\n            // Target a four year half life. \n            require(\n                tx.outputs[this.activeInputIndex].tokenAmount >= \n                (tx.inputs[this.activeInputIndex].tokenAmount - \n                (tx.inputs[this.activeInputIndex].tokenAmount/420768)) + 1);\n\n            // Miners may claim or implicitly burn their tokens\n            // ~~require(tx.outputs[0].tokenAmount == (tx.inputs[this.activeInputIndex].tokenAmount/420768)+1)~~  \n        \n            // Pop the previous difficulty\n            int prevTarget = int(tx.inputs[this.activeInputIndex].nftCommitment.split(8)[0]);\n            \n            bytes preimage = bytes8(tx.version) + \n                             bytes(tx.inputs.length) + \n                             tx.inputs[0].outpointTransactionHash +\n                             bytes(tx.inputs[0].outpointIndex) +\n                             bytes(tx.inputs[0].unlockingBytecode.length) + \n                             tx.inputs[0].unlockingBytecode +\n                             bytes(tx.inputs[0].sequenceNumber)  +\n                             bytes(tx.outputs.length) + \n                             bytes(tx.outputs[0].value) +  \n                             0xef +\n                             bytes(tx.outputs[0].nftCommitment) + \n                             bytes(tx.outputs[0].tokenAmount) + \n                             tx.outputs[0].lockingBytecode +\n                             bytes(tx.outputs[1].value) +  \n                             0xef +\n                             bytes(tx.outputs[1].nftCommitment) + \n                             bytes(tx.outputs[1].tokenAmount) + \n                             tx.outputs[1].lockingBytecode +\n                             bytes4(0);\n\n            int nextHash = int(hash256(preimage).split(8)[0]);\n\n            // Target a once per block emission schedule\n            // If the age is 0, lower the difficulty threshold 1%\n            // If the age is 1, keep the present difficulty\n            // else, increase difficulty proportional to the age\n            require(nextHash < prevTarget * (1 + (age - 1 /100)));\n\n            // Require the output carries the next target.\n            // The nonce and nonce length is unrestricted.\n            int nextTarget = int(tx.outputs[this.activeInputIndex].nftCommitment.split(8)[0]);\n\n            // The difficulty calculated is below the required target\n            require(nextHash < nextTarget);\n            \n        }   \n    }\n\n  }",
+  "debug": {
+    "bytecode": "c2529d76b275c0cdc0c788c0d1c0ce88c351a063c0cc02401f93c0c6a269c0d2c0cf88c0d3c0d09d67c4529dc0ccc0c602b00494a269c0d3c0d0c0d003a06b0696948ba269c0cf587f7581c25880c37e00c87e00c97e00ca82777e00ca7e00cb7ec47e00cc7e01ef7e00d27e00d37e00cd7e51cc7e01ef7e51d27e51d37e51cd7e0054807e76aa587f7581765379515679510164969493959f69c0d2587f75816e9f696d6d687551",
+    "sourceMap": "11:16:11:26;:30::31;:8::33:1;14:28:14:31:0;:8::33:1;;17:27:17:48:0;:16::65:1;:79::100:0;:69::117:1;:8::119;20:27:20:48:0;:16::63:1;:77::98:0;:67::113:1;:8::115;23:11:23:27:0;:30::31;:11:::1;:32:34:9:0;26:31:26:52;:20::59:1;:62::66:0;:20:::1;:80::101:0;:70::108:1;:20;:12::110;29:31:29:52:0;:20::67:1;:81::102:0;:71::117:1;:12::119;32:31:32:52:0;:20::65:1;:79::100:0;:69::113:1;:12::115;37::97:9:0;40:20:40:37;:41::42;:12::44:1;43:31:43:52:0;:20::59:1;:73::94:0;:63::101:1;:104::108:0;:63:::1;:20;:12::110;52:27:52:48:0;:16::61:1;53:27:53:48:0;:17::61:1;54:27:54:48:0;:17::61:1;:62::68:0;:17:::1;53:::69;:16::74;52;51:12::76;60:43:60:64:0;:33::79:1;:86::87:0;:33::88:1;:::91;:29::92;62:36:62:46:0;:29::47:1;;63:35:63:51:0;62:29::52:1;64:39:64:40:0;:29::65:1;62;65:45:65:46:0;:35::61:1;62:29::62;66:45:66:46:0;:35::65:1;:::72;;62:29::73;67:39:67:40:0;:29::59:1;62;68:45:68:46:0;:35::62:1;62:29::63;69:35:69:52:0;62:29::53:1;70:46:70:47:0;:35::54:1;62:29::55;71::71:33:0;62::::1;72:46:72:47:0;:35::62:1;62:29::63;73:46:73:47:0;:35::60:1;62:29::61;74:40:74:41:0;:29::58:1;62;75:46:75:47:0;:35::54:1;62:29::55;76::76:33:0;62::::1;77:46:77:47:0;:35::62:1;62:29::63;78:46:78:47:0;:35::60:1;62:29::61;79:40:79:41:0;:29::58:1;62;80:36:80:37:0;:29::38:1;;62;82:39:82:47:0;:31::48:1;:55::56:0;:31::57:1;:::60;:27::61;88:20:88:28:0;:31::41;;:45::46;:50::53;;:56::57;:59::62;:56:::1;:50;:45::63;:31::64;:20;:12::66;92:44:92:65:0;:33::80:1;:87::88:0;:33::89:1;:::92;:29::93;95:20:95:41:0;::::1;:12::43;37::97:9;;;8:4:98:5;",
+    "logs": [],
+    "requires": [
+      {
+        "ip": 2,
+        "line": 11
+      },
+      {
+        "ip": 4,
+        "line": 14
+      },
+      {
+        "ip": 10,
+        "line": 17
+      },
+      {
+        "ip": 15,
+        "line": 20
+      },
+      {
+        "ip": 27,
+        "line": 26
+      },
+      {
+        "ip": 32,
+        "line": 29
+      },
+      {
+        "ip": 37,
+        "line": 32
+      },
+      {
+        "ip": 41,
+        "line": 40
+      },
+      {
+        "ip": 49,
+        "line": 43
+      },
+      {
+        "ip": 61,
+        "line": 51
+      },
+      {
+        "ip": 143,
+        "line": 88
+      },
+      {
+        "ip": 152,
+        "line": 95
+      }
+    ]
+  },
+  "compiler": {
+    "name": "cashc",
+    "version": "0.12.0"
+  },
+  "updatedAt": "2025-12-01T18:36:28.063Z"
+}
