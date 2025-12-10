@@ -4,6 +4,8 @@
 
 	import SeriesIcon from '$lib/FbchIcon.svelte';
 	import Loading from '$lib/Loading.svelte';
+
+	// @ts-ignore
 	import Readme from './README.md';
 
 	import BitauthLink from '$lib/BitauthLink.svelte';
@@ -24,13 +26,12 @@
 	let now: number = $state(0);
 
 	let key = $state('');
-	let coupons: any[] = $state();
+	let coupons: any[] | undefined = $state();
 	let electrumClient: any;
 	let walletScriptHash = $state('');
 	let amount = $state(0);
 	let connectionStatus = $state('');
 	let contractState = $state('');
-
 
 	let unspent: any[] = $state([]);
 	let walletUnspent: any[] = $state([]);
@@ -50,7 +51,7 @@
 		}
 	}
 
-    const updateWallet = async function () {
+	const updateWallet = async function () {
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
 			walletScriptHash,
@@ -58,7 +59,7 @@
 		);
 		if (response instanceof Error) throw response;
 		let walletUnspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
-		if (walletUnspent.length == 0 ) {
+		if (walletUnspent.length == 0) {
 			walletUnspent = response;
 		}
 		walletBalance = sumUtxoValue(walletUnspent, true);
@@ -69,7 +70,7 @@
 			let d = data.params[0];
 			now = d.height;
 			updateCoupons();
-            updateWallet();
+			updateWallet();
 		} else if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
@@ -107,7 +108,6 @@
 </script>
 
 <section>
-
 	<div class="status">
 		<BitauthLink template={Vault.template} />
 		{#if connectionStatus == 'CONNECTED'}
@@ -140,10 +140,10 @@
 				</thead>
 
 				<tbody>
-					{#each coupons as c }
+					{#each coupons as c}
 						<tr>
 							<td class="r">{Number(c.placement / 1e8)}</td>
-							<td class="r"><SeriesIcon time={c.locktime} size="15" /></td>
+							<td class="r"><SeriesIcon time={c.locktime} size={15} /></td>
 							<td>
 								<a style="color:#75006b; font-weight:600;" href="/v?block={c.locktime}"
 									>{String(c.locktime).padStart(7, '0')}</a
@@ -165,7 +165,7 @@
 									><button class="action" disabled style="font-size:xx-small;">lo bal</button></td
 								>
 							{/if} -->
-                            <td></td>
+							<td></td>
 						</tr>
 					{/each}
 					<!-- <tr style="border-top: solid thin;">
@@ -205,7 +205,7 @@
 		text-align: end;
 	}
 
-    .couponTable {
+	.couponTable {
 		width: 100%;
 		border-collapse: collapse;
 	}

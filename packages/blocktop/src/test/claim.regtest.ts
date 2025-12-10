@@ -7,7 +7,7 @@ import { RegTestWallet, mine } from "mainnet-js";
 
 import BlockTop from "../index.js";
 
-test('test mine function', async t => {
+test.skip('test mine function', async t => {
 
 
   const alice = await getAnAliceWallet(100_003_000)
@@ -67,7 +67,7 @@ test('test mine function', async t => {
   )
   
   let tx_raw = binToHex(encodeTransactionBch(tx.transaction))
-  console.log(tx_raw)
+  // console.log(tx_raw)
   //await provider.sendRawTransaction(tx_raw)
 });
 

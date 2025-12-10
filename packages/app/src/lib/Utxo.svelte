@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { disassembleBytecodeBCH, hexToBin } from '@bitauth/libauth';
+
 	import bch from '$lib/images/BCH.svg';
 
     import TokenNftData from './TokenNftData.svelte'
@@ -7,6 +7,7 @@
 	import TokenIcon from './TokenIcon.svelte';
 
 	let { tx_pos, tx_hash, height, value, token_data } = $props();
+
 </script>
 
 <div class="container">

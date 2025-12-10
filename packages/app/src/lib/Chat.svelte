@@ -38,7 +38,7 @@
 
 	let now = $state(0);
 	let balance = $state(0);
-	let contractBalance = $state(0n);
+	let contractBalance = $state(0);
 	let connectionStatus = $state('');
 	let contractState = $state('');
 

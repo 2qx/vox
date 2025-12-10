@@ -12,6 +12,8 @@ test('test CatDex covenant address', t => {
         "beef00000000000000000000000000000000000000000000000000000000beef",
         "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
         "bchtest"
-    ), "bchtest:rwar8x8srls7ak7m6fytdvuwpmkxkur9rylwsvmtf4d2tmms4k7vjzd5yuf4u")
+    ), "bchtest:r09frvstvfptukrp04h53vmmadvq72x3lc6fllew8k0csqjvsd8jwrv4x67xc")
+    
+    // "bchtest:rwar8x8srls7ak7m6fytdvuwpmkxkur9rylwsvmtf4d2tmms4k7vjzd5yuf4u"
 
 });

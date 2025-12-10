@@ -4,6 +4,7 @@
 
 	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch } from '@bitauth/libauth';
 
+	// @ts-ignore
 	import Readme from './README.md';
 
 	import bch from '$lib/images/BCH.svg';
@@ -55,10 +56,10 @@
 
 	scripthash = Badger.getScriptHash();
 
-	const isMainnet = true; //page.url.hostname == 'vox.cash';
+	const isMainnet = page.url.hostname == 'vox.cash';
 	const icon = isMainnet ? BADGER : tBADGER;
 	const category = isMainnet ? binToHex(badgerCat) : binToHex(tBadgerCat);
-	const baseTicker = isMainnet ? 'Bch' : 'tBch';
+	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
 	const ticker = isMainnet ? 'BADGER' : 'tBADGER';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const server = getDefaultElectrum(isMainnet);
@@ -105,8 +106,8 @@
 		let unspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
 		if (unspent.length == 0 || spent.intersection(unspentIds).size == 0) {
 			unspent = response
-				.filter((u) => u.token_data.nft.capability == 'mutable')
-				.map((u) => {
+				.filter((u:any) => u.token_data.nft.capability == 'mutable')
+				.map((u:any) => {
 					return {
 						...u,
 						...BadgerStake.parseNFT(u),

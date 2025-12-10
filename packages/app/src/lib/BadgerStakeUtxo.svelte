@@ -3,9 +3,6 @@
 	import bch from '$lib/images/BCH.svg';
 	import icon from '$lib/images/BADGER.svg';
 
-	import { disassembleBytecodeBCH, hexToBin } from '@bitauth/libauth';
-
-	import TokenNftData from './TokenNftData.svelte';
 	import TokenAmount from './TokenAmount.svelte';
 	import TokenIcon from './TokenIcon.svelte';
 
@@ -22,7 +19,8 @@
 		now
 	} = $props();
 
-	let hasMatured = $derived(height + stake < now);
+	let hasMatured = $derived((height + stake) < now);
+	
 </script>
 
 <div class="container">
@@ -33,7 +31,7 @@
 					<div>
 						<TokenAmount amount={token_data.amount} category={token_data.category} />
 
-						<TokenIcon size="20" category={token_data.category}></TokenIcon>
+						<TokenIcon size={20} category={token_data.category}></TokenIcon>
 					</div>
 				{/if}
 			</div>
@@ -89,8 +87,7 @@
 	.header {
 		display: flex;
 	}
-	.balance {
-	}
+
 	.hash {
 		font-size: xx-small;
 		font-weight: 200;

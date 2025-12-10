@@ -11,7 +11,10 @@ import {
     InputTemplate,
     OutputTemplate,
     Output,
-    verifyTransactionTokens
+    verifyTransactionTokens,
+    utf8ToBin,
+    isHex,
+    swapEndianness
 } from '@bitauth/libauth';
 
 import {
@@ -39,12 +42,20 @@ export default class SmallIndex {
 
     static vm = createVirtualMachineBch();
 
-    static getLockingBytecode(indexKey: string): Uint8Array {
+    static getLockingBytecode(indexKey: string | Uint8Array): Uint8Array {
+        if (typeof indexKey == "string") {
+            if (isHex(indexKey)) {
+                indexKey = hexToBin(indexKey)
+            } else {
+                indexKey = utf8ToBin(indexKey)
+            }
+        }
+
         const lockingBytecodeResult = this.compiler.generateBytecode(
             {
                 data: {
                     "bytecode": {
-                        "key": hexToBin(indexKey)
+                        "key": indexKey
                     }
                 },
                 scriptId: 'lock'
@@ -75,7 +86,7 @@ export default class SmallIndex {
      * @throws {Error} if transaction generation fails.
      * @returns a cashaddress.
      */
-    static getAddress(indexKey: string, prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
+    static getAddress(indexKey: string | Uint8Array, prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
         return getAddress(this.getLockingBytecode(indexKey), prefix, this.tokenAware)
     }
 

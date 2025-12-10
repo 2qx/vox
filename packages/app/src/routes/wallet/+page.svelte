@@ -50,8 +50,8 @@
 	};
 
 	async function consolidateFungibleTokens() {
-		const cashaddr = wallet.getTokenDepositAddress();
-		let utxos = (await wallet.getUtxos())
+		const cashaddr = wallet!.getTokenDepositAddress();
+		let utxos = (await wallet!.getUtxos())
 			.filter((u: any) => u.token)
 			.filter((u: any) => !u.token.capability);
 		console.log(utxos);
@@ -77,7 +77,7 @@
 			});
 		});
 
-		return await wallet.send(sendRequests);
+		return await wallet!.send(sendRequests);
 	}
 
 	async function consolidateSats() {
