@@ -197,6 +197,19 @@ importers:
         specifier: ^20.17.24
         version: 20.17.24
 
+  packages/blocktop:
+    dependencies:
+      '@bitauth/libauth':
+        specifier: ^3.1.0-next.8
+        version: 3.1.0-next.8
+      '@unspent/tau':
+        specifier: workspace:*
+        version: link:../common
+    devDependencies:
+      '@types/node':
+        specifier: ^20.17.24
+        version: 20.17.24
+
   packages/catdex:
     dependencies:
       '@bitauth/libauth':
