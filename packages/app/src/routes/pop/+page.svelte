@@ -11,7 +11,7 @@
 
 {#if postId}
 	You are viewing an archived post
-	{postId}
+	<ChatPost {postId}></ChatPost>
 {:else}
 	<Chat {topic}></Chat>
 {/if}

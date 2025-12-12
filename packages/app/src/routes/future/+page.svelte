@@ -12,7 +12,7 @@
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 
-	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBCH } from '@bitauth/libauth';
+	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch } from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 	import { BaseWallet, Wallet, TestNetWallet } from 'mainnet-js';
@@ -145,7 +145,7 @@
 							<td class="r">{Number(c.placement / 1e8)}</td>
 							<td class="r"><SeriesIcon time={c.locktime} size={15} /></td>
 							<td>
-								<a style="color:#75006b; font-weight:600;" href="/v?block={c.locktime}"
+								<a style="color:#75006b; font-weight:600;" href="/future/v?block={c.locktime}"
 									>{String(c.locktime).padStart(7, '0')}</a
 								>
 							</td>

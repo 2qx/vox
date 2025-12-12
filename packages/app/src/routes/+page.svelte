@@ -21,7 +21,7 @@
 			description: 'A limit order decentralized exchange.',
 			link: '/cat',
 			image: '/cat.svg',
-			disabled: true
+			disabled: false
 		},
 		{
 			name: 'Drip',

@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 
-	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBCH } from '@bitauth/libauth';
+	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch } from '@bitauth/libauth';
 
 	import bch from '$lib/images/BCH.svg';
 	import tWBCH from '$lib/images/tWBCH.svg';
@@ -24,15 +24,15 @@
 
 	let connectionStatus = $state('');
 
-	let transaction_hex = '';
+	let transaction_hex = $state('');
 	let transaction: any = $state(undefined);
 	let transactionValid = $state(false);
-	let sourceOutputs: any = undefined;
+	let sourceOutputs: any = $state();;
 
 	let unspent: any[] = $state([]);
 	let walletUnspent: any[] = $state([]);
 	let key = '';
-	let electrumClient:any = $state();
+	let electrumClient: any = $state();
 	let timer: any;
 	let scripthash = $state('');
 	let walletScriptHash = $state('');
@@ -125,7 +125,7 @@
 			let result = Wrap.swap(amount, unspent, walletUnspent, key, category);
 			transaction = result.transaction;
 			sourceOutputs = result.sourceOutputs;
-			transaction_hex = binToHex(encodeTransactionBCH(transaction));
+			transaction_hex = binToHex(encodeTransactionBch(transaction));
 			transactionValid = result.verify === true ? true : false;
 			if (result.verify === true) transactionError = '';
 		} catch (error: any) {
@@ -138,9 +138,8 @@
 	};
 
 	onMount(async () => {
-
 		BaseWallet.StorageProvider = IndexedDBProvider;
-		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`) ;
+		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 		let bytecodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
 		if (typeof bytecodeResult == 'string') throw bytecodeResult;
@@ -178,51 +177,50 @@
 		{/if}
 	</div>
 	<h1>Wrap Bitcoin Cash as a CashToken</h1>
-
-	<div class="swap">
-		<div>
-			<img width="50" src={bch} alt={baseTicker} />
-
-			<br />
-			{sumWallet.toLocaleString()} sats {baseTicker}
-		</div>
-		<div>
-			<img width="50" src={icon} alt={ticker} />
-			<br />
-			{sumWalletWrapped.toLocaleString()} sats {ticker}
-		</div>
-	</div>
-	<div class="swap">
-		<input
-			type="range"
-			bind:value={amount}
-			step="1000"
-			onchange={() => updateSwap()}
-			min={Number(-sumWalletWrapped)}
-			max={sumWallet - 2000}
-		/>
-	</div>
-
-	{#if transaction && transactionValid}
+	{#if connectionStatus == 'CONNECTED'}
 		<div class="swap">
 			<div>
-				{#if amount > 0}
-					place: {amount.toLocaleString()} sats
-				{:else if amount < 0}
-					redeem: {(-amount).toLocaleString()} wrapped sats
-				{/if}
+				<img width="50" src={bch} alt={baseTicker} />
+				<br />
+				{sumWallet.toLocaleString()} sats {baseTicker}
+			</div>
+			<div>
+				<img width="50" src={icon} alt={ticker} />
+				<br />
+				{sumWalletWrapped.toLocaleString()} sats {ticker}
 			</div>
 		</div>
 		<div class="swap">
-			<button onclick={() => broadcast(transaction_hex)}>Broadcast</button>
+			<input
+				type="range"
+				bind:value={amount}
+				step="1000"
+				onchange={() => updateSwap()}
+				min={Number(-sumWalletWrapped)}
+				max={sumWallet - 2000}
+			/>
 		</div>
-	{/if}
-	<!-- {#if transaction}
-		<Transaction {transaction} {sourceOutputs} />
-	{/if} -->
-	{transactionError}
 
-	<!-- <div class="grid">
+		{#if transaction && transactionValid}
+			<div class="swap">
+				<div>
+					{#if amount > 0}
+						place: {amount.toLocaleString()} sats
+					{:else if amount < 0}
+						redeem: {(-amount).toLocaleString()} wrapped sats
+					{/if}
+				</div>
+			</div>
+			<div class="swap">
+				<button onclick={() => broadcast(transaction_hex)}>Broadcast</button>
+			</div>
+		{/if}
+		<!-- {#if transaction}
+		    <Transaction {transaction} {sourceOutputs} />
+	    {/if} -->
+		{transactionError}
+
+		<!-- <div class="grid">
 		{#if walletUnspent.length > 0}
 			<h4>Wallet Unspent Transaction Outputs (coins)</h4>
 			<table>
@@ -278,7 +276,7 @@
 		{/if}
 	</div> -->
 
-	<!-- <div class="grid">
+		<!-- <div class="grid">
 		{#if unspent.length > 0}
 			<h4>{ticker} Vault Threads</h4>
 
@@ -326,6 +324,11 @@
 			<p>... getting wrapped vault threads.</p>
 		{/if}
 	</div> -->
+	{:else}
+		<div class="swap">
+			<p>Not connected?</p>
+		</div>
+	{/if}
 
 	<Readme />
 </section>

@@ -408,7 +408,6 @@ export default class Wrap {
         // if placing Bch for WBCH, don't use utxos with tokens
         walletUtxos = walletUtxos.filter(u => u.token_data?.category == category || !u.token_data)
 
-
         let vaultLayers = this.getVaultLayers([...contractUtxos], amount, wbchCat);
         config.inputs.push(...vaultLayers.inputs);
         config.outputs.push(...vaultLayers.outputs);

@@ -42,19 +42,16 @@
 	let connectionStatus = $state('');
 	let contractState = $state('');
 
-	let { topic  = $bindable() } = $props();
-
+	let { postId } = $props();
 	let message = $state('');
 	let thisAuth = $state('');
 	let sequence = $state(0);
 	let estimate = $state(0);
 	let showSettings = $state(false);
 
-	const scripthash = $derived(Channel.getScriptHash(topic));
-	const contractAddress = $derived(Channel.getAddress(topic, prefix));
+
 
 	let posts: any[] = $state([]);
-	let transactions: any[] = $state([]);
 
 	let timer: any;
 	let key = '';
@@ -136,26 +133,9 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		let old = response.filter((u: UtxoI) => u.height > 0 && now - u.height > 1000).slice(0, 300);
+		let old = response.filter((u: UtxoI) => u.height > 0 && now - u.height > 1000).slice(0,300);
 		if (old.length > 0) {
 			let clearPostTx = Channel.clear(topic, old, walletUnspent[0], key, now);
-			let raw_tx = binToHex(encodeTransactionBch(clearPostTx.transaction));
-			console.log(raw_tx);
-			await broadcast(raw_tx);
-		}
-	};
-
-	const burnSpam = async function () {
-		let response = await electrumClient.request(
-			'blockchain.scripthash.listunspent',
-			scripthash,
-			'include_tokens'
-		);
-		if (response instanceof Error) throw response;
-
-		let spam = response.filter((u: UtxoI) => Math.floor(u.value / 10) * 1000 - u.height < 1000);
-		if (spam.length > 0) {
-			let clearPostTx = Channel.clear(topic, spam, walletUnspent[0], key, now);
 			let raw_tx = binToHex(encodeTransactionBch(clearPostTx.transaction));
 			console.log(raw_tx);
 			await broadcast(raw_tx);
@@ -181,7 +161,7 @@
 			-1
 		);
 
-		transactions = await getAllTransactions(electrumClient, tx_hashes);
+		let transactions = await getAllTransactions(electrumClient, tx_hashes);
 
 		posts = buildChannel(historyResponse, transactions, topic);
 		posts = posts.map((p) => {
@@ -199,19 +179,6 @@
 		}
 	};
 
-	const clearPost = async function (post: Post) {
-		let response = await electrumClient.request(
-			'blockchain.scripthash.listunspent',
-			scripthash,
-			'include_tokens'
-		);
-		if (response instanceof Error) throw response;
-
-		let utxos = response.filter((u: UtxoI) => u.tx_hash == post.hash);
-		let clearPostTx = Channel.clear(topic, utxos, walletUnspent[0], key, now);
-		let raw_tx = binToHex(encodeTransactionBch(clearPostTx.transaction));
-		await broadcast(raw_tx);
-	};
 
 	const debounceEstimate = () => {
 		clearTimeout(timer);
@@ -259,7 +226,7 @@
 
 	const newAuthBaton = async function () {
 		await wallet.sendMax(wallet.getDepositAddress());
-		let uname = cashAssemblyToHex(`OP_RETURN <"${Channel.PROTOCOL_IDENTIFIER}"> <"pseudonymous">`);
+		let uname = cashAssemblyToHex(`OP_RETURN <"U3V"> <"pseudonymous">`);
 		let sendResponse = await wallet.tokenGenesis({
 			cashaddr: wallet.getTokenDepositAddress()!, // token UTXO recipient, if not specified will default to sender's address
 			commitment: uname, // NFT Commitment message
@@ -271,7 +238,7 @@
 	const topUp = async function (amount: number) {
 		balance = walletUnspent[0].value;
 		thisAuth = walletUnspent[0].token_data.category;
-		let uname = cashAssemblyToHex(`OP_RETURN <"${Channel.PROTOCOL_IDENTIFIER}"> <"pseudonymous">`);
+		let uname = cashAssemblyToHex(`OP_RETURN <"U3V"> <"pseudonymous">`);
 
 		let sendResponse = await wallet.send(
 			new TokenSendRequest({
@@ -324,13 +291,9 @@
 		{sequence}
 
 		<div style="flex: 2 2 auto;"></div>
-		<b><a onclick={() => (topic = '')} href="/pop/">pop</a> {topic}</b>
+		<b><a onclick={() => (topic = "")} href="/pop/">pop</a> {topic}</b>
 		<div style="flex: 2 2 auto;"></div>
-		{#if contractBalance}
-			<a target="_blank" href="{explorer}{contractAddress}">
-				{Math.floor(Number(contractBalance) / 1000).toLocaleString()}k sats &nbsp;
-			</a>
-		{/if}
+		
 		<BitauthLink template={Channel.template} />
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
@@ -339,60 +302,11 @@
 		{/if}
 	</div>
 	<div id="chat" class="row content">
-		{#if transactions}
-		{#await transactions then build}
-			{#each posts as post}
-				<ChatPost {likePost} {...post} />
-				{#if showSettings}
-					<div class="deleteMe">
-						<button onclick={() => clearPost(post)}>
-							<img height="36px" src={trash} />
-						</button>
-					</div>
-				{/if}
-			{/each}
-		{:catch error}
-			<p style="color: red">{error.message}</p>
-		{/await}
-		{/if}
+		<ChatPost>  { ... post} />
 	</div>
-	{#if balance > 1000000 && walletUnspent.length == 0}
-		<div class="row footer">
-			<h2>Create new identity</h2>
-			<button onclick={() => newAuthBaton()}>New identity 1M sats</button>
+	<div class="row footer">
+			
 		</div>
-	{:else if balance < 1100000 && walletUnspent.length == 0}
-		<div class="row footer">
-			<p><a href="/wallet">Deposit funds</a> to create identity</p>
-		</div>
-	{:else}
-		<div class="row footer">
-			{#if connectionStatus == 'CONNECTED'}
-				<div class="edit">
-					<textarea onkeyup={() => debounceEstimate()} bind:value={message}> </textarea>
-					<div class="estimate">
-						{estimate.toLocaleString()} sats
-					</div>
-				</div>
-				<div class="send">
-					<div class="auth">
-						{#if thisAuth}
-							<img height="32px" src={blo(thisAuth, 16)} alt="avatar" />
-						{/if}
-						{#if walletUnspent.length > 0}
-							<div style="font-size:x-small;">
-								{parseUsername(walletUnspent[0].token_data.nft.commitment)}<br />
-								{walletUnspent[0].value.toLocaleString()}sats
-							</div>
-						{/if}
-					</div>
-					<button onclick={() => send(message)}>Send</button>
-				</div>
-			{:else}
-				<p>Not connected?</p>
-			{/if}
-		</div>
-	{/if}
 
 	<div class="row footer">
 		<div style="margin: auto;">Advanced</div>
@@ -441,17 +355,11 @@
 		font-weight: 800;
 		text-align: center;
 		flex: 0 1 auto;
-
-		overflow: hidden;
 		/* The above is shorthand for:
         flex-grow: 0,
         flex-shrink: 1,
         flex-basis: auto
         */
-	}
-
-	.box .row.header b {
-		overflow: hidden;
 	}
 
 	.box .row.content {

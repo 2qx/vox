@@ -13,8 +13,9 @@
 
 <div class="commitment">
 	{#if commitment.startsWith('6a03553356')}
-		Vox: 
-        <i>{parseUsername(commitment)}</i>
+		Vox: <i>{parseUsername(commitment)}</i>
+	{:else if commitment.startsWith('6a03553358')}
+		CatDex: <i>{parseUsername(commitment)}</i>
 	{:else}
 		{commitment}
 	{/if}

@@ -141,6 +141,7 @@
 		await wallet!.provider.disconnect();
 		await electrumClient.disconnect();
 	});
+	
 </script>
 
 <section>
