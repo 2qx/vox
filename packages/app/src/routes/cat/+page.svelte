@@ -4,6 +4,7 @@
 
 	import Chat from '$lib/Chat.svelte';
 	import Transaction from '$lib/Transaction.svelte';
+	import Utxo from '$lib/Utxo.svelte';
 
 	import BCMR from '$lib/bitcoin-cash-metadata-registry.json' with { type: 'json' };
 	import tBCMR from '$lib/chipnet-metadata-registry.json' with { type: 'json' };
@@ -52,14 +53,13 @@
 	let contractState = $state('');
 	let timer: any;
 
-
 	let unspent: any[] = $state([]);
 	let walletUnspent: any[] = $state([]);
 	let markets: any[] = $state([]);
 	let authBatons: any[] = $state([]);
 	let showSettings = $state(false);
 
-	let selectedAsset = $state();
+	let selectedAsset = $state("");
 
 	let transaction_hex = '';
 	let transaction: any = $state(undefined);
@@ -97,9 +97,16 @@
 		}, 1500);
 	};
 
-	async function updateCoupons() {
+	async function updateOrders() {
 		if (electrumClient && now > 1000) {
-			//coupons = await Vault.getAllCouponUtxos(electrumClient, now);
+			markets = await electrumClient.request(
+				'blockchain.scripthash.listunspent',
+				SmallIndex.getScriptHash(selectedAsset),
+				'include_tokens'
+			);
+
+			let authCats = markets.map((u:UtxoI) => u.token_data?.category)
+			const orders = CatDex.getCatDexOrdersFromUtxos(authCat, selectedAsset, utxos)
 		}
 	}
 
@@ -111,6 +118,7 @@
 		);
 		if (response instanceof Error) throw response;
 		let walletUnspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
+
 		if (walletUnspent.length == 0) {
 			walletUnspent = response;
 		}
@@ -129,7 +137,9 @@
 
 	const newAuthBaton = async function () {
 		await wallet.sendMax(wallet.getDepositAddress());
-		let uname = cashAssemblyToHex(`OP_RETURN <"${CatDex.PROTOCOL_IDENTIFIER}"> <"market auth baton">`);
+		let uname = cashAssemblyToHex(
+			`OP_RETURN <"${CatDex.PROTOCOL_IDENTIFIER}"> <"market auth baton">`
+		);
 		let sendResponse = await wallet.tokenGenesis({
 			cashaddr: wallet.getTokenDepositAddress()!, // token UTXO recipient, if not specified will default to sender's address
 			commitment: uname, // NFT Commitment message
@@ -153,7 +163,6 @@
 		}
 	};
 
-
 	const updateSwap = function () {
 		try {
 			let result = CatDex.swap(amount, unspent, walletUnspent, key);
@@ -176,13 +185,13 @@
 		if (data.method === 'blockchain.headers.subscribe') {
 			let d = data.params[0];
 			now = d.height;
-			updateCoupons();
+			updateOrders();
 			updateWallet();
 		} else if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
 				amount = 0n;
-				// debounceUpdateWallet();
+				debounceUpdateWallet();
 			}
 		} else {
 			console.log(data);
@@ -242,7 +251,11 @@
 					<button onclick={() => newAuthBaton()}>Create a Market Maker Authentication Baton</button>
 				{:else if balance < 10000 && walletUnspent.length == 0}
 					<a href="/wallet">Deposit funds</a> to create a market
-				{:else}{/if}
+				{:else}
+					{#each authBatons as authBaton}
+						<Utxo {...authBaton}></Utxo>
+					{/each}
+				{/if}
 			{/if}
 		</div>
 
@@ -263,13 +276,21 @@
 			<b>{bcmr.get(selectedAsset).token.symbol}</b>
 		{/if}
 
+		<div class="swap">
+			amount to swap:
+			<label>
+				<input type="number" bind:value={amount} min="0" max="10" onchange={() => updateSwap()} />
+			</label>
+		</div>
+
 		<br />
-		{stringify(markets)}
 
 		{#if transaction}
-			<Transaction {transaction} {sourceOutputs} category={selectedAsset}/>
+			<Transaction {transaction} {sourceOutputs} category={selectedAsset} />
 		{/if}
 		{transactionError}
+
+		{stringify(markets)}
 
 		<!-- {#if selectedAsset}
 			<Chat bind:topic={selectedAsset}></Chat>

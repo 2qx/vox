@@ -32,5 +32,6 @@ test('should orderMatch buy and sell orders', async t => {
     let utxos: UtxoI[] = ORDER_UTXOS
     const orders = CatDex.getCatDexOrdersFromUtxos(AUTH, ASSET, utxos);
     t.deepEqual(orders.length, 3)
+    t.assert(orders[0]!.assetUtxo)
 
 });

@@ -4,7 +4,7 @@
   "name": "CatDex",
   "entities": {
     "covenant": {
-      "description": "A CatDex blackboard contract holds limit orders and token treads for trading. \n\n\nAnyone may spend a mutable order NFT to trade some or all of the quantity specified from any output held by the exchange.  \n\n\nFeatures:\n\n\n  - Bidirectional limit order exchange.\n  - ZERO commission trades*.\n  - Partial order fulfillment.\n  - Cash bids for assets not held.\n  - Allows total liquidation of token assets.\n  - Minting NFT holder may easily withdraw, cancel, or rebalance orders.\n  - Many orders may be written in a single transaction. \n  - All orders are discoverable via electrumX\/smallIndex\n  - *Transactions must pay standard fees to miners.\n\n\nOrder Commitments:\n\n\n  Orders are listed on mutable NFT commitments like so\n   \n     byte16(LE)<quantity>   number of tokens remaining in order\n     byte16(LE)<price>      price in token units per coin\n\n\n  - Buy orders are positive (+)\n  - Sell orders are negative (-)\n  - Price MUST be expressed in raw token units per coin (100,000,000 sats)\n  - CatDex has no concept of display decimal metadata \n \nTransaction Building Modes:\n\n\n  Administration Mode\n  \n     Transactions with a minting NFT may withdraw all outputs from the contract.\n  \n     Auth Baton    input[0] -> output[0]     - Authenticating NFT (minting)\n                   input[i] -> output[*]     - Unrestricted spending\n\n\n  Order Mode\n  \n    In \"Order mode\" outputs are submitted in pairs, with both the record for the order\n    and the cash value moving on the even \"foot\" and the tokens trading on the odd \"foot\".\n    \n    orderThread    input[even] -> output[even]  - Order NFT of category (mutable)\n    assetThread    input[odd]  -> output[odd]   - Tread for asset traded.\n\n\nNote: \n\n\n  The exchange owner(s) holds the minting NFT baton(s), which authorizes spending funds from the exchange.\n",
+      "description": "A CatDex blackboard contract holds limit orders and token treads for trading. \n\n\nAnyone may spend a mutable order NFT to trade some or all of the quantity specified from any output held by the exchange.  \n\n\nFeatures:\n\n\n  - Bidirectional limit order exchange.\n  - ZERO commission trades*.\n  - Partial order fulfillment.\n  - Cash bids for assets not held.\n  - Allows total liquidation of token assets.\n  - Minting NFT holder may easily withdraw, cancel, or rebalance orders.\n  - Many orders may be written in a single transaction. \n  - All orders are discoverable via electrumX/smallIndex\n  - *Transactions must pay standard fees to miners.\n\n\nOrder Commitments:\n\n\n  Orders are listed on mutable NFT commitments like so\n   \n     byte16(LE)<quantity>   number of tokens remaining in order\n     byte16(LE)<price>      price in token units per coin\n\n\n  - Buy orders are positive (+)\n  - Sell orders are negative (-)\n  - Price MUST be expressed in raw token units per coin (100,000,000 sats)\n  - CatDex has no concept of display decimal metadata \n \nTransaction Building Modes:\n\n\n  Administration Mode\n  \n     Transactions with a minting NFT may withdraw all outputs from the contract.\n  \n     Auth Baton    input[0] -> output[0]     - Authenticating NFT (minting)\n                   input[i] -> output[*]     - Unrestricted spending\n\n\n  Order Mode\n  \n    In \"Order mode\" outputs are submitted in pairs, with both the record for the order\n    and the cash value moving on the even \"foot\" and the tokens trading on the odd \"foot\".\n    \n    orderThread    input[even] -> output[even]  - Order NFT of category (mutable)\n    assetThread    input[odd]  -> output[odd]   - Tread for asset traded.\n\n\nNote: \n\n\n  The exchange owner(s) holds the minting NFT baton(s), which authorizes spending funds from the exchange.\n",
       "name": "CatDex Blackboard",
       "scripts": [
         "unlock",
@@ -43,7 +43,7 @@
     "base": {
       "data": {
         "bytecode": {
-          "auth_category": "0xefbe00000000000000000000000000000000000000000000000000000000efbe",
+          "auth_category": "0xefbe00000000000000000000000000000000000000000000000000000000adde",
           "asset_category": "0x2c06f3b2565d0818a8e41f58beff5918d5dbdc64b11ee8ad474e499751cde07f"
         }
       },
@@ -75,7 +75,7 @@
             },
             "valueSatoshis": 10400,
             "token": {
-              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
               "nft": {
                 "capability": "mutable",
                 "commitment": "0000000000000000000000000000000000943577000000000000000000000000"
@@ -112,7 +112,7 @@
           ],
           "valueSatoshis": 10000,
           "token": {
-            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef",
             "nft": {
               "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
               "capability": "mutable"
@@ -159,7 +159,7 @@
             },
             "valueSatoshis": 10400,
             "token": {
-              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
               "nft": {
                 "capability": "mutable",
                 "commitment": "0000000000000000000000000000000000943577000000000000000000000000"
@@ -193,7 +193,7 @@
         {
           "valueSatoshis": 10000,
           "token": {
-            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef",
             "nft": {
               "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
               "capability": "mutable"
@@ -215,6 +215,92 @@
             "script": "wallet_lock"
           },
           "valueSatoshis": 10000
+        }
+      ]
+    },
+    "excise_sell_order_asset_two": {
+      "description": "Test buying an asset using a sell order.",
+      "extends": "base",
+      "name": "Use sell order to buy (asset tread)",
+      "transaction": {
+        "inputs": [
+          {},
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          },
+          {
+            "unlockingBytecode": {
+              "script": "wallet_unlock"
+            }
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 200800,
+            "token": {
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
+              "nft": {
+                "capability": "mutable",
+                "commitment": "0000000000000000000000000000000000943577000000000000000000000000"
+              }
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 800
+          },
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "valueSatoshis": 800,
+            "token": {
+              "amount": 500,
+              "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c"
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "valueSatoshis": 293779
+          }
+        ],
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "valueSatoshis": 800,
+          "token": {
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "nft": {
+              "commitment": "1027000000000000000000000000008000943577000000000000000000000000",
+              "capability": "mutable"
+            }
+          }
+        },
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 800,
+          "token": {
+            "category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+            "amount": 10000
+          }
+        },
+        {
+          "lockingBytecode": {
+            "script": "wallet_lock"
+          },
+          "valueSatoshis": 494799
         }
       ]
     },
@@ -243,7 +329,7 @@
             },
             "valueSatoshis": 10800,
             "token": {
-              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
               "nft": {
                 "capability": "mutable",
                 "commitment": "1400000000000000000000000000000000943577000000000000000000000000"
@@ -280,7 +366,7 @@
           ],
           "valueSatoshis": 10000,
           "token": {
-            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef",
             "nft": {
               "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
               "capability": "mutable"
@@ -327,7 +413,7 @@
             },
             "valueSatoshis": 10800,
             "token": {
-              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
               "nft": {
                 "capability": "mutable",
                 "commitment": "1400000000000000000000000000000000943577000000000000000000000000"
@@ -361,7 +447,7 @@
         {
           "valueSatoshis": 10000,
           "token": {
-            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef",
             "nft": {
               "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
               "capability": "mutable"
@@ -411,7 +497,7 @@
             },
             "valueSatoshis": 10800,
             "token": {
-              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
               "nft": {
                 "capability": "mutable",
                 "commitment": "3c00000000000000000000000000008000943577000000000000000000000000"
@@ -441,7 +527,7 @@
         {
           "valueSatoshis": 10000,
           "token": {
-            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef",
             "nft": {
               "commitment": "1400000000000000000000000000008000943577000000000000000000000000",
               "capability": "mutable"
@@ -495,7 +581,7 @@
             },
             "valueSatoshis": 10000,
             "token": {
-              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
               "nft": {
                 "capability": "mutable",
                 "commitment": "0000000000000000000000000000000000943577000000000000000000000000"
@@ -528,7 +614,7 @@
           ],
           "valueSatoshis": 10400,
           "token": {
-            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef",
             "nft": {
               "commitment": "1400000000000000000000000000000000943577000000000000000000000000",
               "capability": "mutable"
@@ -579,7 +665,7 @@
             },
             "valueSatoshis": 10000,
             "token": {
-              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
               "nft": {
                 "capability": "mutable",
                 "commitment": "0000000000000000000000000000000000943577000000000000000000000000"
@@ -609,7 +695,7 @@
         {
           "valueSatoshis": 10400,
           "token": {
-            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef",
             "nft": {
               "commitment": "1400000000000000000000000000000000943577000000000000000000000000",
               "capability": "mutable"
@@ -771,7 +857,7 @@
             },
             "valueSatoshis": 800,
             "token": {
-              "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
               "nft": {
                 "capability": "minting"
               }
@@ -797,7 +883,7 @@
           },
           "valueSatoshis": 800,
           "token": {
-            "category": "beef00000000000000000000000000000000000000000000000000000000beef",
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef",
             "nft": {
               "capability": "minting"
             }
@@ -985,6 +1071,7 @@
         "excise_buy_order_asset",
         "excise_sell_order_baton",
         "excise_sell_order_asset",
+        "excise_sell_order_asset_two",
         "withdraw"
       ],
       "name": "Swap or Administer",
@@ -1007,7 +1094,7 @@
     "lock": {
       "lockingType": "p2sh32",
       "name": "CatDex Blackboard",
-      "script": "// CatDex - A token category authorized decentralized exchange\n//\n// 2025-11-22 Pre-alpha, pre-audit\n//\n// Trade fungible tokens at fixed prices based on orders expressed in NFT commitments\n\n<asset_category> <auth_category>\n\n// pragma cashscript ^0.10.0;\n// contract CatDex(bytes32 authCat, bytes32 assetCat){\n\n    // function swap(){\n    \n        // If the first input has a minting baton (owner),\n        //   the spending of outputs is unrestricted. \n        OP_0 OP_UTXOTOKENCATEGORY OP_OVER OP_2 OP_CAT OP_EQUAL OP_IF \n        // if(tx.inputs[0].tokenCategory == authCat + 0x02){\n            // pass \n        // }\n\n        // If the order input (even input) is a mutable auth Baton ... \n        OP_ELSE    \n        // else{\n            // Push the index of this order baton to the stack\n            OP_INPUTINDEX OP_INPUTINDEX OP_2 OP_MOD OP_SUB \n            // int orderIndex = this.activeInputIndex - (this.activeInputIndex % 2);  \n\n            // Require the order is mutable\n            OP_DUP OP_UTXOTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUALVERIFY \n            // require(tx.inputs[orderIndex].tokenCategory == authCat + 0x01 );\n\n            // Require the mutable baton returns\n            OP_DUP OP_OUTPUTTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUALVERIFY \n            // require(tx.outputs[orderIndex].tokenCategory == authCat + 0x01);\n\n            // Require the order baton be passed back to the contract\n            OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_UTXOBYTECODE OP_EQUALVERIFY \n            // require(tx.outputs[orderIndex].lockingBytecode == \n            //          tx.inputs[orderIndex].lockingBytecode);\n\n            // Get the next index of the asset thread\n            OP_DUP OP_1ADD \n            // int assetIndex = orderIndex + 1; \n\n            // Require the asset thread be sent at the current contract\n            OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_OUTPUTBYTECODE OP_EQUALVERIFY \n            // require(tx.outputs[assetIndex].lockingBytecode == \n            //         tx.outputs[assetIndex].lockingBytecode);                 \n                        \n            // if the amount of tokens is greater than zero,\n            OP_DUP OP_OUTPUTTOKENAMOUNT OP_0 OP_GREATERTHAN OP_IF \n            // if(tx.outputs[assetIndex].tokenAmount > 0){\n              // require the asset output contain token category specified by the order\n              OP_DUP OP_OUTPUTTOKENCATEGORY OP_4 OP_PICK OP_EQUALVERIFY \n            //   require(tx.outputs[assetIndex].tokenCategory == assetCat);\n            // } \n            OP_ENDIF \n\n            // Parse the order data from the NFT commitment\n            OP_OVER OP_UTXOTOKENCOMMITMENT OP_16 OP_SPLIT \n            // bytes quantityBin, bytes priceBin = \n            //               tx.inputs[orderIndex].nftCommitment.split(16);\n\n            OP_OVER OP_BIN2NUM \n            // int orderQuantity = int(quantityBin);  \n\n            OP_OVER OP_BIN2NUM \n            // int price = int(priceBin);\n\n            // Get the amount of the token traded\n            OP_4 OP_PICK OP_OUTPUTTOKENAMOUNT OP_5 OP_PICK OP_UTXOTOKENAMOUNT OP_SUB \n            // int tradeQuantity = tx.outputs[assetIndex].tokenAmount - \n            //                      tx.inputs[assetIndex].tokenAmount;\n\n            // Verify new authCat order baton NFT commitment\n            OP_2 OP_PICK OP_OVER OP_SUB OP_16 OP_NUM2BIN OP_2 OP_PICK OP_16 OP_NUM2BIN OP_CAT \n            // bytes32 nextCommitment = bytes16(orderQuantity-tradeQuantity) + bytes16(price);\n\n            // Require updating order baton\n            OP_7 OP_PICK OP_OUTPUTTOKENCOMMITMENT OP_OVER OP_EQUALVERIFY \n            // require(tx.outputs[orderIndex].nftCommitment == nextCommitment);\n\n            // require the sign of the quantity traded is matches the order sign  \n            OP_OVER OP_0 OP_GREATERTHAN OP_4 OP_PICK OP_0 OP_GREATERTHAN OP_EQUAL OP_VERIFY\n            // require((tradeQuantity > 0 == orderQuantity > 0)); \n\n            // require the amount traded be less than (or equal to) the quantity available\n            OP_OVER OP_ABS OP_4 OP_PICK OP_ABS OP_LESSTHANOREQUAL OP_VERIFY \n            // require(abs(tradeQuantity) <= abs(orderQuantity));\n\n            // Verify the value returned with the order exceeds the quantity traded times the price.\n            OP_7 OP_PICK OP_OUTPUTVALUE OP_8 OP_PICK OP_UTXOVALUE OP_SUB\n            OP_2OVER OP_SWAP OP_MUL <100_000_000> OP_DIV OP_NEGATE OP_NUMEQUALVERIFY \n            // require((tx.outputs[orderIndex].value - tx.inputs[orderIndex].value) == -(tradeQuantity*price/100_000_000));\n            //\n        // } \n        OP_2DROP OP_2DROP OP_2DROP OP_2DROP \n    // } \n    OP_ENDIF \n// } \nOP_2DROP OP_1"
+      "script": "// CatDex - A token category authorized decentralized exchange\n//\n// 2025-11-22 Pre-alpha, pre-audit\n//\n// Trade fungible tokens at fixed prices based on orders expressed in NFT commitments\n\n<asset_category> <auth_category>\n\n// pragma cashscript ^0.10.0;\n// contract CatDex(bytes32 authCat, bytes32 assetCat){\n\n    // function swap(){\n        // If the first input has a minting baton (owner),\n        //   the spending of outputs is unrestricted. \n        OP_0 OP_UTXOTOKENCATEGORY OP_OVER OP_2 OP_CAT OP_EQUAL OP_IF\n        // if(tx.inputs[0].tokenCategory == authCat + 0x02){\n            // pass \n        // }\n\n        // If the order input (even input) is a mutable auth Baton ... \n        OP_ELSE    \n        // else{\n            // Push the index of this order baton to the stack\n            OP_INPUTINDEX OP_INPUTINDEX OP_2 OP_MOD OP_SUB \n            // int orderIndex = this.activeInputIndex - (this.activeInputIndex % 2);  \n\n            // require the order is authenticated by  a mutable baton \n            OP_DUP OP_OUTPUTTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUALVERIFY\n            // require(tx.outputs[orderIndex].tokenCategory ==  authCat + 0x01);\n\n            // Require the order is auth lives on\n            OP_DUP OP_UTXOTOKENCATEGORY OP_OVER OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY \n            // require(tx.inputs[orderIndex].tokenCategory == tx.outputs[orderIndex].tokenCategory);\n\n            // Require the order baton be passed back to the contract\n            OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_UTXOBYTECODE OP_EQUALVERIFY \n            // require(tx.outputs[orderIndex].lockingBytecode == \n            //          tx.inputs[orderIndex].lockingBytecode);\n\n            // Get the next index of the asset thread\n            OP_DUP OP_1ADD \n            // int assetIndex = orderIndex + 1; \n\n            // Require the asset thread be sent at the current contract\n            OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_OUTPUTBYTECODE OP_EQUALVERIFY \n            // require(tx.outputs[assetIndex].lockingBytecode == \n            //         tx.outputs[assetIndex].lockingBytecode);                 \n                        \n            \n            // if the amount of tokens is greater than zero,\n            OP_DUP OP_OUTPUTTOKENAMOUNT OP_0 OP_GREATERTHAN OP_IF \n            // if(tx.outputs[assetIndex].tokenAmount > 0){\n              // require the asset output contain token category specified by the order\n              OP_DUP OP_OUTPUTTOKENCATEGORY OP_4 OP_PICK OP_EQUALVERIFY\n            //   require(tx.outputs[assetIndex].tokenCategory == assetCat);\n            // } \n            OP_ENDIF \n\n            // Parse the order data from the NFT commitment\n            OP_OVER OP_UTXOTOKENCOMMITMENT OP_16 OP_SPLIT \n            // bytes quantityBin, bytes priceBin = \n            //               tx.inputs[orderIndex].nftCommitment.split(16);\n\n            OP_OVER OP_BIN2NUM \n            // int orderQuantity = int(quantityBin);  \n\n            OP_OVER OP_BIN2NUM \n            // int price = int(priceBin);\n\n            // Get the amount of the token traded\n \n            OP_4 OP_PICK OP_OUTPUTTOKENAMOUNT OP_5 OP_PICK OP_UTXOTOKENAMOUNT OP_SUB \n            // int tradeQuantity = tx.outputs[assetIndex].tokenAmount - \n            //                      tx.inputs[assetIndex].tokenAmount;\n\n            // Verify new authCat order baton NFT commitment\n            OP_2 OP_PICK OP_OVER OP_SUB OP_16 OP_NUM2BIN OP_2 OP_PICK OP_16 OP_NUM2BIN OP_CAT \n            // bytes32 nextCommitment = bytes16(orderQuantity-tradeQuantity) + bytes16(price);\n\n            // Require updating order baton\n            OP_7 OP_PICK OP_OUTPUTTOKENCOMMITMENT OP_OVER OP_EQUALVERIFY \n            // require(tx.outputs[orderIndex].nftCommitment == nextCommitment);\n\n            // require the sign of the quantity traded matches the order sign  \n            OP_OVER OP_0 OP_GREATERTHAN OP_4 OP_PICK OP_0 OP_GREATERTHAN OP_EQUALVERIFY\n            // require((tradeQuantity > 0 == orderQuantity > 0)); \n\n            // require the amount traded be less than (or equal to) the quantity available\n            OP_OVER OP_ABS OP_4 OP_PICK OP_ABS OP_LESSTHANOREQUAL OP_VERIFY \n            // require(abs(tradeQuantity) <= abs(orderQuantity));\n\n            // Verify the value returned with the order exceeds the quantity traded times the price.\n            OP_7 OP_PICK OP_OUTPUTVALUE OP_8 OP_PICK OP_UTXOVALUE OP_SUB\n            OP_2OVER OP_SWAP OP_MUL <100_000_000> OP_DIV OP_NEGATE OP_GREATERTHANOREQUAL OP_VERIFY \n            // require((tx.outputs[orderIndex].value - tx.inputs[orderIndex].value) >= -(tradeQuantity*price/100_000_000));\n\n        // } \n       OP_2DROP OP_2DROP OP_2DROP OP_2DROP\n    // } \n    OP_ENDIF \n// } \nOP_2DROP OP_1"
     }
   },
   "supported": [

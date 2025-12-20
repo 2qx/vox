@@ -33,6 +33,16 @@ export const ORDER_UTXOS :UtxoI[] = [
         tx_pos: 0,
         tx_hash: "0000000000000000000000000000000000000000000000000000000000000000",
         height: -1,
+        value: 800,
+        token_data: {
+            amount: "2000",
+            category: ASSET
+        }
+    },
+    {
+        tx_pos: 0,
+        tx_hash: "0000000000000000000000000000000000000000000000000000000000000000",
+        height: -1,
         value: 400,
         token_data: {
             amount: "0",

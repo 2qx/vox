@@ -191,3 +191,4 @@ export function cashAssemblyToHex(str: string): string {
   if (typeof result === "string") throw result
   return binToHex(result)
 }
+
