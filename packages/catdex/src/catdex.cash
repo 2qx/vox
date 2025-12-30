@@ -89,7 +89,7 @@ contract CatDex(bytes32 authCat, bytes32 assetCat){
 
             // Verify the value returned with the order exceeds the quantity traded times the price.
             // OP_7 OP_PICK OP_OUTPUTVALUE OP_8 OP_PICK OP_UTXOVALUE OP_SUB
-            //  OP_2OVER OP_SWAP OP_MUL <100_000_000> OP_DIV OP_NEGATE OP_NUMEQUALVERIFY 
+            // OP_2OVER OP_SWAP OP_MUL <100_000_000> OP_DIV OP_NEGATE OP_NUMEQUALVERIFY 
             require((tx.outputs[orderIndex].value - tx.inputs[orderIndex].value) >= -(tradeQuantity*price/100_000_000));
 
             

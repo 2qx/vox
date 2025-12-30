@@ -4,6 +4,7 @@
 
 	import Chat from '$lib/Chat.svelte';
 	import Transaction from '$lib/Transaction.svelte';
+	import CatDexOrder from '$lib/CatDexOrder.svelte';
 	import Utxo from '$lib/Utxo.svelte';
 
 	import BCMR from '$lib/bitcoin-cash-metadata-registry.json' with { type: 'json' };
@@ -11,7 +12,7 @@
 
 	import Readme from './README.md';
 
-	import CatDex from '@unspent/catdex';
+	import { default as CatDex, getAllMarketOrders } from '@unspent/catdex';
 
 	import SmallIndex from '@unspent/small';
 
@@ -27,7 +28,7 @@
 	} from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
-	import { BaseWallet, Wallet, TestNetWallet, NFTCapability } from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet, NFTCapability, TokenMintRequest } from 'mainnet-js';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 
@@ -41,6 +42,7 @@
 		sumTokenAmounts,
 		type UtxoI
 	} from '@unspent/tau';
+	import TokenIcon from '$lib/TokenIcon.svelte';
 
 	let now: number = $state(0);
 
@@ -55,11 +57,14 @@
 
 	let unspent: any[] = $state([]);
 	let walletUnspent: any[] = $state([]);
-	let markets: any[] = $state([]);
+	let orders: any[] = $state([]);
+	let myOrderBook: any[] = $state([]);
+	let myAuthBatons: any[] = $state([]);
+	let myDexUtxos: any[] = $state([]);
 	let authBatons: any[] = $state([]);
 	let showSettings = $state(false);
 
-	let selectedAsset = $state("");
+	let selectedAsset = $state('');
 
 	let transaction_hex = '';
 	let transaction: any = $state(undefined);
@@ -72,8 +77,13 @@
 
 	const isMainnet = page.url.hostname == 'vox.cash';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
+	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 	const metadata = isMainnet ? BCMR : tBCMR;
+
+	selectedAsset = isMainnet
+		? '7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c'
+		: 'ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271';
 
 	const protocol_prefix = cashAssemblyToHex(`OP_RETURN <"${CatDex.PROTOCOL_IDENTIFIER}">`);
 
@@ -93,20 +103,27 @@
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			updateWallet();
-			//updateUnspent();
+			updateOrders();
 		}, 1500);
 	};
 
 	async function updateOrders() {
 		if (electrumClient && now > 1000) {
-			markets = await electrumClient.request(
+			let markets = await electrumClient.request(
 				'blockchain.scripthash.listunspent',
-				SmallIndex.getScriptHash(selectedAsset),
+				SmallIndex.getScriptHash(CatDex.PROTOCOL_IDENTIFIER),
 				'include_tokens'
 			);
 
-			let authCats = markets.map((u:UtxoI) => u.token_data?.category)
-			const orders = CatDex.getCatDexOrdersFromUtxos(authCat, selectedAsset, utxos)
+			authBatons = markets.map((u: UtxoI) => {
+				return u.token_data?.category;
+			});
+			let marketScriptHashes = authBatons.map((authCat: string) => {
+				return CatDex.getScriptHash(authCat, selectedAsset);
+			});
+			let rawOrders = await getAllMarketOrders(electrumClient, marketScriptHashes);
+			let utxos = Array.from(rawOrders.values());
+			orders = CatDex.getCatDexOrdersFromUtxos(selectedAsset, utxos);
 		}
 	}
 
@@ -117,28 +134,33 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		let walletUnspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
 
-		if (walletUnspent.length == 0) {
-			walletUnspent = response;
-		}
-
-		authBatons = response.filter(
+		myAuthBatons = response.filter(
 			(u: UtxoI) =>
 				u.token_data && u.token_data.nft && u.token_data.nft.commitment.startsWith(protocol_prefix)
 		);
-		balance = sumUtxoValue(walletUnspent, true);
+
 		if (typeof selectedAsset == 'string') {
+			walletUnspent = response.filter(
+				(u: UtxoI) => !u.token_data || u.token_data.category == selectedAsset
+			);
 			assetBalance = sumTokenAmounts(walletUnspent, selectedAsset);
 		} else {
+			walletUnspent = response.filter((u: UtxoI) => !u.token_data);
 			assetBalance = 0n;
 		}
+		balance = sumUtxoValue(walletUnspent, true);
+
+		let myRawOrders = await getAllMarketOrders(electrumClient, [
+			CatDex.getScriptHash(myAuthBatons[0].token_data.category, selectedAsset)
+		]);
+		myDexUtxos = Array.from(myRawOrders.values());
 	};
 
 	const newAuthBaton = async function () {
 		await wallet.sendMax(wallet.getDepositAddress());
 		let uname = cashAssemblyToHex(
-			`OP_RETURN <"${CatDex.PROTOCOL_IDENTIFIER}"> <"market auth baton">`
+			`OP_RETURN <"${CatDex.PROTOCOL_IDENTIFIER}"> <"markets are made">`
 		);
 		let sendResponse = await wallet.tokenGenesis({
 			cashaddr: wallet.getTokenDepositAddress()!, // token UTXO recipient, if not specified will default to sender's address
@@ -148,24 +170,51 @@
 		});
 	};
 
-	const updateAsset = async function () {
-		if (typeof selectedAsset == 'string') {
-			let smallDb = SmallIndex.getScriptHash(selectedAsset);
-			markets = await electrumClient.request(
-				'blockchain.scripthash.listunspent',
-				smallDb,
-				'include_tokens'
-			);
+	const announceAuthBaton = async function (duration: number) {
+		let message = cashAssemblyToHex(`OP_RETURN <"markets are made">`);
+		let sendResponse = await wallet.tokenMint(myAuthBatons[0].token_data.category, [
+			new TokenMintRequest({
+				cashaddr: SmallIndex.getAddress(CatDex.PROTOCOL_IDENTIFIER)!,
+				commitment: message,
+				capability: NFTCapability.none,
+				value: duration
+			})
+		]);
+	};
 
+	const updateAsset = async function () {
+		await updateWallet();
+		await updateOrders();
+		if (typeof selectedAsset == 'string') {
 			assetBalance = sumTokenAmounts(walletUnspent, selectedAsset);
 		} else {
 			assetBalance = 0n;
 		}
 	};
 
+	const addMyOrder = function () {
+		myOrderBook.push({ quantity: 0, price: undefined });
+	};
+
+	const postOrders = async function (replace = false) {
+		let oldOrders = [];
+		if (replace) oldOrders = myDexUtxos;
+		let tx = CatDex.administer(
+			myAuthBatons[0],
+			selectedAsset,
+			oldOrders,
+			myOrderBook,
+			walletUnspent,
+			key
+		);
+		let transaction_hex = binToHex(encodeTransactionBch(tx.transaction));
+		let response = await broadcast(transaction_hex);
+		if (response.length == 64) myOrderBook = [];
+	};
+
 	const updateSwap = function () {
 		try {
-			let result = CatDex.swap(amount, unspent, walletUnspent, key);
+			let result = CatDex.swap(BigInt(amount), orders, walletUnspent, key);
 			transaction = result.transaction;
 			sourceOutputs = result.sourceOutputs;
 			transaction_hex = binToHex(encodeTransactionBch(transaction));
@@ -178,6 +227,21 @@
 			transactionValid = false;
 			transactionError = error;
 		}
+	};
+
+	const broadcast = async function (raw_tx: string) {
+		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
+		if (response instanceof Error) {
+			connectionStatus = ConnectionStatus[electrumClient.status];
+			transactionError = response.message;
+			throw response;
+		}
+		response as any[];
+		transaction = undefined;
+		sourceOutputs = undefined;
+		transaction_hex = '';
+		transactionValid = false;
+		return response;
 	};
 
 	const handleNotifications = function (data: any) {
@@ -193,6 +257,7 @@
 				amount = 0n;
 				debounceUpdateWallet();
 			}
+			console.log('event ', data);
 		} else {
 			console.log(data);
 		}
@@ -219,6 +284,28 @@
 
 		// Set up a subscription for new block headers.
 		await electrumClient.subscribe('blockchain.headers.subscribe');
+
+		let markets = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			SmallIndex.getScriptHash(CatDex.PROTOCOL_IDENTIFIER),
+			'include_tokens'
+		);
+
+		authBatons = markets.map((u: UtxoI) => {
+			return u.token_data?.category;
+		});
+		let marketScriptHashes = authBatons.map((authCat: string) => {
+			return CatDex.getScriptHash(authCat, selectedAsset);
+		});
+
+		marketScriptHashes.map(async (s) => {
+			await electrumClient.subscribe('blockchain.scripthash.subscribe', s);
+		});
+
+		await electrumClient.subscribe(
+			'blockchain.scripthash.subscribe',
+			SmallIndex.getScriptHash(CatDex.PROTOCOL_IDENTIFIER)
+		);
 	});
 
 	onDestroy(async () => {
@@ -239,26 +326,6 @@
 
 	<h1>Trade CashTokens</h1>
 	{#if connectionStatus == 'CONNECTED'}
-		<div>
-			<!-- Rounded switch -->
-			<label class="switch">
-				<input type="checkbox" bind:checked={showSettings} />
-				<span class="slider round"></span>
-			</label>
-
-			{#if showSettings}
-				{#if authBatons.length == 0}
-					<button onclick={() => newAuthBaton()}>Create a Market Maker Authentication Baton</button>
-				{:else if balance < 10000 && walletUnspent.length == 0}
-					<a href="/wallet">Deposit funds</a> to create a market
-				{:else}
-					{#each authBatons as authBaton}
-						<Utxo {...authBaton}></Utxo>
-					{/each}
-				{/if}
-			{/if}
-		</div>
-
 		<b>Select an asset:</b>
 		<select bind:value={selectedAsset} onchange={() => updateAsset()}>
 			{#each bcmr.keys() as token}
@@ -269,32 +336,113 @@
 		</select>
 		<br />
 		{#if selectedAsset}
-			<img height="50" src={bcmr.get(selectedAsset).uris.icon} />
-			{(
-				assetBalance / BigInt(Math.pow(10, bcmr.get(selectedAsset).token.decimals))
-			).toLocaleString()}
-			<b>{bcmr.get(selectedAsset).token.symbol}</b>
+			<div class="swap">
+				<div>
+					<img width="50" src={bch} alt={baseTicker} />
+					<br />
+					{balance.toLocaleString()} sats {baseTicker}
+				</div>
+				<div>
+					<img
+						width="50"
+						src={bcmr.get(selectedAsset).uris.icon}
+						alt={bcmr.get(selectedAsset).token.symbol}
+					/>
+					<br />
+					{(
+						assetBalance / BigInt(Math.pow(10, bcmr.get(selectedAsset).token.decimals))
+					).toLocaleString()}
+					{bcmr.get(selectedAsset).token.symbol}
+				</div>
+			</div>
 		{/if}
 
+		<br />
 		<div class="swap">
-			amount to swap:
-			<label>
-				<input type="number" bind:value={amount} min="0" max="10" onchange={() => updateSwap()} />
-			</label>
+			<label>Swap amount: </label>
+			<input type="number" bind:value={amount} min="0" max="10" onchange={() => updateSwap()} />
 		</div>
 
-		<br />
-
-		{#if transaction}
+		{#if transaction && transactionValid}
+			<div class="swap">
+				<button onclick={() => broadcast(transaction_hex)}>Broadcast</button>
+			</div>
 			<Transaction {transaction} {sourceOutputs} category={selectedAsset} />
 		{/if}
 		{transactionError}
 
-		{stringify(markets)}
+		{#each orders as o}
+			<CatDexOrder {...o} />
+		{/each}
 
-		<!-- {#if selectedAsset}
-			<Chat bind:topic={selectedAsset}></Chat>
-		{/if} -->
+		<br />
+		<span class="switch">Advanced</span>
+		<br />
+
+		<label class="switch">
+			<input type="checkbox" bind:checked={showSettings} />
+			<span class="slider round"></span>
+		</label>
+		{#if showSettings}
+			<br />
+			<div class="settings">
+				{#if balance < 1000 && walletUnspent.length == 0}
+					<a href="/wallet">Deposit funds</a> to create a CatDex authentication baton.
+				{:else if !myAuthBatons}
+					<p>To write orders, you need to create a CatDex Authentication Baton (1000 sats).</p>
+					<button onclick={() => newAuthBaton()}>Create a new Baton</button>
+				{:else if authBatons.indexOf(myAuthBatons[0].token_data.category) == -1}
+					<p>
+						You have a CatDex baton. For others to can find your orders, announce your membership in
+						the CatDex.
+					</p>
+
+					<button onclick={() => announceAuthBaton(1008)}>Week (1008 sats)</button>
+					<button onclick={() => announceAuthBaton(4364)}>Month (4364 sats)</button>
+					<button onclick={() => announceAuthBaton(52596)}>Year (52596 sats) </button>
+					<p>Membership fees are non-refundable and are claimed by miners.</p>
+				{:else}
+					{#each myAuthBatons as authBaton}
+						<TokenIcon size={32} category={authBaton.token_data.category}></TokenIcon>
+					{/each}
+
+					{#if myOrderBook.length > 0}
+						<button onclick={() => postOrders(true)}>Replace Orders</button>
+
+						<button onclick={() => postOrders()}>Append Orders</button>
+					{:else}
+						<button onclick={() => postOrders(true)}> Clear Orders </button>
+					{/if}
+					<br />
+					{#each myOrderBook as o}
+						<div class="orders">
+							<div>
+								<label for="quantity">quantity</label>
+								<input name="quantity" type="number" bind:value={o.quantity} /><br />
+							</div>
+							<div>
+								<label for="quantity">price</label>
+								<input type="number" bind:value={o.price} min="1" max="100000" />
+							</div>
+						</div>
+					{/each}
+					<br />
+					<button onclick={() => addMyOrder()}>New Order +</button><br />
+				{/if}
+			</div>
+		{/if}
+		<br />
+		<br />
+		<br />
+		<br />
+
+		<div class="grid">
+			{#each authBatons as authBaton}
+				<div>
+					<TokenIcon category={authBaton} size={24}></TokenIcon>
+				</div>
+			{/each}
+		</div>
 	{:else}
 		<div class="swap">
 			<p>Not connected.</p>
@@ -329,6 +477,25 @@
 		border-radius: 20%;
 	}
 
+	.fill {
+		flex: 1;
+		word-break: break-all;
+		display: flex;
+	}
+
+	.orders {
+		display: flex;
+		margin: 5px;
+	}
+
+	.grid {
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		text-align: center;
+	}
+
 	button {
 		background-color: #a45eb6; /* Green */
 		border: none;
@@ -341,6 +508,12 @@
 		font-size: 16px;
 	}
 
+	.settings {
+		margin: 10px;
+	}
+	.settings button {
+		margin: 10px;
+	}
 	.switch {
 		position: relative;
 		display: inline-block;

@@ -57,7 +57,7 @@
 			description: 'A small database.',
 			image: '/small.svg',
 			link: '/db',
-			disabled: true
+			disabled: false
 		},
 		{
 			name: 'Subscription',

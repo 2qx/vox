@@ -13,6 +13,8 @@
 		['bb61cd7a6c8a3a3742d965dc7ac73c1117382a5c8930b68338deb881f75c0214', '/tWBCH.svg'],
 		['ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3', '/WBCH.svg']
 	]);
+
+	
 </script>
 
 {#if FUTURE_MAP.has(category)}
@@ -27,7 +29,7 @@
 
 <style>
 	.fallback img {
-		border-radius: 20px;
+		border-radius: 10px;
 	}
 	img {
 		filter: drop-shadow(5px 5px 5px #b1aeaead);

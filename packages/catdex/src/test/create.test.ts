@@ -50,7 +50,7 @@ test('Should create a new blackboard with sell', async t => {
 
     let order: OrderRequest[] = [
         {
-            price: 20n,
+            price: 20,
             quantity: 10000n
         }
     ]
@@ -98,7 +98,7 @@ test('Should create a new blackboard with buy', async t => {
 
     let order: OrderRequest[] = [
         {
-            price: 20n,
+            price: 20,
             quantity: -500000n
         }
     ]
@@ -164,11 +164,11 @@ test('Should clear a new blackboard with buy & sell', async t => {
     let authToken = walletUtxos.filter((u: UtxoI) => u.token_data && u.token_data.category == authCat)[0]
     let orders: OrderRequest[] = [
         {
-            price: 20n,
+            price: 20,
             quantity: -500000n
         },
         {
-            price: 20n,
+            price: 20,
             quantity: 100000n
         }
     ]

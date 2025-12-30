@@ -43,3 +43,19 @@ export async function listUnspentWrap(args:any[]): Promise<UtxoI[]> {
 
     })
 }
+
+export async function listUnspentTokensWrap(args:any[]): Promise<UtxoI[]> {
+    let unspent = await args[0].request(
+        'blockchain.scripthash.listunspent', 
+        args[1],
+        'include_tokens'
+    );
+    if (unspent instanceof Error) throw unspent
+    return unspent.map((utxo:any) => {
+        return {
+            ... utxo,
+            scripthash: args[1]
+        }
+
+    })
+}

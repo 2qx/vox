@@ -1,4 +1,4 @@
 packages:
-  - 'packages/catdex'
-  #- 'packages/*'
+  #- 'packages/catdex'
+  - 'packages/*'
   - 'packages/app'

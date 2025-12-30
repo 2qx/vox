@@ -49,12 +49,8 @@ test('Should swap assets on a blackboard (buy)', async t => {
     let authToken = walletUtxos.filter((u: UtxoI) => u.token_data && u.token_data.category == authCat)[0]
 
     let order: OrderRequest[] = [
-        // {
-        //     price: 20n,
-        //     quantity: 10000n
-        // },
         {
-            price: 20n,
+            price: 20,
             quantity: -10000n
         }
     ]
@@ -82,7 +78,7 @@ test('Should swap assets on a blackboard (buy)', async t => {
         "include_tokens"
     )
 
-    const orders = CatDex.getCatDexOrdersFromUtxos(authCat, assetCat, utxos)
+    const orders = CatDex.getCatDexOrdersFromUtxos(assetCat, utxos)
 
     await sleep(100)
     // Fund the exchange
@@ -126,7 +122,7 @@ test('Should swap assets on a blackboard (buy)', async t => {
     t.is(Math.abs(Number(tradeQuantity)) <= Math.abs(Number(orderData.quantity)), true, "trade amount is available")
 
     t.is(
-        output0?.valueSatoshis! - input0?.valueSatoshis! >= -(tradeQuantity * orderData.price / 100_000_000n),
+        output0?.valueSatoshis! - input0?.valueSatoshis! >= -(tradeQuantity * BigInt(orderData.price) / 100_000_000n),
         true,
         "price is right"
     )
@@ -175,11 +171,11 @@ test('Should swap assets on a blackboard (sell)', async t => {
 
     let order: OrderRequest[] = [
         {
-            price: 21n,
+            price: 21,
             quantity: 10000n
         },
         {
-            price: 20n,
+            price: 20,
             quantity: -10000n
         }
     ]
@@ -208,9 +204,9 @@ test('Should swap assets on a blackboard (sell)', async t => {
         "include_tokens"
     )
 
-    let orders = CatDex.getCatDexOrdersFromUtxos(authCat, assetCat, utxos)
+    let orders = CatDex.getCatDexOrdersFromUtxos(assetCat, utxos)
 
-    console.log(stringify(orders))
+    //console.log(stringify(orders))
     // Use the exchange
     let tx2 = CatDex.swap(-900n, orders, walletUtxos, privateKey);
     // console.log(stringify(tx2.verify))
@@ -262,19 +258,19 @@ test('Should buy swap assets on a blackboard (multi order sell)', async t => {
 
     let order: OrderRequest[] = [
         {
-            price: 4n,
+            price: 4,
             quantity: 10000n
         },
         {
-            price: 3n,
+            price: 3,
             quantity: 10000n
         },
         {
-            price: 5n,
+            price: 5,
             quantity: -10000n
         },
         {
-            price: 6n,
+            price: 6,
             quantity: -10000n
         }
     ]
@@ -303,7 +299,7 @@ test('Should buy swap assets on a blackboard (multi order sell)', async t => {
         "include_tokens"
     )
 
-    let orders = CatDex.getCatDexOrdersFromUtxos(authCat, assetCat, utxos)
+    let orders = CatDex.getCatDexOrdersFromUtxos(assetCat, utxos)
 
     //console.log(stringify(orders))
     // Use the exchange
@@ -352,23 +348,23 @@ test('Should sell swap assets on a blackboard (from multi order buy)', async t =
 
     let order: OrderRequest[] = [
         {
-            price: 4n,
+            price: 4,
             quantity: 500n
         },
         {
-            price: 3n,
+            price: 3,
             quantity: 500n
         },
         {
-            price: 2n,
+            price: 2,
             quantity: 500n
         },
         {
-            price: 5n,
+            price: 5,
             quantity: -10000n
         },
         {
-            price: 6n,
+            price: 6,
             quantity: -10000n
         }
     ]
@@ -397,14 +393,14 @@ test('Should sell swap assets on a blackboard (from multi order buy)', async t =
         "include_tokens"
     )
 
-    let orders = CatDex.getCatDexOrdersFromUtxos(authCat, assetCat, utxos)
+    let orders = CatDex.getCatDexOrdersFromUtxos(assetCat, utxos)
 
     //console.log(stringify(orders))
     // Use the exchange
     let tx2 = CatDex.swap(-1500n, orders, walletUtxos, privateKey);
-     console.log(stringify(tx2.verify))
-     console.log(stringify(tx2.sourceOutputs))
-     console.log(stringify(tx2.transaction))
+    //  console.log(stringify(tx2.verify))
+    //  console.log(stringify(tx2.sourceOutputs))
+    //  console.log(stringify(tx2.transaction))
     // console.log(binToHex(encodeTransactionBch(tx2.transaction)))
 
     await sleep(3000)

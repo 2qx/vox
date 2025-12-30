@@ -28,22 +28,21 @@ import {
     getLibauthCompiler,
     getScriptHash,
     getTransactionFees,
-    listUnspentWrap,
+    listUnspentTokensWrap,
     promiseAllInBatches,
     sumSourceOutputTokenAmounts,
     sumSourceOutputValue,
     sumOutputValue,
     sumOutputTokenAmounts,
-    UtxoI,
-    sleep
+    UtxoI
 } from '@unspent/tau';
 
-const PRICE_MULTIPLIER = 100_000_000n
+const PRICE_MULTIPLIER = 100_000_000
 
 
 export interface OrderRequest {
     quantity: bigint;
-    price: bigint;
+    price: number;
 }
 
 
@@ -59,7 +58,7 @@ export interface CatDexOrder {
     assetUtxo?: UtxoI;
 
     // price per token
-    price: bigint;
+    price: number;
 
     // tokens available on asset utxo
     amount?: bigint;
@@ -148,18 +147,18 @@ export default class CatDex {
 
 
     static getCatDexOrdersFromUtxos(
-        authCat: Uint8Array | string,
         assetCat: Uint8Array | string,
-        utxos: UtxoI[]): CatDexOrder[] {
-        if (typeof authCat != "string") authCat = binToHex(authCat)
+        utxos: UtxoI[],
+        excludeCompleted=true,
+    ): CatDexOrder[] {
         if (typeof assetCat != "string") assetCat = binToHex(assetCat)
 
-        let orderUtxos = utxos.filter((u: UtxoI) => u.token_data?.category == authCat)
-        let assetUtxos = utxos.filter((u: UtxoI) => u.token_data?.category == assetCat)
+        let orderUtxos = utxos.filter((u: UtxoI) => u.token_data && u.token_data?.category != assetCat)
+        
         let dexOrders = orderUtxos.map((u: UtxoI) => {
             let orderData = this.parseNFT(u.token_data?.nft?.commitment!)
             return {
-                authCategory: hexToBin(authCat),
+                authCategory: hexToBin(u.token_data?.category!),
                 assetCategory: hexToBin(assetCat),
                 orderUtxo: u,
                 assetUtxo: undefined,
@@ -170,19 +169,19 @@ export default class CatDex {
             }
         })
 
-
-        assetUtxos.sort((a: UtxoI, b: UtxoI) => Number(BigInt(b.token_data!.amount!) - BigInt(a.token_data!.amount!)))
-        dexOrders.sort((a: CatDexOrder, b: CatDexOrder) => Number(a.quantity) - Number(b.quantity))
-
+        dexOrders.sort((a: CatDexOrder, b: CatDexOrder) => Number(b.price) - Number(a.price))
+        if (excludeCompleted) dexOrders = dexOrders.filter((o) => o.quantity != 0n);
+			
         let matchedOrders: CatDexOrder[] = []
         for (let order of dexOrders) {
-            let nextAssetThread = assetUtxos.shift()
+
+            let matchingIdx = utxos.findIndex((u: UtxoI) => u.tx_hash == order.orderUtxo.tx_hash && u.tx_pos == (order.orderUtxo.tx_pos + 1))
+            if (matchingIdx == -1) throw ("Couldn't find matching asset thread")
+
             let assetInfo = {}
-            if (nextAssetThread) {
-                assetInfo = {
-                    assetUtxo: nextAssetThread,
-                    amount: nextAssetThread.token_data?.amount
-                }
+            assetInfo = {
+                assetUtxo: utxos[matchingIdx],
+                amount: utxos[matchingIdx]?.token_data ? utxos[matchingIdx].token_data.amount : 0n
             }
             matchedOrders.push(
                 { ...order, ...assetInfo }
@@ -223,10 +222,10 @@ export default class CatDex {
         if (typeof commitment == "string") commitment = hexToBin(commitment)
 
         let quantity = vmNumberToBigInt(commitment.slice(0, 16)!, { requireMinimalEncoding: false })
-        let price = vmNumberToBigInt(commitment.slice(-16)!, { requireMinimalEncoding: false })
+        let encodedPrice = vmNumberToBigInt(commitment.slice(-16)!, { requireMinimalEncoding: false })
         return {
             quantity: BigInt(quantity),
-            price: BigInt(price) / PRICE_MULTIPLIER
+            price: (Number(encodedPrice) / PRICE_MULTIPLIER)
         }
 
     }
@@ -240,8 +239,8 @@ export default class CatDex {
     static encodeNFT(order: OrderRequest): Uint8Array {
         return new Uint8Array(
             [
-                ...padMinimallyEncodedVmNumber(bigIntToVmNumber(order.quantity), 16),
-                ...padMinimallyEncodedVmNumber(bigIntToVmNumber(order.price * PRICE_MULTIPLIER), 16)
+                ...padMinimallyEncodedVmNumber(bigIntToVmNumber(BigInt(order.quantity)), 16),
+                ...padMinimallyEncodedVmNumber(bigIntToVmNumber(BigInt(Math.trunc(order.price * PRICE_MULTIPLIER))), 16)
             ]
         )
     }
@@ -288,8 +287,8 @@ export default class CatDex {
         let lockingBytecode = this.getLockingBytecode(order.authCategory, order.assetCategory)
 
         let tokensOut = 0n;
-        if (order.assetUtxo) {
-            tokensOut = BigInt(order.assetUtxo.token_data!.amount) - amount
+        if (order.amount! > 0) {
+            tokensOut = BigInt(order.assetUtxo!.token_data!.amount) - amount
         } else {
             tokensOut = -amount
         }
@@ -297,7 +296,7 @@ export default class CatDex {
         let out: OutputTemplate<CompilerBch>[] = [
             {
                 lockingBytecode: lockingBytecode,
-                valueSatoshis: BigInt(order.orderUtxo.value) + (amount * order.price),
+                valueSatoshis: BigInt(order.orderUtxo.value) + BigInt(Number(amount) * order.price),
                 token: {
                     amount: 0n,
                     category: hexToBin(order.orderUtxo.token_data!.category!),
@@ -341,7 +340,7 @@ export default class CatDex {
         let tokenReserves = 0n;
 
         // If buying, have cash on hand
-        if (order.quantity > 0n) cashReserves += BigInt(order.price * order.quantity)
+        if (order.quantity > 0n) cashReserves += BigInt(Math.trunc(order.price * Number(order.quantity)))
 
         // If selling, have tokens on hand to satisfy the negative order
         if (order.quantity < 0n) tokenReserves = -BigInt(order.quantity)
@@ -550,14 +549,12 @@ export default class CatDex {
     } {
 
 
-        sleep(1000)
         let inputs: InputTemplate<CompilerBch>[] = [];
         let outputs: OutputTemplate<CompilerBch>[] = [];
 
         // Filter available orders to match direction of trade
         orders = orders.filter(o => Math.sign(Number(o.quantity)) != Math.sign(Number(tradeAmount)))
 
-        sleep(2000)
         // Check if we still have a market
         if (orders.length == 0) throw Error("no orders left, maximum recursion depth reached.");
 
@@ -568,20 +565,19 @@ export default class CatDex {
         // sort orders by price
         orders.sort(sortFn)
 
-        console.log("trade amount: ", tradeAmount, orders.length, orders[0]!.quantity)
         // pop the best order
         const best = orders.shift()
 
         if (!best) throw Error("No matching best order found.")
-        if (best.quantity! > 0 && best.assetUtxo) throw Error("Asset utxo for best order not found.")
-
+        if (!best.assetUtxo) throw Error("Order missing asset utxo")
+            
         // Push order thread inputs
         inputs.push(this.getInput(best.authCategory, best.assetCategory, best.orderUtxo))
-        if (best.assetUtxo) inputs.push(this.getInput(best.authCategory, best.assetCategory, best.assetUtxo))
+        inputs.push(this.getInput(best.authCategory, best.assetCategory, best.assetUtxo))
 
         // Push source outputs
         sourceOutputs.push(this.getSourceOutput(best.authCategory, best.assetCategory, best.orderUtxo));
-        if (best.assetUtxo) sourceOutputs.push(this.getSourceOutput(best.authCategory, best.assetCategory, best.assetUtxo));
+        sourceOutputs.push(this.getSourceOutput(best.authCategory, best.assetCategory, best.assetUtxo));
 
         // The best priced order satisfies the amount needed, and we go no further
         if (Math.abs(Number(tradeAmount)) <= Math.abs(Number(best.quantity))) {
@@ -930,7 +926,7 @@ export default class CatDex {
 }
 
 export async function getAllMarketOrders(electrumClient: any, scriptHashes: string[]): Promise<Map<string, UtxoI>> {
-    let allUnspent = (await promiseAllInBatches(listUnspentWrap, scriptHashes.map(a => [electrumClient, a]))).flat()
+    let allUnspent = (await promiseAllInBatches(listUnspentTokensWrap, scriptHashes.map(a => [electrumClient, a]))).flat()
     var map = new Map();
     allUnspent.map((obj: UtxoI) => map.set(obj.tx_hash + ":" + obj.tx_pos, obj));
     return map as Map<string, any>
