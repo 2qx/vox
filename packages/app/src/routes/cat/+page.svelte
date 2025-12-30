@@ -151,10 +151,12 @@
 		}
 		balance = sumUtxoValue(walletUnspent, true);
 
-		let myRawOrders = await getAllMarketOrders(electrumClient, [
-			CatDex.getScriptHash(myAuthBatons[0].token_data.category, selectedAsset)
-		]);
-		myDexUtxos = Array.from(myRawOrders.values());
+		if (myAuthBatons.length > 0) {
+			let myRawOrders = await getAllMarketOrders(electrumClient, [
+				CatDex.getScriptHash(myAuthBatons[0].token_data.category, selectedAsset)
+			]);
+			myDexUtxos = Array.from(myRawOrders.values());
+		}
 	};
 
 	const newAuthBaton = async function () {
@@ -388,7 +390,7 @@
 			<div class="settings">
 				{#if balance < 1000 && walletUnspent.length == 0}
 					<a href="/wallet">Deposit funds</a> to create a CatDex authentication baton.
-				{:else if !myAuthBatons}
+				{:else if myAuthBatons.length==0}
 					<p>To write orders, you need to create a CatDex Authentication Baton (1000 sats).</p>
 					<button onclick={() => newAuthBaton()}>Create a new Baton</button>
 				{:else if authBatons.indexOf(myAuthBatons[0].token_data.category) == -1}
@@ -437,6 +439,7 @@
 		<br />
 
 		<div class="grid">
+			All Makers
 			{#each authBatons as authBaton}
 				<div>
 					<TokenIcon category={authBaton} size={24}></TokenIcon>
