@@ -117,7 +117,7 @@
 
 			authBatons = markets.map((u: UtxoI) => {
 				return u.token_data?.category;
-			});
+			}).filter((v:number, i:number, array:string[]) => array.indexOf(v) === i);;
 			let marketScriptHashes = authBatons.map((authCat: string) => {
 				return CatDex.getScriptHash(authCat, selectedAsset);
 			});
@@ -390,7 +390,7 @@
 			<div class="settings">
 				{#if balance < 1000 && walletUnspent.length == 0}
 					<a href="/wallet">Deposit funds</a> to create a CatDex authentication baton.
-				{:else if myAuthBatons.length==0}
+				{:else if myAuthBatons.length == 0}
 					<p>To write orders, you need to create a CatDex Authentication Baton (1000 sats).</p>
 					<button onclick={() => newAuthBaton()}>Create a new Baton</button>
 				{:else if authBatons.indexOf(myAuthBatons[0].token_data.category) == -1}
@@ -437,9 +437,10 @@
 		<br />
 		<br />
 		<br />
+		All Makers
+		<br />
 
 		<div class="grid">
-			All Makers
 			{#each authBatons as authBaton}
 				<div>
 					<TokenIcon category={authBaton} size={24}></TokenIcon>
