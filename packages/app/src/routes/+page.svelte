@@ -3,11 +3,11 @@
 	const isMainnet = page.url.hostname == 'vox.cash';
 	let protocols = [
 		{
-			name: 'Badger',
+			name: 'Badgers',
 			description: 'Token rewards for time-locking BCH.',
 			image: '/badger.svg',
 			link: '/badger',
-			disabled: true
+			disabled: false
 		},
 		{
 			name: 'BPTS',

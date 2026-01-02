@@ -177,7 +177,7 @@
 		let historyResponse = await electrumClient.request(
 			'blockchain.scripthash.get_history',
 			scripthash,
-			now - 1500,
+			now - 10000,
 			-1
 		);
 

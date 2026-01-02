@@ -1,28 +1,84 @@
 import test from 'ava';
 
+import { binToHex, encodeTransactionBch, hexToBin } from "@bitauth/libauth";
+
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
-import { Wallet, RegTestWallet, mine, NFTCapability, TokenMintRequest,  } from "mainnet-js";
-import { sleep, UtxoI } from "@unspent/tau";
+import { Wallet, RegTestWallet, mine, NFTCapability, TokenMintRequest, TokenSendRequest } from "mainnet-js";
+import { sleep, UtxoI, getHdPrivateKey } from "@unspent/tau";
 import BadgerStake from "../index.js";
 
 
-test.skip('test staking and unstaking badgers', async t => {
+test('test staking and unstaking badgers', async t => {
 
-    const alice = await getAnAliceWallet(100_003_000)
+    const alice = await getAnAliceWallet(2400000000)
+    //@ts-ignore
+    let privateKey = getHdPrivateKey(alice.mnemonic!, alice.derivationPath.slice(0, -2), alice.isTestnet)
+
     let provider = alice.provider!
 
-    let contract_address = BadgerStake.getAddress("bchreg");
+
     let admin_pkh = alice.getPublicKeyHash(true) as string
     // Make a "main" badger token.
+
+    let masterCommitment = BadgerStake.encodeNFT({
+        admin_pkh: hexToBin(admin_pkh),
+        fee: 1000,
+        amount: 800
+    })
+
     const genesisResponse = await alice.tokenGenesis({
-        cashaddr: contract_address, // token UTXO recipient
         capability: NFTCapability.minting,
-        commitment: admin_pkh + "00".repeat(18) + "03E8",
-        amount: 10000n,
-        value: 800,                    // Satoshi value
+        commitment: binToHex(masterCommitment),
+        amount: 1000000000n,
+        value: 10000,                    // Satoshi value
     });
     const tokenId = genesisResponse.tokenIds![0]!;
+
+    let contract_address = BadgerStake.getAddress(tokenId, "bchreg");
+
+    await alice.send(new TokenSendRequest({
+        cashaddr: contract_address,
+        tokenId: tokenId,
+        amount: 1000000000n,
+        commitment: binToHex(masterCommitment),
+        capability: NFTCapability.minting
+    }))
+
+    sleep(1000)
+    // @ts-ignore
+    let mainUtxos = await provider.performRequest(
+        "blockchain.address.listunspent",
+        contract_address,
+        "include_tokens"
+    )
+
+
+    console.log(mainUtxos[0])
+    // @ts-ignore
+    let utxos = await provider.performRequest(
+        "blockchain.address.listunspent",
+        alice.getTokenDepositAddress(),
+        "exclude_tokens"
+    )
+
+    let lockTx = BadgerStake.lock(
+        mainUtxos[0],
+        100_000_000,
+        9,
+        utxos,
+        privateKey)
+
+    console.log(lockTx)
+    await sleep(1000);
+
+    // @ts-ignore
+    let response = await provider.performRequest(
+        "blockchain.transaction.broadcast",
+        binToHex(encodeTransactionBch(lockTx.transaction))
+    )
+
+    console.log(response)
 
     await mine({
         /* cspell:disable-next-line */
@@ -41,15 +97,15 @@ test.skip('test staking and unstaking badgers', async t => {
 
     let currentHeight = await provider.getBlockHeight()
     contractUtxos = contractUtxos.filter((u: any) => u.height + u.value < currentHeight)
-    
+
     let transaction = BadgerStake.unlock(contractUtxos[0])
 
-    const oldLength =  contractUtxos.length
+    const oldLength = contractUtxos.length
 
     // @ts-ignore
     await provider.performRequest(
         "blockchain.transaction.broadcast",
-        transaction
+        binToHex(encodeTransactionBch(transaction.transaction))
     )
 
 
@@ -62,27 +118,7 @@ test.skip('test staking and unstaking badgers', async t => {
         "include_tokens"
     )
     contractUtxos = contractUtxos.filter((u: any) => u.height + u.value < currentHeight)
-    
+
     t.assert(oldLength - contractUtxos.length == 1)
-
-});
-
-
-test('test parsing NFTs', async t => {
-
-
-    let contract_address = BadgerStake.getAddress();
-    let watch = await Wallet.fromCashaddr(contract_address)
-    let provider = watch.provider!
-    // @ts-ignore
-    let badgerUtxos = await provider.performRequest(
-        "blockchain.address.listunspent",
-        contract_address,
-        "include_tokens"
-    )
-    let stakes = badgerUtxos.map( (u:UtxoI) => BadgerStake.parseNFT(u))
-    
-    t.assert(stakes[0].amount>0)
-    t.assert(stakes[0].stake>0)
 
 });

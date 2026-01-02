@@ -2,7 +2,12 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 
-	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch } from '@bitauth/libauth';
+	import {
+		binToHex,
+		cashAddressToLockingBytecode,
+		encodeTransactionBch,
+		valueSatoshisToBin
+	} from '@bitauth/libauth';
 
 	// @ts-ignore
 	import Readme from './README.md';
@@ -14,18 +19,16 @@
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet, hexToBin } from 'mainnet-js';
-
 	import {
-		getDefaultElectrum,
-		sumUtxoValue,
-		sumTokenAmounts,
-		getScriptHash,
-		getHdPrivateKey,
-		type UtxoI
-	} from '@unspent/tau';
+		BaseWallet,
+		Wallet,
+		TestNetWallet,
+		hexToBin,
+		NFTCapability,
+		TokenSendRequest
+	} from 'mainnet-js';
 
-	import Badger from '@unspent/badgers';
+	import { getDefaultElectrum, getScriptHash, getHdPrivateKey, type UtxoI } from '@unspent/tau';
 
 	import BadgerStake, { BADGER as badgerCat, tBADGER as tBadgerCat } from '@unspent/badgers';
 
@@ -46,15 +49,15 @@
 
 	let unspent: any[] = $state([]);
 	let walletUnspent: any[] = $state([]);
+	let authUtxo: any = $state('');
 	let key = $state('');
 	let electrumClient: any = $state();
 	let scripthash = $state('');
+	let vaultAddr = $state('');
 	let walletScriptHash = $state('');
 
-	let sumWallet = $state(0);
-	let sumVault = $state(0);
-
-	scripthash = Badger.getScriptHash();
+	let stakeValue = $state(0);
+	let stakeBlock = $state(0);
 
 	const isMainnet = page.url.hostname == 'vox.cash';
 	const icon = isMainnet ? BADGER : tBADGER;
@@ -64,11 +67,15 @@
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const server = getDefaultElectrum(isMainnet);
 
+	scripthash = BadgerStake.getScriptHash(category);
+	vaultAddr = BadgerStake.getAddress(category, prefix);
+
 	let spent = new Set();
 	let timer: any = 0;
 	let amount = 0;
 	let wallet: any;
 	let transactionError: string | boolean = '';
+	let req = {};
 
 	const handleNotifications = async function (data: any) {
 		if (data.method === 'blockchain.headers.subscribe') {
@@ -79,13 +86,54 @@
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
 				connectionStatus = ConnectionStatus[electrumClient.status];
-				amount = 0;
-				//debounceUpdateWallet();
+				updateUnspent();
+				updateWallet();
 			}
 		} else {
 			console.log(data);
 		}
 	};
+
+	const updateWallet = async function () {
+		let response = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			walletScriptHash,
+			'include_tokens'
+		);
+		if (response instanceof Error) throw response;
+		walletUnspent = response;
+	};
+
+	// const init = async function () {
+	// 	let admin_pkh = wallet.getPublicKeyHash();
+	// 	let masterCommitment = BadgerStake.encodeNFT({
+	// 		admin_pkh: admin_pkh,
+	// 		fee: 1000,
+	// 		amount: 800
+	// 	});
+
+	// 	const genesisResponse = await wallet.tokenGenesis({
+	// 		capability: NFTCapability.minting,
+	// 		commitment: binToHex(masterCommitment),
+	// 		amount: 9223372036854775807n,
+	// 		value: 10000 // Satoshi value
+	// 	});
+
+	// 	const tokenId = genesisResponse.tokenIds![0]!;
+
+	// 	let contract_address = BadgerStake.getAddress(tokenId, 'bchtest');
+
+	// 	await wallet.send(
+	// 		new TokenSendRequest({
+	// 			cashaddr: contract_address,
+	// 			tokenId: tokenId,
+	// 			amount: 9223372036854775807n,
+	// 			commitment: binToHex(masterCommitment),
+	// 			capability: NFTCapability.minting,
+	// 			value: 10000
+	// 		})
+	// 	);
+	// };
 
 	const broadcast = async function (raw_tx: string) {
 		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
@@ -103,24 +151,46 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		let unspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
-		if (unspent.length == 0 || spent.intersection(unspentIds).size == 0) {
-			unspent = response
-				.filter((u:any) => u.token_data.nft.capability == 'mutable')
-				.map((u:any) => {
-					return {
-						...u,
-						...BadgerStake.parseNFT(u),
-						...{ now: now }
-					};
-				});
-		}
+
+		unspent = response
+			.filter((u: any) => u.token_data.nft.capability == 'mutable')
+			.map((u: any) => {
+				return {
+					...u,
+					...BadgerStake.parseNFT(u),
+					...{ now: now }
+				};
+			});
+		unspent.sort((a, b) => a.stake + a.height - (b.stake + b.height));
+
+		authUtxo = response
+			.filter((u: any) => u.token_data.nft.capability == 'minting')
+			.map((u: any) => {
+				return {
+					...u,
+					...BadgerStake.parseNFT(u),
+					...{ now: now }
+				};
+			})[0];
 	};
 
 	const unlock = async function (utxo: UtxoI) {
 		let unlockResponse = BadgerStake.unlock(utxo);
-
 		let raw_tx = binToHex(encodeTransactionBch(unlockResponse.transaction));
+		console.log(raw_tx);
+		await broadcast(raw_tx);
+	};
+
+	const lock = async function () {
+		let lockResponse = BadgerStake.lock(
+			authUtxo,
+			stakeValue * 100_000_000,
+			stakeBlock,
+			walletUnspent,
+			key
+		);
+		let raw_tx = binToHex(encodeTransactionBch(lockResponse.transaction));
+		console.log(raw_tx);
 		await broadcast(raw_tx);
 	};
 
@@ -134,7 +204,7 @@
 		walletScriptHash = getScriptHash(lockingCodeResult.bytecode);
 
 		// Initialize an electrum client.
-		electrumClient = new ElectrumClient(Badger.USER_AGENT, '1.4.1', server);
+		electrumClient = new ElectrumClient(BadgerStake.USER_AGENT, '1.4.1', server);
 
 		// Wait for the client to connect.
 		await electrumClient.connect();
@@ -150,46 +220,63 @@
 	});
 
 	onDestroy(async () => {
-		const electrumClient = new ElectrumClient(Badger.USER_AGENT, '1.4.1', server);
+		const electrumClient = new ElectrumClient(BadgerStake.USER_AGENT, '1.4.1', server);
 		await electrumClient.disconnect();
 	});
 </script>
 
 <section>
 	<div class="status">
-		<BitauthLink template={Badger.template} />
+		<BitauthLink template={BadgerStake.template} />
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
 		{:else}
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
+		<p>{now.toLocaleString()}</p>
 	</div>
 
-	<!-- <div class="swap">
+	<!-- <button onclick={() => { init(); }}> init </button> -->
+
+	<div class="swap">
 		<div>
-			<img width="50" src={bch} alt={baseTicker} />
-			<br />
-			{sumWallet.toLocaleString()} sats {baseTicker}
+			<label for="quantity">BCH to Lock</label>
+			<input name="quantity" type="number" bind:value={stakeValue} min="0.00005" /><br />
+			{#if stakeValue > 0 && stakeBlock > 0}
+				{stakeValue * stakeBlock}
+			{/if}
 		</div>
 		<div>
-			<img width="50" src={icon} alt={ticker} />
-			<br />
-			{sumVault.toLocaleString()}
-			{ticker}
+			<label for="quantity"># Blocks</label>
+			<input type="number" bind:value={stakeBlock} min="1" max="32767" />
+			{#if stakeBlock > 0}
+				= {Number(stakeBlock / 144).toLocaleString(undefined, {
+					minimumFractionDigits: 0,
+					maximumFractionDigits: 3
+				})} days
+			{/if}
 		</div>
-	</div> -->
+		<button
+			onclick={() => {
+				lock();
+			}}
+		>
+			stake
+		</button>
+	</div>
 
 	{#if unspent.length}
- 		<h3>Current Stakes</h3>
+		<h3>Current Stakes</h3>
 		<div class="grid">
-			{#if unspent.filter((i: any) => i.height > 0).length > 0}
-				{#each unspent.filter((i: any) => i.height > 0) as item, index}
+			{#if unspent.length > 0}
+				{#each unspent as item, index}
 					<div class="row">
-						<BadgerStakeButton { unlock} {...item} />
+						<BadgerStakeButton {unlock} {...item} />
 					</div>
 				{/each}
 			{:else}
 				<p>No staked coins?</p>
+				{vaultAddr}
 			{/if}
 		</div>
 	{/if}
@@ -198,6 +285,9 @@
 </section>
 
 <style>
+	section {
+		padding: 5px;
+	}
 	.swap {
 		display: flex;
 	}
@@ -212,7 +302,7 @@
 		justify-content: center;
 	}
 	.swap div {
-		padding: 20px;
+		padding: 10px;
 		justify-content: center;
 		text-align: center;
 	}
@@ -257,22 +347,23 @@
 		justify-content: center;
 		align-items: center;
 		text-align: right;
-		grid-gap: 0.2rem;
-		margin: 0 0 0.2rem 0;
+		grid-gap: 0.1rem;
+		margin: 0 0 0.1rem 0;
 	}
 
-	.swap button {
+	button {
 		background-color: #a45eb6; /* Green */
 		border: none;
 		color: white;
+		padding: 10px;
 		border-radius: 20px;
-		padding: 15px 32px;
 		text-align: center;
 		text-decoration: none;
 		display: inline-block;
 		font-size: 16px;
 	}
-	.swap button:hover {
+
+	button:hover {
 		background-color: #9933b3;
 	}
 </style>

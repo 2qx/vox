@@ -23,7 +23,7 @@
         "description": "A reward token for aged unspent outputs."
       }
     },
-    "242f6ecedb404c743477e35b09733a56cacae34f3109d5cee1cbc1d5630affd7": {
+    "7003b9e854d2abc855b2c20c9734c3dfe4ec3a4de573f7ebb9ce1be527a5bb36": {
       "2024-05-09T19:45:12.865Z": {
         "name": "ChipnetBadgers",
         "description": "Chipnet HoneyBadgers",
@@ -33,7 +33,7 @@
           "telegram": "https://t.me/badgers_cash"
         },
         "token": {
-          "category": "242f6ecedb404c743477e35b09733a56cacae34f3109d5cee1cbc1d5630affd7",
+          "category": "7003b9e854d2abc855b2c20c9734c3dfe4ec3a4de573f7ebb9ce1be527a5bb36",
           "decimals": 0,
           "symbol": "tBADGER"
         }

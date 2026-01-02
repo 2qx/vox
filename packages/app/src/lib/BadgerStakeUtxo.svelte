@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { blo } from 'blo';
+	import { binToHex} from "@bitauth/libauth";
 	import bch from '$lib/images/BCH.svg';
 	import icon from '$lib/images/BADGER.svg';
 
@@ -19,7 +20,7 @@
 		now
 	} = $props();
 
-	let hasMatured = $derived((height + stake) < now);
+	let hasMatured = $derived( height > 0 && (height + stake) <= now);
 	
 </script>
 
@@ -52,11 +53,11 @@
 								});
 							}}
 						>
-							release
+							unlock
 						</button>
 					{/if}
 					{#if user_pkh}
-						<img height="32px" src={blo(user_pkh, 16)} alt={user_pkh} />
+						<img height="32px" src={blo(binToHex(user_pkh), 16)} alt={binToHex(user_pkh)} />
 					{/if}
 				</div>
 			</div>
@@ -99,6 +100,7 @@
 	.fill {
 		flex: 1;
 		word-break: break-all;
+		font-size: small;
 	}
 	.fill div {
 	}
@@ -125,6 +127,21 @@
 			font-weight: 400;
 			line-height: 1;
 		}
+	}
+
+	button {
+		background-color: #a45eb6; /* Green */
+		border: none;
+		color: white;
+		padding: 5px;
+		border-radius: 20px;
+		text-align: center;
+		text-decoration: none;
+		display: inline-block;
+	}
+
+	button:hover {
+		background-color: #9933b3;
 	}
 
 	.stake.op {
