@@ -182,16 +182,18 @@
 	};
 
 	const lock = async function () {
-		let lockResponse = BadgerStake.lock(
-			authUtxo,
-			stakeValue * 100_000_000,
-			stakeBlock,
-			walletUnspent,
-			key
-		);
-		let raw_tx = binToHex(encodeTransactionBch(lockResponse.transaction));
-		console.log(raw_tx);
-		await broadcast(raw_tx);
+		if (stakeBlock < 32767) {
+			let lockResponse = BadgerStake.lock(
+				authUtxo,
+				stakeValue * 100_000_000,
+				stakeBlock,
+				walletUnspent,
+				key
+			);
+			let raw_tx = binToHex(encodeTransactionBch(lockResponse.transaction));
+			console.log(raw_tx);
+			await broadcast(raw_tx);
+		}
 	};
 
 	onMount(async () => {
@@ -238,31 +240,44 @@
 
 	<!-- <button onclick={() => { init(); }}> init </button> -->
 
-	<div class="swap">
-		<div>
+	<div class="grid">
+		<div class="stake">
 			<label for="quantity">BCH to Lock</label>
-			<input name="quantity" type="number" bind:value={stakeValue} min="0.00005" /><br />
-			{#if stakeValue > 0 && stakeBlock > 0}
-				{stakeValue * stakeBlock}
+			<input
+				style="max-width: 60px"
+				id="quantity"
+				type="number"
+				bind:value={stakeValue}
+				min="0.00005"
+			/><br />
+			{#if stakeValue > 0 && stakeValue < 0.00005}
+				<span style="font-size:large; color: red;">Min stake is 0.00005 BCH!</span>
+			{:else if stakeValue > 0 && stakeBlock > 0}
+				Earn {stakeValue * stakeBlock} {ticker}
 			{/if}
 		</div>
-		<div>
+		<div class="stake">
 			<label for="quantity"># Blocks</label>
-			<input type="number" bind:value={stakeBlock} min="1" max="32767" />
-			{#if stakeBlock > 0}
+			<input type="number" bind:value={stakeBlock} min="1" max="32767" /><br />
+			{#if stakeBlock > 32767}
+				<span style="font-size:large; color: red;">Max duration is 32,767 blocks!</span>
+			{:else if stakeBlock > 0}
 				= {Number(stakeBlock / 144).toLocaleString(undefined, {
 					minimumFractionDigits: 0,
 					maximumFractionDigits: 3
 				})} days
 			{/if}
+			
 		</div>
-		<button
-			onclick={() => {
-				lock();
-			}}
-		>
-			stake
-		</button>
+		<div class="stake">
+			<button
+				onclick={() => {
+					lock();
+				}}
+			>
+				stake
+			</button>
+		</div>
 	</div>
 
 	{#if unspent.length}
@@ -339,7 +354,15 @@
 		display: flex;
 		flex-direction: row;
 		flex-wrap: wrap;
-		align-items: flex-start;
+		align-items: flex-end;
+	}
+
+	.grid .stake {
+		flex: 1 1 180px;
+		padding: 5px;
+		justify-content: end;
+		align-items: end;
+		text-align: right;
 	}
 
 	.grid .row {
@@ -348,7 +371,7 @@
 		align-items: center;
 		text-align: right;
 		grid-gap: 0.1rem;
-		margin: 0 0 0.1rem 0;
+		margin: 0 0 3px 0;
 	}
 
 	button {
