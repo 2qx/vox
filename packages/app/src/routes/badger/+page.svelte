@@ -235,8 +235,9 @@
 		{:else}
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
-		<p>{now.toLocaleString()}</p>
 	</div>
+
+		<h1>Stake Coins for Badgers</h1>
 
 	<!-- <button onclick={() => { init(); }}> init </button> -->
 
