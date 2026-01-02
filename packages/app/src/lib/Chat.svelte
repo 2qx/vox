@@ -472,7 +472,7 @@
 	}
 	.edit textarea {
 		width: 100%;
-		min-height: 10em;
+		min-height: 5em;
 	}
 
 	.estimate {

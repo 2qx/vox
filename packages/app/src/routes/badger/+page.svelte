@@ -358,7 +358,7 @@
 	}
 
 	.grid .stake {
-		flex: 1 1 180px;
+		flex: 1 1 160px;
 		padding: 5px;
 		justify-content: end;
 		align-items: end;
@@ -366,7 +366,7 @@
 	}
 
 	.grid .row {
-		flex: 1 1 180px;
+		flex: 1 1 160px;
 		justify-content: center;
 		align-items: center;
 		text-align: right;

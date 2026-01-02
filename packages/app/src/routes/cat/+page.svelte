@@ -321,6 +321,12 @@
 {#if showChat}
 	<div class="trollbox">
 		<Chat topic={CatDex.PROTOCOL_IDENTIFIER} />
+		<label class="switch">
+			Hide
+			<input type="checkbox" bind:checked={showChat} />
+			<span class="slider round"></span>
+		</label>
+		
 	</div>
 {/if}
 
