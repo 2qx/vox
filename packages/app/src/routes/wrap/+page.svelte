@@ -4,7 +4,8 @@
 
 	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch } from '@bitauth/libauth';
 
-	import bch from '$lib/images/BCH.svg';
+	import BCH from '$lib/images/BCH.svg';
+	import tBCH from '$lib/images/tBCH.svg';
 	import tWBCH from '$lib/images/tWBCH.svg';
 	import WBCH from '$lib/images/WBCH.svg';
 
@@ -52,6 +53,7 @@
 	const ticker = isMainnet ? 'WBCH' : 'tWBCH';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const bchIcon = isMainnet ? BCH : tBCH;
 
 	let spent = new Set();
 
@@ -180,7 +182,7 @@
 	{#if connectionStatus == 'CONNECTED'}
 		<div class="swap">
 			<div>
-				<img width="50" src={bch} alt={baseTicker} />
+				<img width="50" src={bchIcon} alt={baseTicker} />
 				<br />
 				{sumWallet.toLocaleString()} sats {baseTicker}
 			</div>

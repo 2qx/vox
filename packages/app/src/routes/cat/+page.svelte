@@ -63,6 +63,7 @@
 	let myDexUtxos: any[] = $state([]);
 	let authBatons: any[] = $state([]);
 	let showSettings = $state(false);
+	let showChat = $state(false);
 
 	let selectedAsset = $state('');
 
@@ -115,9 +116,11 @@
 				'include_tokens'
 			);
 
-			authBatons = markets.map((u: UtxoI) => {
-				return u.token_data?.category;
-			}).filter((v:number, i:number, array:string[]) => array.indexOf(v) === i);;
+			authBatons = markets
+				.map((u: UtxoI) => {
+					return u.token_data?.category;
+				})
+				.filter((v: number, i: number, array: string[]) => array.indexOf(v) === i);
 			let marketScriptHashes = authBatons.map((authCat: string) => {
 				return CatDex.getScriptHash(authCat, selectedAsset);
 			});
@@ -254,12 +257,9 @@
 			updateOrders();
 			updateWallet();
 		} else if (data.method === 'blockchain.scripthash.subscribe') {
-			if (data.params[1] !== contractState) {
-				contractState = data.params[1];
-				amount = 0n;
-				debounceUpdateWallet();
-			}
-			console.log('event ', data);
+			// data.params[0]
+			// TODO: only update matching utxos
+			debounceUpdateWallet();
 		} else {
 			console.log(data);
 		}
@@ -315,6 +315,12 @@
 		await electrumClient.disconnect();
 	});
 </script>
+
+{#if showChat}
+	<div class="trollbox">
+		<Chat topic={CatDex.PROTOCOL_IDENTIFIER} />
+	</div>
+{/if}
 
 <section>
 	<div class="status">
@@ -374,12 +380,10 @@
 		{transactionError}
 
 		{#each orders as o}
-			<CatDexOrder {...o} />
+			<CatDexOrder {...o} {...{ isMainnet: isMainnet }} />
 		{/each}
 
-		<br />
-		<span class="switch">Advanced</span>
-		<br />
+		<h3>Advanced</h3>
 
 		<label class="switch">
 			<input type="checkbox" bind:checked={showSettings} />
@@ -435,11 +439,7 @@
 		{/if}
 		<br />
 		<br />
-		<br />
-		<br />
-		All Makers
-		<br />
-
+		<h3>Makers</h3>
 		<div class="grid">
 			{#each authBatons as authBaton}
 				<div>
@@ -453,10 +453,23 @@
 		</div>
 	{/if}
 
+	<h3>Chat</h3>
+	<label class="switch">
+		<input type="checkbox" bind:checked={showChat} />
+		<span class="slider round"></span>
+	</label>
+
 	<Readme />
 </section>
 
 <style>
+	.trollbox {
+		position: fixed;
+		right: 0px;
+		bottom: 0px;
+		background: #ffffffbb;
+		z-index: 1;
+	}
 	.swap {
 		display: flex;
 		margin: auto;

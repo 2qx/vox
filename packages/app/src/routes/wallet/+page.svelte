@@ -103,9 +103,8 @@
 
 	onMount(async () => {
 		try {
-			
 			BaseWallet.StorageProvider = IndexedDBProvider;
-			wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`) ;
+			wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 
 			balance = (await wallet.getBalance('sat')) as number;
 
@@ -141,7 +140,6 @@
 		await wallet!.provider.disconnect();
 		await electrumClient.disconnect();
 	});
-	
 </script>
 
 <section>
@@ -211,7 +209,7 @@
 			{#if unspent!.length > 0}
 				<h3>Unspent Outputs (coins)</h3>
 				{#each unspent! as u, i (u.tx_hash + ':' + u.tx_pos)}
-					<Utxo {...u} />
+					<Utxo {...u} {... {isMainnet:isMainnet}} />
 				{/each}
 
 				<div class="walletHead">

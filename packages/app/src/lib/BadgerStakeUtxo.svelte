@@ -2,7 +2,9 @@
 	import { blo } from 'blo';
 	import { binToHex} from "@bitauth/libauth";
 	import bch from '$lib/images/BCH.svg';
-	import icon from '$lib/images/BADGER.svg';
+	import tbch from '$lib/images/tBCH.svg';
+
+	import {BADGER} from "@unspent/badgers";
 
 	import TokenAmount from './TokenAmount.svelte';
 	import TokenIcon from './TokenIcon.svelte';
@@ -21,7 +23,8 @@
 	} = $props();
 
 	let hasMatured = $derived( height > 0 && (height + stake) <= now);
-	
+	let icon = $derived(token_data.category == BADGER ? bch: tbch)
+
 </script>
 
 <div class="container">
@@ -39,7 +42,7 @@
 			<div>
 				<div>
 					{Number(value / 100000000).toLocaleString(undefined, {})} <b>BCH</b>
-					<img width="20px" src={bch} />
+					<img width="20px" src={icon} />
 				</div>
 				<div class="auth">
 					{#if hasMatured}

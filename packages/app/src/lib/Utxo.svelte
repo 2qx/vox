@@ -1,12 +1,15 @@
 <script lang="ts">
 
-	import bch from '$lib/images/BCH.svg';
+	import BCH from '$lib/images/BCH.svg';
+	import tBCH from '$lib/images/tBCH.svg';
 
     import TokenNftData from './TokenNftData.svelte'
 	import TokenAmount from './TokenAmount.svelte';
 	import TokenIcon from './TokenIcon.svelte';
 
-	let { tx_pos, tx_hash, height, value, token_data } = $props();
+	let { tx_pos, tx_hash, height, value, token_data, isMainnet } = $props();
+
+	let bchIcon = isMainnet? BCH: tBCH
 
 </script>
 
@@ -30,7 +33,7 @@
 				{/if}
 			</div>
 			<div>
-				{Number(value).toLocaleString(undefined, {})} sats <img width="20px" src={bch} />
+				{Number(value).toLocaleString(undefined, {})} sats <img width="20px" src={bchIcon} />
 			</div>
 		</div>
 		<div class="header">

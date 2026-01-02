@@ -459,6 +459,7 @@
 		overflow-y: scroll;
 		overflow-x: hidden;
 		max-height: 65vh;
+		min-height: 10vh;
 	}
 
 	.box .row.footer .edit {

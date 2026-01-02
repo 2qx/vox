@@ -149,12 +149,12 @@ export default class CatDex {
     static getCatDexOrdersFromUtxos(
         assetCat: Uint8Array | string,
         utxos: UtxoI[],
-        excludeCompleted=true,
+        excludeCompleted = true,
     ): CatDexOrder[] {
         if (typeof assetCat != "string") assetCat = binToHex(assetCat)
 
         let orderUtxos = utxos.filter((u: UtxoI) => u.token_data && u.token_data?.category != assetCat)
-        
+
         let dexOrders = orderUtxos.map((u: UtxoI) => {
             let orderData = this.parseNFT(u.token_data?.nft?.commitment!)
             return {
@@ -171,7 +171,7 @@ export default class CatDex {
 
         dexOrders.sort((a: CatDexOrder, b: CatDexOrder) => Number(b.price) - Number(a.price))
         if (excludeCompleted) dexOrders = dexOrders.filter((o) => o.quantity != 0n);
-			
+
         let matchedOrders: CatDexOrder[] = []
         for (let order of dexOrders) {
 
@@ -570,7 +570,7 @@ export default class CatDex {
 
         if (!best) throw Error("No matching best order found.")
         if (!best.assetUtxo) throw Error("Order missing asset utxo")
-            
+
         // Push order thread inputs
         inputs.push(this.getInput(best.authCategory, best.assetCategory, best.orderUtxo))
         inputs.push(this.getInput(best.authCategory, best.assetCategory, best.assetUtxo))
@@ -681,18 +681,22 @@ export default class CatDex {
         let sumSatsIn = sumSourceOutputValue(sourceOutputs)
         let satsRequired = sumSatsOut - sumSatsIn
 
+        const satsIn = this.getWalletInputs(walletUtxos, satsRequired, privateKey)
+        config.inputs.push(...satsIn.inputs);
+        sourceOutputs.push(...satsIn.sourceOutputs);
+
+
         let sumTokenAmountsOut = sumOutputTokenAmounts(config.outputs, assetCat)
         let sumTokenAmountsIn = sumSourceOutputTokenAmounts(sourceOutputs, assetCat)
         let tokensRequired = sumTokenAmountsOut - sumTokenAmountsIn
+        console.log("Tokens required:", tokensRequired)
 
+        if (tokensRequired > 0n) {
+            const tokensIn = this.getWalletInputs(walletUtxos, tokensRequired, privateKey, assetCat)
+            config.inputs.push(...tokensIn.inputs);
+            sourceOutputs.push(...tokensIn.sourceOutputs);
+        }
 
-        const satsIn = this.getWalletInputs(walletUtxos, satsRequired, privateKey)
-        const tokensIn = this.getWalletInputs(walletUtxos, tokensRequired, privateKey, assetCat)
-
-        config.inputs.push(...satsIn.inputs);
-        sourceOutputs.push(...satsIn.sourceOutputs);
-        config.inputs.push(...tokensIn.inputs);
-        sourceOutputs.push(...tokensIn.sourceOutputs);
 
         // Calculate excess cash and tokens to be returned as change
         sumSatsOut = sumOutputValue(config.outputs)

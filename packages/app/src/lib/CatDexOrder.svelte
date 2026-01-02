@@ -1,14 +1,18 @@
 <script lang="ts">
-	import bch from '$lib/images/BCH.svg';
+	import BCH from '$lib/images/BCH.svg';
+	import tBCH from '$lib/images/tBCH.svg';
 
 	import { binToHex } from '@bitauth/libauth';
 	import TokenNftData from './TokenNftData.svelte';
 	import Ticker from './Ticker.svelte';
 	import TokenIcon from './TokenIcon.svelte';
-	let { authCategory, assetCategory, orderUtxo, assetUtxo, price, amount, quantity, value } =
+	let { authCategory, assetCategory, orderUtxo, assetUtxo, price, amount, quantity, value, isMainnet } =
 		$props();
 	let bid = $derived(false);
 	bid = !(quantity<0)
+
+	let bchIcon = isMainnet? BCH: tBCH
+
 </script>
 
 <div class={["container",{bid}]}>
@@ -45,7 +49,7 @@
 			<div class="assets">
 				{#if quantity > 0}
 					<div>
-						{Number(value - 800).toLocaleString(undefined, {})} <img width="20px" src={bch} />
+						{Number(value - 800).toLocaleString(undefined, {})} <img width="20px" src={bchIcon} />
 					</div>
 				{:else}
 					<div>
