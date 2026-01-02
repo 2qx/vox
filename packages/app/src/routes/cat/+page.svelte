@@ -32,7 +32,8 @@
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 
-	import bch from '$lib/images/BCH.svg';
+	import BCH from '$lib/images/BCH.svg';
+	import tBCH from '$lib/images/tBCH.svg';
 
 	import {
 		cashAssemblyToHex,
@@ -81,6 +82,7 @@
 	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 	const metadata = isMainnet ? BCMR : tBCMR;
+	const bchIcon = isMainnet ? BCH : tBCH;
 
 	selectedAsset = isMainnet
 		? '7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c'
@@ -346,7 +348,7 @@
 		{#if selectedAsset}
 			<div class="swap">
 				<div>
-					<img width="50" src={bch} alt={baseTicker} />
+					<img width="50" src={bchIcon} alt={baseTicker} />
 					<br />
 					{balance.toLocaleString()} sats {baseTicker}
 				</div>
