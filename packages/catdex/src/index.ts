@@ -624,7 +624,13 @@ export default class CatDex {
         if (!category) {
             utxos = utxos.filter(u => !u.token_data)
         } else {
-            utxos = utxos.filter(u => u.token_data && u.token_data?.category == category)
+            console.log(utxos)
+            utxos = utxos
+                .filter(u => u.token_data && u.token_data?.category == category)
+
+                // Must not contain NFTs
+                .filter(u => u.token_data && !u.token_data.nft)
+            console.log(utxos)
         }
 
         // TODO: sort by highest value first

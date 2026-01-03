@@ -12,7 +12,8 @@
 	// @ts-ignore
 	import Readme from './README.md';
 
-	import bch from '$lib/images/BCH.svg';
+	import BCH from '$lib/images/BCH.svg';
+	import tBCH from '$lib/images/tBCH.svg';
 	import tBADGER from '$lib/images/tBADGER.svg';
 	import BADGER from '$lib/images/BADGER.svg';
 
@@ -28,7 +29,13 @@
 		TokenSendRequest
 	} from 'mainnet-js';
 
-	import { getDefaultElectrum, getScriptHash, getHdPrivateKey, type UtxoI } from '@unspent/tau';
+	import {
+		getDefaultElectrum,
+		getScriptHash,
+		getHdPrivateKey,
+		sumUtxoValue,
+		type UtxoI
+	} from '@unspent/tau';
 
 	import BadgerStake, { BADGER as badgerCat, tBADGER as tBadgerCat } from '@unspent/badgers';
 
@@ -56,6 +63,7 @@
 	let vaultAddr = $state('');
 	let walletScriptHash = $state('');
 
+	let balance = $state(0);
 	let stakeValue = $state(0);
 	let stakeBlock = $state(0);
 
@@ -66,6 +74,7 @@
 	const ticker = isMainnet ? 'BADGER' : 'tBADGER';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const server = getDefaultElectrum(isMainnet);
+	const bchIcon = isMainnet ? BCH : tBCH;
 
 	scripthash = BadgerStake.getScriptHash(category);
 	vaultAddr = BadgerStake.getAddress(category, prefix);
@@ -102,6 +111,7 @@
 		);
 		if (response instanceof Error) throw response;
 		walletUnspent = response;
+		balance = sumUtxoValue(walletUnspent, true);
 	};
 
 	// const init = async function () {
@@ -229,6 +239,7 @@
 
 <section>
 	<div class="status">
+		{now.toLocaleString()}
 		<BitauthLink template={BadgerStake.template} />
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
@@ -237,9 +248,16 @@
 		{/if}
 	</div>
 
-		<h1>Stake Coins for Badgers</h1>
+	<h1>Stake Coins for Badgers</h1>
 
 	<!-- <button onclick={() => { init(); }}> init </button> -->
+	<div class="swap">
+		<div>
+			<img width="50" src={bchIcon} alt={baseTicker} />
+			<br />
+			{(balance / 100000000).toLocaleString()} {baseTicker}
+		</div>
+	</div>
 
 	<div class="grid">
 		<div class="stake">
@@ -268,7 +286,6 @@
 					maximumFractionDigits: 3
 				})} days
 			{/if}
-			
 		</div>
 		<div class="stake">
 			<button
@@ -309,6 +326,8 @@
 	}
 	.status {
 		text-align: end;
+		color: #ffffff;
+		font-weight: 600;
 	}
 
 	.swap {

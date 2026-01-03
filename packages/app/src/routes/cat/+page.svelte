@@ -200,7 +200,19 @@
 	};
 
 	const addMyOrder = function () {
-		myOrderBook.push({ quantity: 0, price: undefined });
+		if (myOrderBook.length >= 2) {
+			let o = myOrderBook.slice(-2);
+			myOrderBook.push({
+				quantity: o[1].quantity - (o[0].quantity - o[1].quantity),
+				price: o[1].price - (o[0].price - o[1].price)
+			});
+		} else {
+			myOrderBook.push({ quantity: undefined, price: undefined });
+		}
+	};
+	
+	const dropOrder = function (i) {
+		myOrderBook.splice(i, 1);
 	};
 
 	const postOrders = async function (replace = false) {
@@ -326,7 +338,6 @@
 			<input type="checkbox" bind:checked={showChat} />
 			<span class="slider round"></span>
 		</label>
-		
 	</div>
 {/if}
 
@@ -378,7 +389,7 @@
 			<label>Swap amount: </label>
 			<input type="number" bind:value={amount} min="0" max="10" onchange={() => updateSwap()} />
 		</div>
-
+		<br />
 		{#if transaction && transactionValid}
 			<div class="swap">
 				<button onclick={() => broadcast(transaction_hex)}>Broadcast</button>
@@ -428,7 +439,7 @@
 						<button onclick={() => postOrders(true)}> Clear Orders </button>
 					{/if}
 					<br />
-					{#each myOrderBook as o}
+					{#each myOrderBook as o, i}
 						<div class="orders">
 							<div>
 								<label for="quantity">quantity</label>
@@ -437,6 +448,13 @@
 							<div>
 								<label for="quantity">price</label>
 								<input type="number" bind:value={o.price} min="1" max="100000" />
+							</div>
+							<div>
+								<button
+									onclick={() => {
+										dropOrder(i);
+									}}>-</button
+								>
 							</div>
 						</div>
 					{/each}
@@ -510,6 +528,16 @@
 
 	.orders {
 		display: flex;
+		margin: 5px;
+	}
+
+	.orders div {
+		display: flex;
+		margin: 5px;
+		align-items: center;
+	}
+
+	.orders div button {
 		margin: 5px;
 	}
 

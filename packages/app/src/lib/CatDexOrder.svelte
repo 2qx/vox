@@ -8,8 +8,7 @@
 	import TokenIcon from './TokenIcon.svelte';
 	let { authCategory, assetCategory, orderUtxo, assetUtxo, price, amount, quantity, value, isMainnet } =
 		$props();
-	let bid = $derived(false);
-	bid = !(quantity<0)
+	let bid = $derived(quantity<0);
 
 	let bchIcon = isMainnet? BCH: tBCH
 
