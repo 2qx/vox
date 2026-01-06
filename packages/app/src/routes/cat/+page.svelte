@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import type { PageProps } from './$types';
 
 	import Chat from '$lib/Chat.svelte';
 	import Transaction from '$lib/Transaction.svelte';
@@ -45,6 +47,9 @@
 	} from '@unspent/tau';
 	import TokenIcon from '$lib/TokenIcon.svelte';
 
+	let { data }: PageProps = $props();
+	let selectedAsset = $state(data.asset);
+
 	let now: number = $state(0);
 
 	let key = $state('');
@@ -66,8 +71,6 @@
 	let showSettings = $state(false);
 	let showChat = $state(false);
 
-	let selectedAsset = $state('');
-
 	let transaction_hex = '';
 	let transaction: any = $state(undefined);
 	let transactionValid = $state(false);
@@ -84,9 +87,11 @@
 	const metadata = isMainnet ? BCMR : tBCMR;
 	const bchIcon = isMainnet ? BCH : tBCH;
 
-	selectedAsset = isMainnet
-		? '7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c'
-		: 'ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271';
+	if (typeof selectedAsset !== 'string') {
+		selectedAsset = isMainnet
+			? '7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c'
+			: 'ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271';
+	}
 
 	const protocol_prefix = cashAssemblyToHex(`OP_RETURN <"${CatDex.PROTOCOL_IDENTIFIER}">`);
 
@@ -193,6 +198,7 @@
 		await updateWallet();
 		await updateOrders();
 		if (typeof selectedAsset == 'string') {
+			goto(`?asset=${selectedAsset}`, { keepFocus: true });
 			assetBalance = sumTokenAmounts(walletUnspent, selectedAsset);
 		} else {
 			assetBalance = 0n;
@@ -210,7 +216,7 @@
 			myOrderBook.push({ quantity: undefined, price: undefined });
 		}
 	};
-	
+
 	const dropOrder = function (i) {
 		myOrderBook.splice(i, 1);
 	};
@@ -232,19 +238,21 @@
 	};
 
 	const updateSwap = function () {
-		try {
-			let result = CatDex.swap(BigInt(amount), orders, walletUnspent, key);
-			transaction = result.transaction;
-			sourceOutputs = result.sourceOutputs;
-			transaction_hex = binToHex(encodeTransactionBch(transaction));
-			transactionValid = result.verify === true ? true : false;
-			if (result.verify === true) transactionError = '';
-		} catch (error: any) {
-			transaction = undefined;
-			sourceOutputs = undefined;
-			transaction_hex = '';
-			transactionValid = false;
-			transactionError = error;
+		if (amount) {
+			try {
+				let result = CatDex.swap(BigInt(amount), orders, walletUnspent, key);
+				transaction = result.transaction;
+				sourceOutputs = result.sourceOutputs;
+				transaction_hex = binToHex(encodeTransactionBch(transaction));
+				transactionValid = result.verify === true ? true : false;
+				if (result.verify === true) transactionError = '';
+			} catch (error: any) {
+				transaction = undefined;
+				sourceOutputs = undefined;
+				transaction_hex = '';
+				transactionValid = false;
+				transactionError = error;
+			}
 		}
 	};
 

@@ -20,8 +20,15 @@
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 
 	import bch from '$lib/images/BCH.svg';
-	import { getScriptHash, getHdPrivateKey, sumUtxoValue, sumTokenAmounts } from '@unspent/tau';
+	import {
+		getScriptHash,
+		getHdPrivateKey,
+		sumUtxoValue,
+		sumTokenAmounts,
+		type UtxoI
+	} from '@unspent/tau';
 	import { Vault, USER_AGENT } from '@fbch/lib';
+	import { TIMELOCK_MAP, TIMELOCK_MAP_CHIPNET } from '@fbch/lib';
 
 	let now: number = $state(0);
 
@@ -30,6 +37,8 @@
 	let electrumClient: any;
 	let walletScriptHash = $state('');
 	let amount = $state(0);
+	let openCouponInterest = $state(0);
+	let couponTotal = $state(0);
 	let connectionStatus = $state('');
 	let contractState = $state('');
 
@@ -42,12 +51,49 @@
 	const baseTicker = isMainnet ? 'FBCH' : 'tFBCH';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const SERIES_MAP = isMainnet ? TIMELOCK_MAP : TIMELOCK_MAP_CHIPNET;
 
 	let wallet: any;
+
+	async function handlePlacement(coupon: any, couponI: any) {
+		let vaultUtxos = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			Vault.getScriptHash(coupon.locktime),
+			'include_tokens'
+		);
+
+		vaultUtxos = vaultUtxos.filter(u => 
+			u.token_data?.category == SERIES_MAP.get(coupon.locktime)
+		);
+		let swapTx = Vault.swap(
+			coupon.placement,
+			vaultUtxos,
+			walletUnspent,
+			coupon.locktime,
+			key,
+			coupon
+		);
+		let transactionHex = binToHex(encodeTransactionBch(swapTx.transaction));
+		await broadcast(transactionHex);
+	}
+
+	const broadcast = async function (raw_tx: string) {
+		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
+		if (response instanceof Error) {
+			connectionStatus = ConnectionStatus[electrumClient.status];
+			throw response;
+		}
+		response as any[];
+	};
 
 	async function updateCoupons() {
 		if (electrumClient && now > 1000) {
 			coupons = await Vault.getAllCouponUtxos(electrumClient, now);
+		}
+		if (coupons) {
+			coupons.sort((a: any, b: any) => parseFloat(b.spb) - parseFloat(a.spb));
+			openCouponInterest = Number(coupons.reduce((acc, c) => acc + c.placement, 0) / 1e8);
+			couponTotal = Number(coupons.reduce((acc, c) => acc + c.value, 0));
 		}
 	}
 
@@ -60,7 +106,7 @@
 		if (response instanceof Error) throw response;
 		let walletUnspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
 		if (walletUnspent.length == 0) {
-			walletUnspent = response;
+			walletUnspent = response.filter((u: UtxoI) => !u.token_data);
 		}
 		walletBalance = sumUtxoValue(walletUnspent, true);
 	};
@@ -145,7 +191,7 @@
 							<td class="r">{Number(c.placement / 1e8)}</td>
 							<td class="r"><SeriesIcon time={c.locktime} size={15} /></td>
 							<td>
-								<a style="color:#75006b; font-weight:600;" href="/future/v?block={c.locktime}"
+								<a style="color:#75006b; font-weight:600;" href="/future/v?time={c.locktime}"
 									>{String(c.locktime).padStart(7, '0')}</a
 								>
 							</td>
@@ -155,39 +201,31 @@
 								<i>{c.locale.ypa}%</i>
 							</td>
 							<td class="tiny">{c.dateLocale}</td>
-							<!-- {#if walletBalance + Number(c.value) > c.placement}
+							{#if walletBalance + Number(c.value) > c.placement}
 								<td style="text-align:center;"
-									><button class="action" on:click={() => handlePlacement(c, c.id)}>claim</button
+									><button class="action" onclick={() => handlePlacement(c, c.id)}>claim</button
 									></td
 								>
 							{:else}
 								<td style="text-align:center;"
 									><button class="action" disabled style="font-size:xx-small;">lo bal</button></td
 								>
-							{/if} -->
-							<td></td>
+							{/if}
 						</tr>
 					{/each}
-					<!-- <tr style="border-top: solid thin;">
-							<td>∑</td>
-							<td class="r"><b>{openCouponInterest.toFixed(0)} </b></td>
-							<td class="r">
-								<b>{couponTotal.toLocaleString()} </b>
-							</td>
-							<td></td>
-							<td></td>
-							<td></td>
-						</tr> -->
+					<tr style="border-top: solid thin;">
+						<td class="r">∑<b>{openCouponInterest.toFixed(0)} </b></td>
+						<td></td>
+						<td></td>
+						<td class="r">
+							<b>{couponTotal.toLocaleString()} </b>
+						</td>
+						<td></td>
+						<td></td>
+						<td></td>
+					</tr>
 				</tbody>
 			</table>
-			<hr />
-			<p style="font-size:small">
-				<i>sats (satoshis)</i>: one 100,000,000<sup>th</sup> of a whole coin.<br />
-				<i>spb</i>: rate in sats per coin per block of time remaining to maturation.<br />
-				<i>apy, coupon rate per annum</i>: effective non-compounding rate of annual return. Note:
-				approximate rates assume 870 sats network transaction fees (550 swap, 320 redeem)―paid to
-				miners.
-			</p>
 		{:else}
 			<p>no coupons available</p>
 		{/if}
@@ -197,6 +235,15 @@
 			<Loading />
 		</div>
 	{/if}
+	<div>
+		<p style="font-size:small">
+			<i>sats (satoshis)</i>: one 100,000,000<sup>th</sup> of a whole coin.<br />
+			<i>spb</i>: rate in sats per coin per block of time remaining to maturation.<br />
+			<i>apy, coupon rate per annum</i>: effective non-compounding rate of annual return. Note:
+			approximate rates assume 870 sats network transaction fees (550 swap, 320 redeem)―paid to
+			miners.
+		</p>
+	</div>
 	<Readme />
 </section>
 

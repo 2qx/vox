@@ -4,6 +4,6 @@ export const prerender = true;
 
 export const load: PageLoad = ({ params,url }) => {
     return {
-        key: url.searchParams.get('key')
+        time: url.searchParams.get('time')
     };
 };

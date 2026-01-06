@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Ticker from './Ticker.svelte';
-	import { CATEGORY_MAP as FUTURE_MAP } from '@fbch/lib';
+	import { CATEGORY_MAP , CATEGORY_MAP_CHIPNET } from '@fbch/lib';
 
-	let { amount, category } = $props();
+	let { amount, category, isMainnet } = $props();
 
 	let FIRST_CLASS = new Map([
 		['242f6ecedb404c743477e35b09733a56cacae34f3109d5cee1cbc1d5630affd7', 0],
@@ -11,6 +11,9 @@
 		['bb61cd7a6c8a3a3742d965dc7ac73c1117382a5c8930b68338deb881f75c0214', 8],
 		['ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3', 8]
 	]);
+	
+	let FUTURE_MAP = isMainnet ? CATEGORY_MAP : CATEGORY_MAP_CHIPNET;
+
 </script>
 
 {#if Number(amount) > 0}
@@ -22,4 +25,4 @@
 		{Number(amount).toLocaleString(undefined, {})}
 	{/if}
 {/if}
-<b> &nbsp;<Ticker {category} /></b>
+<b> &nbsp;<Ticker {category} {isMainnet} /></b>

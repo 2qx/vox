@@ -207,7 +207,7 @@
 		);
 		if (response instanceof Error) throw response;
 
-		let utxos = response.filter((u: UtxoI) => u.tx_hash == post.hash);
+		let utxos = response.filter((u: UtxoI) => u.tx_hash == post.hash).slice(0, 300);
 		let clearPostTx = Channel.clear(topic, utxos, walletUnspent[0], key, now);
 		let raw_tx = binToHex(encodeTransactionBch(clearPostTx.transaction));
 		await broadcast(raw_tx);

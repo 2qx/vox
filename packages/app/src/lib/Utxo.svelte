@@ -19,7 +19,7 @@
 			<div class="fill">
 				{#if token_data}
 					<div>
-						<TokenAmount amount={token_data.amount} category={token_data.category}/><br/>
+						<TokenAmount amount={token_data.amount} category={token_data.category} {isMainnet}/><br/>
 					</div>
 
 					<div>
@@ -28,7 +28,7 @@
 						{/if}
 					</div>
 					<div>
-						<TokenIcon category={token_data.category}></TokenIcon>
+						<TokenIcon category={token_data.category} {isMainnet}></TokenIcon>
 					</div>
 				{/if}
 			</div>

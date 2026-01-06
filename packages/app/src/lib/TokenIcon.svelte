@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { blo } from 'blo';
 
-	import { CATEGORY_MAP as FUTURE_MAP } from '@fbch/lib';
+	import { CATEGORY_MAP , CATEGORY_MAP_CHIPNET } from '@fbch/lib';
 	import FbchIcon from './FbchIcon.svelte';
 
-	let { category, size=64 } = $props();
+	let { category, size=64, isMainnet=true } = $props();
 
 	let FIRST_CLASS = new Map([
 		['242f6ecedb404c743477e35b09733a56cacae34f3109d5cee1cbc1d5630affd7', '/badger.svg'],
@@ -14,6 +14,8 @@
 		['bb61cd7a6c8a3a3742d965dc7ac73c1117382a5c8930b68338deb881f75c0214', '/tWBCH.svg'],
 		['ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3', '/WBCH.svg']
 	]);
+
+	let FUTURE_MAP = isMainnet ? CATEGORY_MAP : CATEGORY_MAP_CHIPNET;
 
 	
 </script>

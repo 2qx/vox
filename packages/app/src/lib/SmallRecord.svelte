@@ -1,6 +1,6 @@
 <script lang="ts">
-	
 	import TokenIcon from './TokenIcon.svelte';
+	import { disassembleBytecodeBch, hexToBin } from '@bitauth/libauth';
 
 	let { tx_pos, tx_hash, height, value, token_data, now = $bindable() } = $props();
 </script>
@@ -8,7 +8,7 @@
 <div class="container">
 	<div class="post">
 		<div class="balance">
-			<div >
+			<div>
 				{#if token_data}
 					<div>
 						<TokenIcon size={24} category={token_data.category}></TokenIcon>
@@ -17,23 +17,22 @@
 			</div>
 			<div class="fill">
 				{#if token_data.nft.commitment}
-					<pre> {token_data.nft.commitment}</pre>
-                    {:else}
-                    <pre> undefined</pre>
+					<pre> {disassembleBytecodeBch(hexToBin(token_data.nft.commitment))}</pre>
+				{:else}
+					<pre> undefined</pre>
 				{/if}
 			</div>
 			<div>
-                {#if height>0}
-               {(height+value)-now}
-            {:else}
-             {height}
+				{#if height > 0}
+					{height + value - now}
+				{:else}
+					{height}
 				{/if}
 			</div>
 		</div>
 		<div class="header">
 			<div class="fill"></div>
 			<div class="timestamp">{Number(value).toLocaleString(undefined, {})}</div>
-			
 		</div>
 	</div>
 </div>
@@ -59,9 +58,9 @@
 	.balance {
 		display: flex;
 	}
-    pre{
-        margin: 2px;
-    }
+	pre {
+		margin: 2px;
+	}
 	.hash {
 		font-size: xx-small;
 		font-weight: 200;
@@ -75,10 +74,12 @@
 		word-break: break-all;
 		display: flex;
 		flex-direction: column;
-
+	}
+	.fill pre {
+		white-space: pre-line;
 	}
 	.fill div {
-        padding: 5px;
+		padding: 5px;
 	}
 	.fill div p {
 		text-align: right;

@@ -73,7 +73,7 @@
 		display: flex;
 		flex-direction: column;
 		width: 100%;
-		max-width: 40rem;
+		max-width: 35rem;
 		margin: 0 auto;
 		box-sizing: border-box;
 	}

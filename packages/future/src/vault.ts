@@ -26,7 +26,7 @@ import {
     sumSourceOutputTokenAmounts
 } from '@unspent/tau';
 
-import { COUPON_SERIES, VAULT_SERIES, TIMELOCK_MAP } from "./constant.js";
+import { COUPON_SERIES, VAULT_SERIES } from "./constant.js";
 
 import template from './template.v2.json' with { type: "json" };
 
@@ -48,8 +48,8 @@ export class Vault {
     static vm = createVirtualMachineBch();
 
     locktime: number = 0;
-    //static unlockingScript = "c0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77"
 
+    //static unlockingScript = "c0d3c0d0a06376b17568c0cec0d188c0cdc0c788c0d0c0c693c0d3c0cc939c77"
 
     /**
      * return the scripthash
@@ -173,7 +173,7 @@ export class Vault {
      * @param series - power of 10 to stagger the times
      * @param limit - length of the array to return
      */
-    static getSeriesTimes(startTime: number, series = 3, limit = 10) {
+    static getSeriesTimes(startTime: number, series = 3, limit = 11) {
         const step = Math.pow(10, series)
         const next = startTime - (startTime % step) + step;
         //@ts-ignore
@@ -217,8 +217,8 @@ export class Vault {
      * @param locktime - filter to coupons for a single series
      */
 
-    public static async getAllCouponUtxos(electrumClient: any, height: number) {
-        let couponSeries = Vault.getAllCouponSeries(height)
+    public static async getAllCouponUtxos(electrumClient: any, height: number, seriesTimes?:number[]) {
+        let couponSeries = Vault.getAllCouponSeries(height, seriesTimes)
         let allCoupons = await getAllUnspentCoupons(electrumClient, [...couponSeries.keys()])
         allCoupons.forEach((value, key, map) => {
             let cData = couponSeries.get(value.scripthash)
@@ -431,8 +431,6 @@ export class Vault {
     }
 
 
-
-
     static getVaultLayers(
         utxos: UtxoI[],
         amount: number,
@@ -610,7 +608,8 @@ export class Vault {
 
 
         let unique = [...new Set(contractUtxos.map(u => u.token_data?.category))]
-        if (unique.length != 1) throw Error("Future vault UTXOs may only contain a single future token series")
+        
+        if (unique.length > 1) throw Error("Future vault UTXOs may only contain a single future token series")
         let category = unique.pop()!
 
         let fbchCat = hexToBin(category)

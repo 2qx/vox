@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import type { PageProps } from './$types';
 
 	import Readme from './README.md';
 
@@ -18,11 +20,7 @@
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 
-	import { 
-		binToHex,
-		cashAddressToLockingBytecode, 
-		encodeTransactionBch, 
-	 } from '@bitauth/libauth';
+	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch } from '@bitauth/libauth';
 
 	import { getScriptHash, getHdPrivateKey, type UtxoI } from '@unspent/tau';
 
@@ -30,12 +28,15 @@
 
 	let now: number = $state(0);
 	let privatekey = $state('');
-	let key = $state('');
+
+	let { data }: PageProps = $props();
+	let key = $state(data.key ? data.key : '');
+	console.log(key)
 	let connectionStatus = $state('');
 	let electrumClient: any;
 	let walletScriptHash = $state('');
 	let wallet: any = $state();
-	let transactionError = $state("");
+	let transactionError = $state('');
 
 	let unspent: UtxoI[] = $state([]);
 	let batons: any[] = $state([]);
@@ -46,27 +47,24 @@
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 
 	async function updateUnspent() {
+		goto(`?key=${key}`, { keepFocus: true });
 		if (electrumClient && now > 1000) {
 			unspent = await electrumClient.request(
 				'blockchain.scripthash.listunspent',
 				SmallIndex.getScriptHash(key),
 				'include_tokens'
-			) ;
+			);
 		}
-	}
-	async function setAuth(auth: UtxoI) {
-		selected = auth;
 	}
 
 	const clear = async function () {
 		// mint 2 NFTs, amount reducing
 
-		unspent = unspent.filter((u: any) => u.height + u.value < now)
-		console.log(key)
-		let tx = SmallIndex.drop(key, unspent)
+		unspent = unspent.filter((u: any) => u.height + u.value < now);
+		console.log(key);
+		let tx = SmallIndex.drop(key, unspent);
 		let transaction_hex = binToHex(encodeTransactionBch(tx.transaction));
 		await broadcast(transaction_hex);
-		
 	};
 
 	const handleNotifications = function (data: any) {
@@ -108,7 +106,7 @@
 			transactionError = response.message;
 			throw response;
 		}
-		transactionError = response
+		transactionError = response;
 		response as any[];
 	};
 
@@ -162,13 +160,13 @@
 	<br />
 	{#if unspent.length > 0}
 		{#each unspent as record}
-			<SmallRecord {...record} {now}  />
+			<SmallRecord {...record} {now} />
 		{/each}
 	{:else}
 		No Records
 	{/if}
-	<br>
-	<br>
+	<br />
+	<br />
 	<button onclick={() => clear()}>Clear Expired</button>
 	{transactionError}
 	<Readme />
