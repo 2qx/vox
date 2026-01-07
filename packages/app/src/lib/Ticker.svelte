@@ -23,5 +23,5 @@
 {:else if FIRST_CLASS.has(category)}
 	{FIRST_CLASS.get(category)}
 {:else}
-	{category.substring(0, 8) + '...' + category.substring(category.length-8, category.length)}
+	{category.substring(0, 6) + '...' + category.substring(category.length-6, category.length)}
 {/if}

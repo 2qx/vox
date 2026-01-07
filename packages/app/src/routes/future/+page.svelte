@@ -55,15 +55,15 @@
 
 	let wallet: any;
 
-	async function handlePlacement(coupon: any, couponI: any) {
+	async function handlePlacement(coupon: any) {
 		let vaultUtxos = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
 			Vault.getScriptHash(coupon.locktime),
 			'include_tokens'
 		);
 
-		vaultUtxos = vaultUtxos.filter(u => 
-			u.token_data?.category == SERIES_MAP.get(coupon.locktime)
+		vaultUtxos = vaultUtxos.filter(
+			(u) => u.token_data?.category == SERIES_MAP.get(coupon.locktime)
 		);
 		let swapTx = Vault.swap(
 			coupon.placement,
@@ -73,6 +73,10 @@
 			key,
 			coupon
 		);
+		let i = coupons!.findIndex(
+			(c: UtxoI) => c.tx_hash == coupon.tx_hash && c.tx_pos == coupon.tx_pos
+		);
+		if(i) coupons?.splice(i, 1);
 		let transactionHex = binToHex(encodeTransactionBch(swapTx.transaction));
 		await broadcast(transactionHex);
 	}

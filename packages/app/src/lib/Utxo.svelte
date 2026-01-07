@@ -1,39 +1,42 @@
 <script lang="ts">
-
 	import BCH from '$lib/images/BCH.svg';
 	import tBCH from '$lib/images/tBCH.svg';
 
-    import TokenNftData from './TokenNftData.svelte'
+	import TokenNftData from './TokenNftData.svelte';
 	import TokenAmount from './TokenAmount.svelte';
 	import TokenIcon from './TokenIcon.svelte';
 
 	let { tx_pos, tx_hash, height, value, token_data, isMainnet } = $props();
 
-	let bchIcon = isMainnet? BCH: tBCH
-
+	let bchIcon = isMainnet ? BCH : tBCH;
 </script>
 
 <div class="container">
 	<div class="post">
+		
 		<div class="balance">
+			<div>
+				{#if token_data}
+				<TokenIcon category={token_data.category} size={16} {isMainnet}></TokenIcon>
+				{/if}
+			</div>
 			<div class="fill">
 				{#if token_data}
 					<div>
-						<TokenAmount amount={token_data.amount} category={token_data.category} {isMainnet}/><br/>
+						<TokenAmount amount={token_data.amount} category={token_data.category} {isMainnet} />
 					</div>
-
 					<div>
 						{#if token_data.nft}
-						<TokenNftData {... token_data.nft}/>
+							<TokenNftData {...token_data.nft} />
 						{/if}
-					</div>
-					<div>
-						<TokenIcon category={token_data.category} {isMainnet}></TokenIcon>
 					</div>
 				{/if}
 			</div>
 			<div>
-				{Number(value).toLocaleString(undefined, {})} sats <img width="20px" src={bchIcon} />
+				{#if value > 1000n}
+					<img width="16px" src={bchIcon} /> <b>BCH</b>
+					{Number(value / 100_000_000).toLocaleString(undefined, {})}
+				{/if}
 			</div>
 		</div>
 		<div class="header">

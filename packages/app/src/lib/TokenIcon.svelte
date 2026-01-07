@@ -21,7 +21,7 @@
 </script>
 
 {#if FUTURE_MAP.has(category)}
-	<FbchIcon time={FUTURE_MAP.get(category)} size={64} />
+	<FbchIcon time={FUTURE_MAP.get(category)} size={size} />
 {:else if FIRST_CLASS.has(category)}
 	<img height={size} src={FIRST_CLASS.get(category)} alt={FIRST_CLASS.get(category)} />
 {:else}

@@ -4,10 +4,12 @@
 	import walletIcon from '$lib/images/hot.svg';
 	import hot from '$lib/images/hot.svg';
 	import hotCT from '$lib/images/cashTokens.svg';
-	import bch from '$lib/images/BCH.svg';
+
+	import BCMR from '$lib/bitcoin-cash-metadata-registry.json' with { type: 'json' };
+	import tBCMR from '$lib/chipnet-metadata-registry.json' with { type: 'json' };
+	import { CATEGORY_MAP, CATEGORY_MAP_CHIPNET } from '@fbch/lib';
 
 	import { cashAddressToLockingBytecode, stringify, swapEndianness } from '@bitauth/libauth';
-	import { blo } from 'blo';
 
 	import { getScriptHash, sumUtxoValue, type UtxoI } from '@unspent/tau';
 
@@ -22,24 +24,43 @@
 
 	const isMainnet = page.url.hostname == 'vox.cash';
 	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const metadata = isMainnet ? BCMR : tBCMR;
+	const SERIES_MAP = isMainnet ? CATEGORY_MAP : CATEGORY_MAP_CHIPNET;
 
 	let now = $state(0);
 	let wallet: Wallet | TestNetWallet | undefined = $state();
 	let walletError = false;
 	let balance = $state(0);
 	let electrumClient: any;
+	let connectionStatus = $state('');
 	let connectionError = $state('');
 	let showTokenAddress = $state(true);
 	let history: any[];
 	let unspent: UtxoI[] = $state([]);
+	let assetsCash: UtxoI[] = $state([]);
+	let assetsCommodity: UtxoI[] = $state([]);
+	let assetsFuture: UtxoI[] = $state([]);
 	let showInfo = $state(false);
 	let scripthash = $state('');
 
 	let showHistory = $state(false);
 	let cancelWatch: any;
 
+	console.log(CATEGORY_MAP.keys())
+
+	const bcmr = Object.entries(metadata.identities)
+		.map((o) => {
+			return Object.values(Object.values(o[1]));
+		})
+		.flat()
+		.reduce((acc, o) => {
+			acc.set(o.token.category, o);
+			return acc;
+		}, new Map());
+
 	const handleNotifications = function (data: any) {
 		if (data.method === 'blockchain.headers.subscribe') {
+			connectionStatus = ConnectionStatus[electrumClient.status];
 			let d = data.params[0];
 			now = d.height;
 		} else if (data.method === 'blockchain.scripthash.subscribe') {
@@ -97,6 +118,26 @@
 		);
 		if (response instanceof Error) throw response;
 		unspent = response;
+		let result = Object.groupBy(unspent, ({ token_data }) => (!token_data ? 'cash' : 'other'));
+		assetsCash = result.cash ? result.cash : [];
+
+		let result2 = result.other
+			? Object.groupBy(result.other, ({ token_data }) =>
+					bcmr.has(token_data!.category) && Number(token_data?.amount) > 0 ? 'commodity' : 'other'
+				)
+			: { other: [], commodity: [] };
+
+		assetsCommodity = result2.commodity ? result2.commodity : [];
+
+		let result3 = result2.other
+			? Object.groupBy(result2.other, ({ token_data }) =>
+					SERIES_MAP.has(token_data!.category) ? 'future' : 'other'
+				)
+			: { other: [], future: [] };
+		
+		assetsFuture = result3.future ? result3.future : [];
+		
+		unspent = result3.other ? result3.other : [];
 
 		balance = sumUtxoValue(unspent as UtxoI[], true);
 	};
@@ -106,7 +147,7 @@
 			BaseWallet.StorageProvider = IndexedDBProvider;
 			wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 
-			balance = (await wallet.getBalance('sat')) as number;
+			//balance = (await wallet.getBalance('sat')) as number;
 
 			let lockingBytecode = cashAddressToLockingBytecode(wallet.getDepositAddress());
 			if (typeof lockingBytecode == 'string') throw lockingBytecode;
@@ -144,6 +185,11 @@
 
 <section>
 	<div class="status">
+		{#if connectionStatus == 'CONNECTED'}
+			<img src={CONNECTED} alt={connectionStatus} />
+		{:else}
+			<img src={DISCONNECTED} alt="Disconnected" />
+		{/if}
 		<div class="scanable">
 			{#if wallet}
 				{#if !showTokenAddress}
@@ -198,26 +244,38 @@
 			{#if connectionError}
 				<b>{connectionError}</b>
 			{/if}
-			{#if balance >= 0}
-				<div>
-					{balance!.toLocaleString()} sats
-				</div>
-			{/if}
 		</div>
-
+	</div>
+	<div>
 		{#if unspent}
+			{#if assetsCash!.length > 0}
+				<h3>assets : cash</h3>
+				{#each assetsCash! as u, i (u.tx_hash + ':' + u.tx_pos)}
+					<Utxo {...u} {...{ isMainnet: isMainnet }} />
+				{/each}
+			{/if}
+			{#if assetsCommodity!.length > 0}
+				<h3>assets : commodities</h3>
+				{#each assetsCommodity! as u, i (u.tx_hash + ':' + u.tx_pos)}
+					<Utxo {...u} {...{ isMainnet: isMainnet }} />
+				{/each}
+			{/if}
+			{#if assetsFuture.length > 0}
+				<h3>assets : commodities : futures</h3>
+				{#each assetsFuture as u, i (u.tx_hash + ':' + u.tx_pos)}
+					<Utxo {...u} {...{ isMainnet: isMainnet }} />
+				{/each}
+			{/if}
 			{#if unspent!.length > 0}
-				<h3>Unspent Outputs (coins)</h3>
+				<h3>assets : other</h3>
 				{#each unspent! as u, i (u.tx_hash + ':' + u.tx_pos)}
-					<Utxo {...u} {... {isMainnet:isMainnet}} />
+					<Utxo {...u} {isMainnet} />
 				{/each}
 
 				<div class="walletHead">
 					<button onclick={() => consolidateFungibleTokens()}> Consolidate Tokens</button>
 					<button onclick={() => consolidateSats()}> Consolidate Sats</button>
 				</div>
-			{:else}
-				<p>no wallet utxos available</p>
 			{/if}
 		{:else}
 			<p>loading wallet...</p>
@@ -280,6 +338,10 @@
 </section>
 
 <style>
+	.status {
+		text-align: end;
+	}
+
 	pre {
 		margin-block: 0px;
 		padding: 0px;

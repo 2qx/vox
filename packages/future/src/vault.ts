@@ -600,7 +600,8 @@ export class Vault {
     ): {
         transaction: Transaction,
         sourceOutputs: Output[],
-        verify: string | boolean
+        verify: string | boolean,
+        walletUtxos: UtxoI[]
     } {
 
         const inputs: InputTemplate<CompilerBch>[] = [];
@@ -684,7 +685,8 @@ export class Vault {
         return {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
-            verify: verify
+            verify: verify,
+            walletUtxos: walletUtxos
         }
     }
 }
