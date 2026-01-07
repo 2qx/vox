@@ -42,7 +42,7 @@
 	let connectionStatus = $state('');
 	let contractState = $state('');
 
-	let { topic  = $bindable() } = $props();
+	let { topic = $bindable() } = $props();
 
 	let message = $state('');
 	let thisAuth = $state('');
@@ -111,6 +111,7 @@
 		if (response instanceof Error) throw response;
 		now = response.height;
 	};
+
 	const updateWallet = async function () {
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
@@ -127,6 +128,21 @@
 		if (walletUnspent.length > 0 && walletUnspent[0].token_data) {
 			thisAuth = walletUnspent[0].token_data.category;
 		}
+	};
+
+	const emptyBaton = async function () {
+		let response  = await wallet.send([
+			new TokenSendRequest({
+				cashaddr: wallet.getTokenDepositAddress(),
+				tokenId: walletUnspent[0].token_data.category,
+				amount: 0,
+				capability: walletUnspent[0].token_data.nft.capability,
+				commitment: walletUnspent[0].token_data.nft.commitment,
+				value: 800
+
+			})
+		]);
+		console.log(response)
 	};
 
 	const clearPosts = async function () {
@@ -340,20 +356,20 @@
 	</div>
 	<div id="chat" class="row content">
 		{#if transactions}
-		{#await transactions then build}
-			{#each posts as post}
-				<ChatPost {likePost} {...post} />
-				{#if showSettings}
-					<div class="deleteMe">
-						<button onclick={() => clearPost(post)}>
-							<img height="36px" src={trash} />
-						</button>
-					</div>
-				{/if}
-			{/each}
-		{:catch error}
-			<p style="color: red">{error.message}</p>
-		{/await}
+			{#await transactions then build}
+				{#each posts as post}
+					<ChatPost {likePost} {...post} />
+					{#if showSettings}
+						<div class="deleteMe">
+							<button onclick={() => clearPost(post)}>
+								<img height="36px" src={trash} />
+							</button>
+						</div>
+					{/if}
+				{/each}
+			{:catch error}
+				<p style="color: red">{error.message}</p>
+			{/await}
 		{/if}
 	</div>
 	{#if balance > 1000000 && walletUnspent.length == 0}
@@ -414,6 +430,11 @@
 			<div class="row footer">
 				<button onclick={() => clearPosts()}>Clear Old Posts</button>
 				<button onclick={() => burnSpam()}>Burn Spam</button>
+			</div>
+			<div class="row footer">
+				{#if thisAuth}
+					<button onclick={() => emptyBaton()}>Empty Baton Sats</button>
+				{/if}
 			</div>
 		{/if}
 	{/if}
