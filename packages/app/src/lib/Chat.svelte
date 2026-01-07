@@ -34,15 +34,16 @@
 		? 'https://explorer.salemkode.com/address/'
 		: 'https://cbch.loping.net/address/';
 
-	const protocol_prefix = cashAssemblyToHex(`OP_RETURN <"U3V">`);
+	const protocol_prefix = cashAssemblyToHex(`OP_RETURN <"${Channel.PROTOCOL_IDENTIFIER}">`);
 
 	let now = $state(0);
 	let balance = $state(0);
-	let contractBalance = $state(0n);
+	let contractBalance = $state(0);
 	let connectionStatus = $state('');
 	let contractState = $state('');
 
-	let { topic, transactions } = $props();
+	let { topic = $bindable() } = $props();
+
 	let message = $state('');
 	let thisAuth = $state('');
 	let sequence = $state(0);
@@ -53,6 +54,7 @@
 	const contractAddress = $derived(Channel.getAddress(topic, prefix));
 
 	let posts: any[] = $state([]);
+	let transactions: any[] = $state([]);
 
 	let timer: any;
 	let key = '';
@@ -109,6 +111,7 @@
 		if (response instanceof Error) throw response;
 		now = response.height;
 	};
+
 	const updateWallet = async function () {
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
@@ -127,6 +130,21 @@
 		}
 	};
 
+	const emptyBaton = async function () {
+		let response  = await wallet.send([
+			new TokenSendRequest({
+				cashaddr: wallet.getTokenDepositAddress(),
+				tokenId: walletUnspent[0].token_data.category,
+				amount: 0,
+				capability: walletUnspent[0].token_data.nft.capability,
+				commitment: walletUnspent[0].token_data.nft.commitment,
+				value: 800
+
+			})
+		]);
+		console.log(response)
+	};
+
 	const clearPosts = async function () {
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
@@ -134,7 +152,7 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		let old = response.filter((u: UtxoI) => u.height > 0 && now - u.height > 1000).slice(0,300);
+		let old = response.filter((u: UtxoI) => u.height > 0 && now - u.height > 1000).slice(0, 300);
 		if (old.length > 0) {
 			let clearPostTx = Channel.clear(topic, old, walletUnspent[0], key, now);
 			let raw_tx = binToHex(encodeTransactionBch(clearPostTx.transaction));
@@ -175,11 +193,11 @@
 		let historyResponse = await electrumClient.request(
 			'blockchain.scripthash.get_history',
 			scripthash,
-			now - 1500,
+			now - 10000,
 			-1
 		);
 
-		let transactions = await getAllTransactions(electrumClient, tx_hashes);
+		transactions = await getAllTransactions(electrumClient, tx_hashes);
 
 		posts = buildChannel(historyResponse, transactions, topic);
 		posts = posts.map((p) => {
@@ -205,7 +223,7 @@
 		);
 		if (response instanceof Error) throw response;
 
-		let utxos = response.filter((u: UtxoI) => u.tx_hash == post.hash);
+		let utxos = response.filter((u: UtxoI) => u.tx_hash == post.hash).slice(0, 300);
 		let clearPostTx = Channel.clear(topic, utxos, walletUnspent[0], key, now);
 		let raw_tx = binToHex(encodeTransactionBch(clearPostTx.transaction));
 		await broadcast(raw_tx);
@@ -257,7 +275,7 @@
 
 	const newAuthBaton = async function () {
 		await wallet.sendMax(wallet.getDepositAddress());
-		let uname = cashAssemblyToHex(`OP_RETURN <"U3V"> <"pseudonymous">`);
+		let uname = cashAssemblyToHex(`OP_RETURN <"${Channel.PROTOCOL_IDENTIFIER}"> <"pseudonymous">`);
 		let sendResponse = await wallet.tokenGenesis({
 			cashaddr: wallet.getTokenDepositAddress()!, // token UTXO recipient, if not specified will default to sender's address
 			commitment: uname, // NFT Commitment message
@@ -269,7 +287,7 @@
 	const topUp = async function (amount: number) {
 		balance = walletUnspent[0].value;
 		thisAuth = walletUnspent[0].token_data.category;
-		let uname = cashAssemblyToHex(`OP_RETURN <"U3V"> <"pseudonymous">`);
+		let uname = cashAssemblyToHex(`OP_RETURN <"${Channel.PROTOCOL_IDENTIFIER}"> <"pseudonymous">`);
 
 		let sendResponse = await wallet.send(
 			new TokenSendRequest({
@@ -322,7 +340,7 @@
 		{sequence}
 
 		<div style="flex: 2 2 auto;"></div>
-		<b><a onclick={() => (topic = "")} href="/pop/">pop</a> {topic}</b>
+		<b><a onclick={() => (topic = '')} href="/pop/">pop</a> {topic}</b>
 		<div style="flex: 2 2 auto;"></div>
 		{#if contractBalance}
 			<a target="_blank" href="{explorer}{contractAddress}">
@@ -337,20 +355,22 @@
 		{/if}
 	</div>
 	<div id="chat" class="row content">
-		{#await transactions then build}
-			{#each posts as post}
-				<ChatPost {likePost} {...post} />
-				{#if showSettings}
-					<div class="deleteMe">
-						<button onclick={() => clearPost(post)}>
-							<img height="36px" src={trash} />
-						</button>
-					</div>
-				{/if}
-			{/each}
-		{:catch error}
-			<p style="color: red">{error.message}</p>
-		{/await}
+		{#if transactions}
+			{#await transactions then build}
+				{#each posts as post}
+					<ChatPost {likePost} {...post} />
+					{#if showSettings}
+						<div class="deleteMe">
+							<button onclick={() => clearPost(post)}>
+								<img height="36px" src={trash} />
+							</button>
+						</div>
+					{/if}
+				{/each}
+			{:catch error}
+				<p style="color: red">{error.message}</p>
+			{/await}
+		{/if}
 	</div>
 	{#if balance > 1000000 && walletUnspent.length == 0}
 		<div class="row footer">
@@ -411,6 +431,11 @@
 				<button onclick={() => clearPosts()}>Clear Old Posts</button>
 				<button onclick={() => burnSpam()}>Burn Spam</button>
 			</div>
+			<div class="row footer">
+				{#if thisAuth}
+					<button onclick={() => emptyBaton()}>Empty Baton Sats</button>
+				{/if}
+			</div>
 		{/if}
 	{/if}
 </div>
@@ -437,6 +462,8 @@
 		font-weight: 800;
 		text-align: center;
 		flex: 0 1 auto;
+
+		overflow: hidden;
 		/* The above is shorthand for:
         flex-grow: 0,
         flex-shrink: 1,
@@ -444,11 +471,16 @@
         */
 	}
 
+	.box .row.header b {
+		overflow: hidden;
+	}
+
 	.box .row.content {
 		flex: 1 1 auto;
 		overflow-y: scroll;
 		overflow-x: hidden;
 		max-height: 65vh;
+		min-height: 10vh;
 	}
 
 	.box .row.footer .edit {
@@ -461,7 +493,7 @@
 	}
 	.edit textarea {
 		width: 100%;
-		min-height: 10em;
+		min-height: 5em;
 	}
 
 	.estimate {
