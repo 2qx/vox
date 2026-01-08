@@ -46,7 +46,7 @@
 	let showHistory = $state(false);
 	let cancelWatch: any;
 
-	console.log(CATEGORY_MAP.keys())
+
 
 	const bcmr = Object.entries(metadata.identities)
 		.map((o) => {
@@ -134,9 +134,9 @@
 					SERIES_MAP.has(token_data!.category) ? 'future' : 'other'
 				)
 			: { other: [], future: [] };
-		
+
 		assetsFuture = result3.future ? result3.future : [];
-		
+
 		unspent = result3.other ? result3.other : [];
 
 		balance = sumUtxoValue(unspent as UtxoI[], true);
@@ -340,6 +340,10 @@
 <style>
 	.status {
 		text-align: end;
+	}
+
+	h3 {
+		margin-block-end: 0px;
 	}
 
 	pre {
