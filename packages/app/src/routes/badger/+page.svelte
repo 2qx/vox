@@ -248,7 +248,7 @@
 			{/if}
 		</div>
 		<div class="stake">
-			{#if stakeValue * stakeBlock > 1}
+			{#if stakeValue * stakeBlock >= 1}
 				<button
 					onclick={() => {
 						lock();
