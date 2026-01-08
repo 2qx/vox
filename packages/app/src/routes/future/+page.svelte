@@ -14,7 +14,12 @@
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 
-	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch, stringify } from '@bitauth/libauth';
+	import {
+		binToHex,
+		cashAddressToLockingBytecode,
+		encodeTransactionBch,
+		stringify
+	} from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 	import { BaseWallet, Wallet, TestNetWallet } from 'mainnet-js';
@@ -81,9 +86,9 @@
 		);
 		if (i) coupons?.splice(i, 1);
 		couponGrouped = Object.groupBy(
-				coupons!,
-				({ locktime, placement, value }) => `${locktime}-${placement}-${value}`
-			);
+			coupons!,
+			({ locktime, placement, value }) => `${locktime}-${placement}-${value}`
+		);
 		let transactionHex = binToHex(encodeTransactionBch(swapTx.transaction));
 		await broadcast(transactionHex);
 	}
@@ -107,7 +112,6 @@
 				({ locktime, placement, value }) => `${locktime}-${placement}-${value}`
 			);
 
-
 			coupons.sort((a: any, b: any) => parseFloat(b.spb) - parseFloat(a.spb));
 			openCouponInterest = Number(coupons.reduce((acc, c) => acc + c.placement, 0) / 1e8);
 			couponTotal = Number(coupons.reduce((acc, c) => acc + c.value, 0));
@@ -129,6 +133,7 @@
 	};
 
 	const handleNotifications = function (data: any) {
+		connectionStatus = ConnectionStatus[electrumClient.status];
 		if (data.method === 'blockchain.headers.subscribe') {
 			let d = data.params[0];
 			now = d.height;
@@ -137,7 +142,6 @@
 		} else if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
-				connectionStatus = ConnectionStatus[electrumClient.status];
 				amount = 0;
 				// debounceUpdateWallet();
 			}
@@ -172,6 +176,7 @@
 
 <section>
 	<div class="status">
+		{now.toLocaleString()}
 		<BitauthLink template={Vault.template} />
 		{#if connectionStatus == 'CONNECTED'}
 			<img src={CONNECTED} alt={connectionStatus} />
@@ -209,10 +214,10 @@
 
 				<tbody>
 					{#each Object.values(couponGrouped) as subList}
-						{#each subList as c, i }
+						{#each subList as c, i}
 							{#if i == 0}
 								<tr>
-									<td> 
+									<td>
 										<img height={16} src={blo(`${c.tx_hash}:${c.tx_pos}`, 16)} alt={c.id} />
 									</td>
 									<td class="r">{subList.length} </td>
@@ -233,7 +238,9 @@
 										<td style="text-align:center;"
 											><button
 												class="action"
-												onclick={() => {handlePlacement(c)}}>claim</button
+												onclick={() => {
+													handlePlacement(c);
+												}}>claim</button
 											></td
 										>
 									{:else}
@@ -285,6 +292,8 @@
 <style>
 	.status {
 		text-align: end;
+		color: #ffffff;
+		font-weight: 600;
 	}
 
 	.couponTable {

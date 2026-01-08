@@ -203,7 +203,7 @@ export default class BadgerStake {
                 data: {
                     "bytecode": {
                         "authentication_category": authCat,
-                        "amount": bigIntToVmNumber(BigInt(req.amount)),
+                        "amount": bigIntToVmNumber(BigInt(Math.floor(req.amount))),
                         "stake_blocks": bigIntToVmNumber(BigInt(req.stake)),
                         "user_pkh": req.user_pkh
                     }
@@ -230,7 +230,7 @@ export default class BadgerStake {
             valueSatoshis: BigInt(utxo.value + fee),
             token: utxo.token_data ? {
                 category: hexToBin(utxo.token_data!.category!),
-                amount: BigInt(utxo.token_data.amount) - BigInt(value / 100_000_000 * stake),
+                amount: BigInt(utxo.token_data.amount) - BigInt(Math.floor(value / 100_000_000 * stake)),
                 nft: utxo.token_data.nft ? {
                     commitment: hexToBin(utxo.token_data.nft.commitment!),
                     capability: utxo.token_data.nft.capability,
@@ -318,7 +318,7 @@ export default class BadgerStake {
             valueSatoshis: BigInt(stake.amount),
             token: {
                 category: hexToBin(authUtxo.token_data?.category!),
-                amount: BigInt(stake.amount / 100_000_000 * stake.stake),
+                amount: BigInt(Math.floor(stake.amount / 100_000_000 * stake.stake)),
                 nft: {
                     commitment: BadgerStake.encodeNFT(stake),
                     capability: 'mutable',

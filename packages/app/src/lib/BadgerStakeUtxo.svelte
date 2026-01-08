@@ -27,6 +27,7 @@
 
 </script>
 
+
 <div class="container">
 	<div class="stake">
 		<div class="balance">

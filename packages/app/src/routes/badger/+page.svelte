@@ -20,14 +20,7 @@
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import {
-		BaseWallet,
-		Wallet,
-		TestNetWallet,
-		hexToBin,
-		NFTCapability,
-		TokenSendRequest
-	} from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet } from 'mainnet-js';
 
 	import {
 		getDefaultElectrum,
@@ -40,7 +33,6 @@
 	import BadgerStake, { BADGER as badgerCat, tBADGER as tBadgerCat } from '@unspent/badgers';
 
 	import BitauthLink from '$lib/BitauthLink.svelte';
-	import Transaction from '$lib/Transaction.svelte';
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 	import BadgerStakeButton from '$lib/BadgerStakeUtxo.svelte';
@@ -64,8 +56,8 @@
 	let walletScriptHash = $state('');
 
 	let balance = $state(0);
-	let stakeValue = $state(0);
-	let stakeBlock = $state(0);
+	let stakeValue = $state();
+	let stakeBlock = $state(1);
 
 	const isMainnet = page.url.hostname == 'vox.cash';
 	const icon = isMainnet ? BADGER : tBADGER;
@@ -87,14 +79,15 @@
 	let req = {};
 
 	const handleNotifications = async function (data: any) {
+		connectionStatus = ConnectionStatus[electrumClient.status];
 		if (data.method === 'blockchain.headers.subscribe') {
 			let d = data.params[0];
 			now = d.height;
+
 			updateUnspent();
 		} else if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
-				connectionStatus = ConnectionStatus[electrumClient.status];
 				updateUnspent();
 				updateWallet();
 			}
@@ -195,7 +188,7 @@
 		if (stakeBlock < 32767) {
 			let lockResponse = BadgerStake.lock(
 				authUtxo,
-				stakeValue * 100_000_000,
+				Math.floor(stakeValue * 100_000_000),
 				stakeBlock,
 				walletUnspent,
 				key
@@ -255,20 +248,16 @@
 		<div>
 			<img width="50" src={bchIcon} alt={baseTicker} />
 			<br />
-			{(balance / 100000000).toLocaleString()} {baseTicker}
+			{(balance / 100000000).toLocaleString()}
+			{baseTicker}
 		</div>
 	</div>
+	{page.error?.message}
 
 	<div class="grid">
 		<div class="stake">
 			<label for="quantity">BCH to Lock</label>
-			<input
-				style="max-width: 60px"
-				id="quantity"
-				type="number"
-				bind:value={stakeValue}
-				min="0.00005"
-			/><br />
+			<input style="max-width: 60px" id="quantity" type="number" bind:value={stakeValue} /><br />
 			{#if stakeValue > 0 && stakeValue < 0.00005}
 				<span style="font-size:large; color: red;">Min stake is 0.00005 BCH!</span>
 			{:else if stakeValue > 0 && stakeBlock > 0}
@@ -280,6 +269,8 @@
 			<input type="number" bind:value={stakeBlock} min="1" max="32767" /><br />
 			{#if stakeBlock > 32767}
 				<span style="font-size:large; color: red;">Max duration is 32,767 blocks!</span>
+			{:else if stakeBlock < 1}
+				<span style="font-size:large; color: red;">Min duration is one block</span>
 			{:else if stakeBlock > 0}
 				= {Number(stakeBlock / 144).toLocaleString(undefined, {
 					minimumFractionDigits: 0,
@@ -288,13 +279,19 @@
 			{/if}
 		</div>
 		<div class="stake">
-			<button
-				onclick={() => {
-					lock();
-				}}
-			>
-				stake
-			</button>
+			{#if stakeValue * stakeBlock > 1}
+				<button
+					onclick={() => {
+						lock();
+					}}
+				>
+					stake
+				</button>
+			{:else}
+				<button disabled> stake </button>
+				<br />
+				<span style="font-size:large; color: red;"></span>
+			{/if}
 		</div>
 	</div>
 
@@ -406,6 +403,10 @@
 		font-size: 16px;
 	}
 
+	button:disabled {
+		background-color: rgb(202, 191, 204);
+		color: white;
+	}
 	button:hover {
 		background-color: #9933b3;
 	}
