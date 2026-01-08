@@ -2,6 +2,8 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 
+	import { blo } from 'blo';
+
 	import SeriesIcon from '$lib/FbchIcon.svelte';
 	import Loading from '$lib/Loading.svelte';
 
@@ -12,7 +14,7 @@
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 
-	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch } from '@bitauth/libauth';
+	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch, stringify } from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 	import { BaseWallet, Wallet, TestNetWallet } from 'mainnet-js';
@@ -35,6 +37,7 @@
 	let key = $state('');
 	let coupons: any[] | undefined = $state();
 	let electrumClient: any;
+	let couponGrouped = $state();
 	let walletScriptHash = $state('');
 	let amount = $state(0);
 	let openCouponInterest = $state(0);
@@ -76,7 +79,11 @@
 		let i = coupons!.findIndex(
 			(c: UtxoI) => c.tx_hash == coupon.tx_hash && c.tx_pos == coupon.tx_pos
 		);
-		if(i) coupons?.splice(i, 1);
+		if (i) coupons?.splice(i, 1);
+		couponGrouped = Object.groupBy(
+				coupons!,
+				({ locktime, placement, value }) => `${locktime}-${placement}-${value}`
+			);
 		let transactionHex = binToHex(encodeTransactionBch(swapTx.transaction));
 		await broadcast(transactionHex);
 	}
@@ -95,6 +102,12 @@
 			coupons = await Vault.getAllCouponUtxos(electrumClient, now);
 		}
 		if (coupons) {
+			couponGrouped = Object.groupBy(
+				coupons,
+				({ locktime, placement, value }) => `${locktime}-${placement}-${value}`
+			);
+
+
 			coupons.sort((a: any, b: any) => parseFloat(b.spb) - parseFloat(a.spb));
 			openCouponInterest = Number(coupons.reduce((acc, c) => acc + c.placement, 0) / 1e8);
 			couponTotal = Number(coupons.reduce((acc, c) => acc + c.value, 0));
@@ -167,11 +180,14 @@
 		{/if}
 	</div>
 
-	{#if coupons}
-		{#if coupons.length > 0}
+	<h1>Stake coins for futures</h1>
+	{#if couponGrouped}
+		{#if Object.keys(couponGrouped).length > 0}
 			<table class="couponTable">
 				<thead>
 					<tr class="header">
+						<td></td>
+						<td>Qty</td>
 						<td>BCH</td>
 						<td colspan="2">FBCH</td>
 						<td colspan="2">Coupon </td>
@@ -179,6 +195,8 @@
 						<td>Action</td>
 					</tr>
 					<tr class="units">
+						<td></td>
+						<td></td>
 						<td><img width="15" src={bch} alt="bchLogo" /></td>
 						<td></td>
 						<td>series</td>
@@ -190,34 +208,47 @@
 				</thead>
 
 				<tbody>
-					{#each coupons as c}
-						<tr>
-							<td class="r">{Number(c.placement / 1e8)}</td>
-							<td class="r"><SeriesIcon time={c.locktime} size={15} /></td>
-							<td>
-								<a style="color:#75006b; font-weight:600;" href="/future/v?time={c.locktime}"
-									>{String(c.locktime).padStart(7, '0')}</a
-								>
-							</td>
+					{#each Object.values(couponGrouped) as subList}
+						{#each subList as c, i }
+							{#if i == 0}
+								<tr>
+									<td> 
+										<img height={16} src={blo(`${c.tx_hash}:${c.tx_pos}`, 16)} alt={c.id} />
+									</td>
+									<td class="r">{subList.length} </td>
+									<td class="r">{Number(c.placement / 1e8)}</td>
+									<td class="r"><SeriesIcon time={c.locktime} size={15} /></td>
+									<td>
+										<a style="color:#75006b; font-weight:600;" href="/future/v?time={c.locktime}"
+											>{String(c.locktime).padStart(7, '0')}</a
+										>
+									</td>
 
-							<td class="sats">{Number(c.value / 1000).toLocaleString()}k </td>
-							<td class="r">
-								<i>{c.locale.ypa}%</i>
-							</td>
-							<td class="tiny">{c.dateLocale}</td>
-							{#if walletBalance + Number(c.value) > c.placement}
-								<td style="text-align:center;"
-									><button class="action" onclick={() => handlePlacement(c, c.id)}>claim</button
-									></td
-								>
-							{:else}
-								<td style="text-align:center;"
-									><button class="action" disabled style="font-size:xx-small;">lo bal</button></td
-								>
+									<td class="sats">{Number(c.value / 1000).toLocaleString()}k </td>
+									<td class="r">
+										<i>{c.locale.ypa}%</i>
+									</td>
+									<td class="tiny">{c.dateLocale}</td>
+									{#if walletBalance + Number(c.value) > c.placement}
+										<td style="text-align:center;"
+											><button
+												class="action"
+												onclick={() => {handlePlacement(c)}}>claim</button
+											></td
+										>
+									{:else}
+										<td style="text-align:center;"
+											><button class="action" disabled style="font-size:xx-small;">lo bal</button
+											></td
+										>
+									{/if}
+								</tr>
 							{/if}
-						</tr>
+						{/each}
 					{/each}
 					<tr style="border-top: solid thin;">
+						<td></td>
+						<td></td>
 						<td class="r">∑<b>{openCouponInterest.toFixed(0)} </b></td>
 						<td></td>
 						<td></td>

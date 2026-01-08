@@ -50,7 +50,7 @@
 <style>
 	.container {
 		display: flex;
-		padding: 5px;
+		padding: 2px;
 	}
 	.post {
 		border-radius: 10px;
