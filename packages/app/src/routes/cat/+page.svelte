@@ -64,6 +64,7 @@
 	let unspent: any[] = $state([]);
 	let walletUnspent: any[] = $state([]);
 	let orders: any[] = $state([]);
+	let myOrders: any[] = $state([]);
 	let myOrderBook: any[] = $state([]);
 	let myAuthBatons: any[] = $state([]);
 	let myDexUtxos: any[] = $state([]);
@@ -117,23 +118,33 @@
 
 	async function updateOrders() {
 		if (electrumClient && now > 1000) {
-			let markets = await electrumClient.request(
+			let marketMakers = await electrumClient.request(
 				'blockchain.scripthash.listunspent',
 				SmallIndex.getScriptHash(CatDex.PROTOCOL_IDENTIFIER),
 				'include_tokens'
 			);
 
-			authBatons = markets
+			authBatons = marketMakers
 				.map((u: UtxoI) => {
 					return u.token_data?.category;
 				})
 				.filter((v: number, i: number, array: string[]) => array.indexOf(v) === i);
+
 			let marketScriptHashes = authBatons.map((authCat: string) => {
 				return CatDex.getScriptHash(authCat, selectedAsset);
 			});
+
 			let rawOrders = await getAllMarketOrders(electrumClient, marketScriptHashes);
 			let utxos = Array.from(rawOrders.values());
 			orders = CatDex.getCatDexOrdersFromUtxos(selectedAsset, utxos);
+
+			if (myAuthBatons.length > 0) {
+				let myRawOrders = await getAllMarketOrders(electrumClient, [
+					CatDex.getScriptHash(myAuthBatons[0].token_data.category, selectedAsset)
+				]);
+				myDexUtxos = Array.from(myRawOrders.values());
+				myOrders = CatDex.getCatDexOrdersFromUtxos(selectedAsset, myDexUtxos);
+			}
 		}
 	}
 
@@ -161,12 +172,6 @@
 		}
 		balance = sumUtxoValue(walletUnspent, true);
 
-		if (myAuthBatons.length > 0) {
-			let myRawOrders = await getAllMarketOrders(electrumClient, [
-				CatDex.getScriptHash(myAuthBatons[0].token_data.category, selectedAsset)
-			]);
-			myDexUtxos = Array.from(myRawOrders.values());
-		}
 	};
 
 	const newAuthBaton = async function () {
@@ -205,8 +210,11 @@
 		}
 	};
 
-	const addMyOrder = function () {
-		if (myOrderBook.length >= 2) {
+	const addMyOrder = function (i:number) {
+		if(myOrderBook.length+1 == i){
+			myOrderBook.splice(i, 0, { quantity: undefined, price: undefined })
+		}
+		else if (myOrderBook.length >= 2) {
 			let o = myOrderBook.slice(-2);
 			myOrderBook.push({
 				quantity: o[1].quantity - (o[0].quantity - o[1].quantity),
@@ -222,11 +230,11 @@
 	};
 
 	const postOrders = async function (replace = false) {
-		let oldOrders = [];
-		if (replace) oldOrders = myDexUtxos;
+		let oldOrders = replace ? myDexUtxos : [];
+
 		let tx = CatDex.administer(
 			myAuthBatons[0],
-			selectedAsset,
+			selectedAsset!,
 			oldOrders,
 			myOrderBook,
 			walletUnspent,
@@ -309,15 +317,17 @@
 		// Set up a subscription for new block headers.
 		await electrumClient.subscribe('blockchain.headers.subscribe');
 
-		let markets = await electrumClient.request(
+		// Get a list of
+		let marketMakers = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
 			SmallIndex.getScriptHash(CatDex.PROTOCOL_IDENTIFIER),
 			'include_tokens'
 		);
 
-		authBatons = markets.map((u: UtxoI) => {
+		authBatons = marketMakers.map((u: UtxoI) => {
 			return u.token_data?.category;
 		});
+
 		let marketScriptHashes = authBatons.map((authCat: string) => {
 			return CatDex.getScriptHash(authCat, selectedAsset);
 		});
@@ -438,15 +448,10 @@
 					{#each myAuthBatons as authBaton}
 						<TokenIcon size={32} category={authBaton.token_data.category}></TokenIcon>
 					{/each}
-
-					{#if myOrderBook.length > 0}
-						<button onclick={() => postOrders(true)}>Replace Orders</button>
-
-						<button onclick={() => postOrders()}>Append Orders</button>
-					{:else}
-						<button onclick={() => postOrders(true)}> Clear Orders </button>
-					{/if}
-					<br />
+					<h3>Current Orders</h3>
+					{#each myOrders as o}
+						<CatDexOrder {...o} {...{ isMainnet: isMainnet }} />
+					{/each}
 					{#each myOrderBook as o, i}
 						<div class="orders">
 							<div>
@@ -458,6 +463,7 @@
 								<input type="number" bind:value={o.price} min="1" max="100000" />
 							</div>
 							<div>
+								<button onclick={() => addMyOrder(i+1)}>+</button><br />
 								<button
 									onclick={() => {
 										dropOrder(i);
@@ -466,8 +472,19 @@
 							</div>
 						</div>
 					{/each}
+
+					{#if myOrderBook.length > 0}
+						<button onclick={() => postOrders(true)}>Replace Orders</button>
+
+						<button onclick={() => postOrders()}>Append Orders</button>
+					{:else}
+						<button onclick={() => postOrders(true)}> Clear Orders </button>
+						<button onclick={() => addMyOrder(0)}>New Orders</button><br />
+					{/if}
 					<br />
-					<button onclick={() => addMyOrder()}>New Order +</button><br />
+					
+					<br />
+
 				{/if}
 			</div>
 		{/if}

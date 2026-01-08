@@ -40,13 +40,12 @@
 	let assetsCash: UtxoI[] = $state([]);
 	let assetsCommodity: UtxoI[] = $state([]);
 	let assetsFuture: UtxoI[] = $state([]);
+	let assetsAuth: UtxoI[] = $state([]);
 	let showInfo = $state(false);
 	let scripthash = $state('');
 
 	let showHistory = $state(false);
 	let cancelWatch: any;
-
-
 
 	const bcmr = Object.entries(metadata.identities)
 		.map((o) => {
@@ -109,15 +108,7 @@
 		showInfo = !showInfo;
 	};
 
-	const updateWallet = async function () {
-		console.log('updating wallet...');
-		let response = await electrumClient.request(
-			'blockchain.scripthash.listunspent',
-			scripthash,
-			'include_tokens'
-		);
-		if (response instanceof Error) throw response;
-		unspent = response;
+	const classifyUtxos = function (unspent: UtxoI[]) {
 		let result = Object.groupBy(unspent, ({ token_data }) => (!token_data ? 'cash' : 'other'));
 		assetsCash = result.cash ? result.cash : [];
 
@@ -137,7 +128,27 @@
 
 		assetsFuture = result3.future ? result3.future : [];
 
-		unspent = result3.other ? result3.other : [];
+		let result4 = result3.other
+			? Object.groupBy(result3.other, ({ token_data }) =>
+					token_data!.nft?.commitment.startsWith('6a035533') ? 'auth' : 'other'
+				)
+			: { other: [], auth: [] };
+
+		assetsAuth = result4.auth ? result4.auth : [];
+
+		unspent = result4.other ? result4.other : [];
+		return unspent;
+	};
+
+	const updateWallet = async function () {
+		console.log('updating wallet...');
+		let response = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			scripthash,
+			'include_tokens'
+		);
+		if (response instanceof Error) throw response;
+		unspent = classifyUtxos(response);
 
 		balance = sumUtxoValue(unspent as UtxoI[], true);
 	};
@@ -266,17 +277,24 @@
 					<Utxo {...u} {...{ isMainnet: isMainnet }} />
 				{/each}
 			{/if}
+
+			{#if assetsAuth.length > 0}
+				<h3>assets : authentication</h3>
+				{#each assetsAuth as u, i (u.tx_hash + ':' + u.tx_pos)}
+					<Utxo {...u} {...{ isMainnet: isMainnet }} />
+				{/each}
+			{/if}
+
 			{#if unspent!.length > 0}
 				<h3>assets : other</h3>
 				{#each unspent! as u, i (u.tx_hash + ':' + u.tx_pos)}
 					<Utxo {...u} {isMainnet} />
 				{/each}
-
-				<div class="walletHead">
-					<button onclick={() => consolidateFungibleTokens()}> Consolidate Tokens</button>
-					<button onclick={() => consolidateSats()}> Consolidate Sats</button>
-				</div>
 			{/if}
+			<div class="walletHead">
+				<button onclick={() => consolidateFungibleTokens()}> Consolidate Tokens</button>
+				<button onclick={() => consolidateSats()}> Consolidate Sats</button>
+			</div>
 		{:else}
 			<p>loading wallet...</p>
 		{/if}

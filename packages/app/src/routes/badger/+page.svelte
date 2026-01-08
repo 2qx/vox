@@ -107,37 +107,6 @@
 		balance = sumUtxoValue(walletUnspent, true);
 	};
 
-	// const init = async function () {
-	// 	let admin_pkh = wallet.getPublicKeyHash();
-	// 	let masterCommitment = BadgerStake.encodeNFT({
-	// 		admin_pkh: admin_pkh,
-	// 		fee: 1000,
-	// 		amount: 800
-	// 	});
-
-	// 	const genesisResponse = await wallet.tokenGenesis({
-	// 		capability: NFTCapability.minting,
-	// 		commitment: binToHex(masterCommitment),
-	// 		amount: 9223372036854775807n,
-	// 		value: 10000 // Satoshi value
-	// 	});
-
-	// 	const tokenId = genesisResponse.tokenIds![0]!;
-
-	// 	let contract_address = BadgerStake.getAddress(tokenId, 'bchtest');
-
-	// 	await wallet.send(
-	// 		new TokenSendRequest({
-	// 			cashaddr: contract_address,
-	// 			tokenId: tokenId,
-	// 			amount: 9223372036854775807n,
-	// 			commitment: binToHex(masterCommitment),
-	// 			capability: NFTCapability.minting,
-	// 			value: 10000
-	// 		})
-	// 	);
-	// };
-
 	const broadcast = async function (raw_tx: string) {
 		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
 		if (response instanceof Error) {
