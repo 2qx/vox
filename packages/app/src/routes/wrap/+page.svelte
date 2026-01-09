@@ -19,6 +19,7 @@
 	import { WBCH as wbchCat, tWBCH as twbchCat } from '@unspent/wrap';
 
 	import Readme from './README.md';
+
 	import BitauthLink from '$lib/BitauthLink.svelte';
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
@@ -28,7 +29,7 @@
 	let transaction_hex = $state('');
 	let transaction: any = $state(undefined);
 	let transactionValid = $state(false);
-	let sourceOutputs: any = $state();;
+	let sourceOutputs: any = $state();
 
 	let unspent: any[] = $state([]);
 	let walletUnspent: any[] = $state([]);
@@ -184,16 +185,17 @@
 			<div>
 				<img width="50" src={bchIcon} alt={baseTicker} />
 				<br />
-				{sumWallet.toLocaleString()} sats {baseTicker}
+				{(sumWallet/100000000).toLocaleString()} {baseTicker}
 			</div>
 			<div>
 				<img width="50" src={icon} alt={ticker} />
 				<br />
-				{sumWalletWrapped.toLocaleString()} sats {ticker}
+				{(sumWalletWrapped/100000000n).toLocaleString()} {ticker}
 			</div>
 		</div>
 		<div class="swap">
 			<input
+				class="slider"
 				type="range"
 				bind:value={amount}
 				step="1000"
@@ -207,14 +209,14 @@
 			<div class="swap">
 				<div>
 					{#if amount > 0}
-						place: {amount.toLocaleString()} sats
+						place: {(amount/100000000).toLocaleString()} {baseTicker}
 					{:else if amount < 0}
-						redeem: {(-amount).toLocaleString()} wrapped sats
+						redeem: {(-amount/100000000).toLocaleString()} wrapped {baseTicker}
 					{/if}
 				</div>
 			</div>
 			<div class="swap">
-				<button onclick={() => broadcast(transaction_hex)}>Broadcast</button>
+				<button onclick={() => broadcast(transaction_hex)}>Broadcast Transaction</button>
 			</div>
 		{/if}
 		<!-- {#if transaction}
@@ -386,9 +388,6 @@
 		text-align: center;
 	}
 
-	.swap input {
-		background-color: #ddd;
-	}
 
 	.swap button {
 		background-color: #a45eb6; /* Green */
@@ -403,5 +402,44 @@
 	}
 	.swap button:hover {
 		background-color: #9933b3;
+	}
+
+	/* The slider itself */
+	.slider {
+		-webkit-appearance: none; /* Override default CSS styles */
+		appearance: none;
+		width: 100%; /* Full-width */
+		height: 10px; /* Specified height */
+		background-color: #caa9cb; /* Grey background */
+		outline: none; /* Remove outline */
+		opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+		-webkit-transition: 0.2s; /* 0.2 seconds transition on hover */
+		transition: opacity 0.2s;
+		border-radius: 5px;
+	}
+
+	/* Mouse-over effects */
+	.slider:hover {
+		opacity: 1; /* Fully shown on mouse-over */
+	}
+
+	
+	/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+	.slider::-webkit-slider-thumb {
+		-webkit-appearance: none; /* Override default look */
+		appearance: none;
+		border-radius: 12px;
+		width: 25px; /* Set a specific slider handle width */
+		height: 25px; /* Slider handle height */
+		background: #d440c8; /* Green background */
+		cursor: pointer; /* Cursor on hover */
+	}
+
+	.slider::-moz-range-thumb {
+		width: 25px; /* Set a specific slider handle width */
+		height: 25px; /* Slider handle height */
+		border-radius: 10px;
+		background: #d440c8; /* Green background */
+		cursor: pointer; /* Cursor on hover */
 	}
 </style>

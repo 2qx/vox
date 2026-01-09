@@ -12,7 +12,7 @@
 	// @ts-ignore
 	import Readme from './README.md';
 
-	import Range from '$lib/Range.svelte';
+	import RangeSlider from '$lib/RangeSlider.svelte';
 	import TokenIcon from '$lib/TokenIcon.svelte';
 	import BCH from '$lib/images/BCH.svg';
 	import tBCH from '$lib/images/tBCH.svg';
@@ -232,18 +232,21 @@
 				{#if stakeValue > 0 && stakeValue < 0.00005}
 					<span style="font-size:large; color: red;">Min stake is 0.00005 BCH!</span>
 				{:else if stakeValue > 0 && stakeBlock > 0}
-					<h3>Earn {(stakeValue * stakeBlock).toLocaleString()} {ticker} 				
+					<h3>Earn {Math.floor(stakeValue * stakeBlock).toLocaleString()} {ticker} 			
 						<TokenIcon category={category} size={16} {isMainnet}></TokenIcon>
 					</h3>
+					{:else}
+					<h3>Adjust controls to earn {ticker}</h3>
 				{/if}
 		</div>
 		<div class="purple-theme">
 			<label for="stakeValue">BCH to Lock</label>
-			<Range bind:value={stakeValue} id="stakeValue" min={0} max={balance / 100000000} />
+			<RangeSlider bind:value={stakeValue} id="stakeValue" min={0} step={0.01} max={balance / 100000000} />
+			{stakeValue} {baseTicker}
 		</div>
 		<div class="purple-theme">
 			<label for="stakeBlock"># Blocks</label>
-			<Range bind:value={stakeBlock} id="stakeBlock" min={1} max={32767} />
+			<RangeSlider bind:value={stakeBlock} id="stakeBlock" min={1} max={32767} />
 			{#if stakeBlock > 32767}
 				<span style="font-size:large; color: red;">Max duration is 32,767 blocks!</span>
 			{:else if stakeBlock < 1}
@@ -394,14 +397,6 @@
 		background-color: #9933b3;
 	}
 
-	.purple-theme {
-		--track-focus: #c368ff;
-		--track-highlight-bgcolor: #c368ff;
-		--track-highlight-bg: linear-gradient(90deg, #c368ff, #c965ff);
-		--thumb-holding-outline: rgba(191, 102, 251, 0.3);
-		--tooltip-bgcolor: #c368ff;
-		--tooltip-bg: linear-gradient(45deg, #c368ff, #c965ff);
-	}
 
 	.theme-buttons {
 		display: flex;
