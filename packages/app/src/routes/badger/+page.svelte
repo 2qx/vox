@@ -236,17 +236,17 @@
 						<TokenIcon category={category} size={16} {isMainnet}></TokenIcon>
 					</h3>
 					{:else}
-					<h3>Adjust controls to earn {ticker}</h3>
+					<h3>Adjust controls to stake {ticker}</h3>
 				{/if}
 		</div>
 		<div class="purple-theme">
 			<label for="stakeValue">BCH to Lock</label>
-			<RangeSlider bind:value={stakeValue} id="stakeValue" min={0} step={0.01} max={balance / 100000000} />
+			<RangeSlider bind:value={stakeValue} id="stakeValue" float={true} min={0} step={0.01} max={balance / 100000000} />
 			{stakeValue} {baseTicker}
 		</div>
 		<div class="purple-theme">
 			<label for="stakeBlock"># Blocks</label>
-			<RangeSlider bind:value={stakeBlock} id="stakeBlock" min={1} max={32767} />
+			<RangeSlider bind:value={stakeBlock} id="stakeBlock" float={true}  min={1} max={32767} />
 			{#if stakeBlock > 32767}
 				<span style="font-size:large; color: red;">Max duration is 32,767 blocks!</span>
 			{:else if stakeBlock < 1}
