@@ -32,7 +32,7 @@
 
 <style>
 	.fallback img {
-		border-radius: 10px;
+		border-radius: 30%;
 	}
 	img {
 		filter: drop-shadow(5px 5px 5px #b1aeaead);

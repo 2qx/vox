@@ -268,9 +268,9 @@
 					{/if}
 				{/each}
 			</div>
-		{:else}
+		{:else }
 			<div class="swap">
-				<p>No confirmed coins to claim Block Points, check back in a few minutes.</p>
+				<p><a href="/wallet">Deposit funds</a> to claim block points.</p>
 			</div>
 		{/if}
 	{:else}

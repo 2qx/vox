@@ -122,7 +122,7 @@
 		align-items: center;
 		flex: 0.6;
 		display: flex;
-		padding: 0px;
+		padding-top: 10px;
 	}
 
 	h1 {

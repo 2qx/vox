@@ -6,54 +6,49 @@
 	import TokenNftData from './TokenNftData.svelte';
 	import Ticker from './Ticker.svelte';
 	import TokenIcon from './TokenIcon.svelte';
-	let { authCategory, assetCategory, orderUtxo, assetUtxo, price, amount, quantity, value, isMainnet } =
-		$props();
-	let bid = $derived(quantity<0);
+	let {
+		authCategory,
+		assetCategory,
+		orderUtxo,
+		assetUtxo,
+		price,
+		amount,
+		quantity,
+		value,
+		isMainnet
+	} = $props();
+	let bid = $derived(quantity < 0);
 
-	let bchIcon = isMainnet? BCH: tBCH
-
+	let bchIcon = isMainnet ? BCH : tBCH;
 </script>
 
-<div class={["container",{bid}]}>
+<div class={['container', { bid }]}>
 	<div class="post">
 		<div class="balance">
 			<div class="order">
 				{#if orderUtxo}
-					<div class='orderDir'>
+					<div class="auth">
+						<TokenIcon size={20} category={orderUtxo.token_data.category}></TokenIcon>
+					</div>
+					<div class="orderDir">
 						{#if quantity > 0}
 							BID
 						{:else}
 							ASK
 						{/if}
 					</div>
-
-					<TokenIcon size={24} category={orderUtxo.token_data.category}></TokenIcon>
-					<div class="orderText">
-						<div>
-							<pre>{Number(quantity).toLocaleString(undefined, {}).padStart(12)} <Ticker
-									category={binToHex(assetCategory)}
-								/></pre>
-						</div>
-
-						<div>
-							<pre> @ {Number(price).toLocaleString(undefined, {
-									minimumFractionDigits: 0,
-									maximumFractionDigits: 6
-								})} sats </pre>
-						</div>
+					<div class="quantity">
+						{Number(quantity).toLocaleString(undefined, {}).padStart(12)}
 					</div>
-				{/if}
-			</div>
-
-			<div class="assets">
-				{#if quantity > 0}
 					<div>
-						{Number(value - 800).toLocaleString(undefined, {})} <img width="20px" src={bchIcon} />
+						<TokenIcon size={24} category={assetCategory} {isMainnet} />
 					</div>
-				{:else}
-					<div>
-						{Number(amount).toLocaleString(undefined, {})}
-						<TokenIcon size={20} category={binToHex(assetCategory)}></TokenIcon>
+					<div class="price">
+						•
+						{Number(price).toLocaleString(undefined, {
+							minimumFractionDigits: 0,
+							maximumFractionDigits: 6
+						})}
 					</div>
 				{/if}
 			</div>
@@ -68,7 +63,7 @@
 		display: flex;
 	}
 	.post {
-				border-radius: 10px;
+		border-radius: 10px;
 		padding: 2px 2px 2px 2px;
 		background-color: #ffffffdd;
 		margin: auto;
@@ -77,11 +72,13 @@
 		border-width: 1px;
 	}
 
-	.bid{
+	.bid {
 		background-color: #9ef79e;
 	}
+
 	.orderDir {
 		font-weight: 700;
+		color: #00000088;
 		padding: 2px;
 		min-width: 30px;
 		font-size: small;
@@ -98,12 +95,21 @@
 	.orderText div {
 		padding: 0px;
 	}
-	.assets {
-		display: inline;
-	}
-	.assets div {
+	.quantity {
+		white-space: pre-wrap;
+		font-size: larger;
+		font-weight: 500;
 		text-align: end;
-		margin: 3px;
+		min-width: 110px;
+	}
+	.price {
+		display: inline;
+
+		min-width: 70px;
+		font-size:x-large;
+		
+		font-weight: 600;
+		text-align: start;
 	}
 	.balance {
 		display: flex;
@@ -121,15 +127,16 @@
 		flex: 1;
 		word-break: break-all;
 		display: flex;
+		margin: 2px;
 	}
 
 	.order pre {
 		margin: 0px;
-		font-weight: 600;
+		font-weight: 700;
 		font-size: x-small;
 	}
-	.order div p {
-		text-align: right;
+	.order div {
+		padding: 3px;
 	}
 	.timestamp {
 		font-size: xx-small;
@@ -138,10 +145,8 @@
 		word-break: break-all;
 	}
 	.auth {
+		opacity: 0.9;
 		align-content: center;
-	}
-	.auth img {
-		border-radius: 50%;
 	}
 
 	.post :global {

@@ -185,33 +185,39 @@
 			<div>
 				<img width="50" src={bchIcon} alt={baseTicker} />
 				<br />
-				{(sumWallet/100000000).toLocaleString()} {baseTicker}
+				{(sumWallet / 100000000).toLocaleString()}
+				{baseTicker}
 			</div>
 			<div>
 				<img width="50" src={icon} alt={ticker} />
 				<br />
-				{(sumWalletWrapped/100000000n).toLocaleString()} {ticker}
+				{(sumWalletWrapped / 100000000n).toLocaleString()}
+				{ticker}
 			</div>
 		</div>
 		<div class="swap">
-			<input
-				class="slider"
-				type="range"
-				bind:value={amount}
-				step="1000"
-				onchange={() => updateSwap()}
-				min={Number(-sumWalletWrapped)}
-				max={sumWallet - 2000}
-			/>
+			{#if sumWallet > 0}
+				<input
+					class="slider"
+					type="range"
+					bind:value={amount}
+					step="1000"
+					onchange={() => updateSwap()}
+					min={Number(-sumWalletWrapped)}
+					max={sumWallet - 2000}
+				/>
+			{:else}
+				<p><a href="/wallet">Deposit funds</a> to wrap coins.</p>
+			{/if}
 		</div>
 
 		{#if transaction && transactionValid}
 			<div class="swap">
 				<div>
 					{#if amount > 0}
-						place: {(amount/100000000).toLocaleString()} {baseTicker}
+						place {(amount / 100000000).toLocaleString()} {baseTicker} for {ticker}
 					{:else if amount < 0}
-						redeem: {(-amount/100000000).toLocaleString()} wrapped {baseTicker}
+						redeem {(-amount / 100000000).toLocaleString()} {ticker} for {baseTicker}
 					{/if}
 				</div>
 			</div>
@@ -388,7 +394,6 @@
 		text-align: center;
 	}
 
-
 	.swap button {
 		background-color: #a45eb6; /* Green */
 		border: none;
@@ -423,7 +428,6 @@
 		opacity: 1; /* Fully shown on mouse-over */
 	}
 
-	
 	/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
 	.slider::-webkit-slider-thumb {
 		-webkit-appearance: none; /* Override default look */

@@ -225,56 +225,71 @@
 			{baseTicker}
 		</div>
 	</div>
-	{page.error?.message}
 
-	<div class="stakeForm">
-		<div>
+
+	{#if balance > 0}
+		<div class="stakeForm">
+			<div>
 				{#if stakeValue > 0 && stakeValue < 0.00005}
 					<span style="font-size:large; color: red;">Min stake is 0.00005 BCH!</span>
 				{:else if stakeValue > 0 && stakeBlock > 0}
-					<h3>Earn {Math.floor(stakeValue * stakeBlock).toLocaleString()} {ticker} 			
-						<TokenIcon category={category} size={16} {isMainnet}></TokenIcon>
+					<h3>
+						Earn {Math.floor(stakeValue * stakeBlock).toLocaleString()}
+						{ticker}
+						<TokenIcon {category} size={16} {isMainnet}></TokenIcon>
 					</h3>
-					{:else}
+				{:else}
 					<h3>Adjust controls to stake {ticker}</h3>
 				{/if}
+			</div>
+			<div class="purple-theme">
+				<label for="stakeValue">BCH to Lock</label>
+				<RangeSlider
+					bind:value={stakeValue}
+					id="stakeValue"
+					float={true}
+					min={0}
+					step={0.01}
+					max={balance / 100000000}
+				/>
+				{stakeValue}
+				{baseTicker}
+			</div>
+			<div class="purple-theme">
+				<label for="stakeBlock"># Blocks</label>
+				<RangeSlider bind:value={stakeBlock} id="stakeBlock" float={true} min={1} max={32767} />
+				{#if stakeBlock > 32767}
+					<span style="font-size:large; color: red;">Max duration is 32,767 blocks!</span>
+				{:else if stakeBlock < 1}
+					<span style="font-size:large; color: red;">Min duration is one block</span>
+				{:else if stakeBlock > 0}
+					= {Number(stakeBlock / 144).toLocaleString(undefined, {
+						minimumFractionDigits: 0,
+						maximumFractionDigits: 3
+					})} days
+				{/if}
+			</div>
+			<div class="stake">
+				{#if stakeValue * stakeBlock >= 1}
+					<button
+						onclick={() => {
+							lock();
+						}}
+					>
+						stake
+					</button>
+				{:else}
+					<button disabled> stake </button>
+					<br />
+					<span style="font-size:large; color: red;"></span>
+				{/if}
+			</div>
 		</div>
-		<div class="purple-theme">
-			<label for="stakeValue">BCH to Lock</label>
-			<RangeSlider bind:value={stakeValue} id="stakeValue" float={true} min={0} step={0.01} max={balance / 100000000} />
-			{stakeValue} {baseTicker}
+	{:else}
+		<div class="stakeForm">
+			<p><a href="/wallet" >Deposit funds</a> to stake coins.</p>
 		</div>
-		<div class="purple-theme">
-			<label for="stakeBlock"># Blocks</label>
-			<RangeSlider bind:value={stakeBlock} id="stakeBlock" float={true}  min={1} max={32767} />
-			{#if stakeBlock > 32767}
-				<span style="font-size:large; color: red;">Max duration is 32,767 blocks!</span>
-			{:else if stakeBlock < 1}
-				<span style="font-size:large; color: red;">Min duration is one block</span>
-			{:else if stakeBlock > 0}
-				= {Number(stakeBlock / 144).toLocaleString(undefined, {
-					minimumFractionDigits: 0,
-					maximumFractionDigits: 3
-				})} days
-			{/if}
-		</div>
-		<div class="stake">
-			{#if stakeValue * stakeBlock >= 1}
-				<button
-					onclick={() => {
-						lock();
-					}}
-				>
-					stake
-				</button>
-			{:else}
-				<button disabled> stake </button>
-				<br />
-				<span style="font-size:large; color: red;"></span>
-			{/if}
-		</div>
-	</div>
-
+	{/if}
 	{#if unspent.length}
 		<h3>Current Stakes</h3>
 		<div class="grid">
@@ -396,7 +411,6 @@
 	button:hover {
 		background-color: #9933b3;
 	}
-
 
 	.theme-buttons {
 		display: flex;

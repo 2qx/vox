@@ -46,6 +46,7 @@
 		type UtxoI
 	} from '@unspent/tau';
 	import TokenIcon from '$lib/TokenIcon.svelte';
+	import Ticker from '$lib/Ticker.svelte';
 
 	let { data }: PageProps = $props();
 	let selectedAsset = $state(data.asset);
@@ -66,6 +67,10 @@
 	let orders: any[] = $state([]);
 	let myOrders: any[] = $state([]);
 	let myOrderBook: any[] = $state([]);
+	let myMarketRecord: any = $state();
+	let myMarketTokens: any = $state();
+	let myMarketSatoshis: any = $state();
+	let myMembership: any = $state(0);
 	let myAuthBatons: any[] = $state([]);
 	let myDexUtxos: any[] = $state([]);
 	let authBatons: any[] = $state([]);
@@ -142,7 +147,11 @@
 				let myRawOrders = await getAllMarketOrders(electrumClient, [
 					CatDex.getScriptHash(myAuthBatons[0].token_data.category, selectedAsset)
 				]);
+
 				myDexUtxos = Array.from(myRawOrders.values());
+
+				myMarketTokens = sumTokenAmounts(myDexUtxos, selectedAsset);
+				myMarketSatoshis = sumUtxoValue(myDexUtxos);
 				myOrders = CatDex.getCatDexOrdersFromUtxos(selectedAsset, myDexUtxos);
 			}
 		}
@@ -171,7 +180,6 @@
 			assetBalance = 0n;
 		}
 		balance = sumUtxoValue(walletUnspent, true);
-
 	};
 
 	const newAuthBaton = async function () {
@@ -210,11 +218,10 @@
 		}
 	};
 
-	const addMyOrder = function (i:number) {
-		if(myOrderBook.length+1 == i){
-			myOrderBook.splice(i, 0, { quantity: undefined, price: undefined })
-		}
-		else if (myOrderBook.length >= 2) {
+	const addMyOrder = function (i: number) {
+		if (myOrderBook.length + 1 == i) {
+			myOrderBook.splice(i, 0, { quantity: undefined, price: undefined });
+		} else if (myOrderBook.length >= 2) {
 			let o = myOrderBook.slice(-2);
 			myOrderBook.push({
 				quantity: o[1].quantity - (o[0].quantity - o[1].quantity),
@@ -317,6 +324,8 @@
 		// Set up a subscription for new block headers.
 		await electrumClient.subscribe('blockchain.headers.subscribe');
 
+		await electrumClient.subscribe('blockchain.scripthash.subscribe', walletScriptHash);
+
 		// Get a list of
 		let marketMakers = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
@@ -328,6 +337,13 @@
 			return u.token_data?.category;
 		});
 
+		myMarketRecord = marketMakers
+			.filter((u) => u.token_data?.category == myAuthBatons[0].token_data.category)
+			.pop();
+		myMembership =
+			myMarketRecord && myMarketRecord.height > 0
+				? myMarketRecord.height + myMarketRecord.value - now
+				: 0;
 		let marketScriptHashes = authBatons.map((authCat: string) => {
 			return CatDex.getScriptHash(authCat, selectedAsset);
 		});
@@ -401,12 +417,18 @@
 				</div>
 			</div>
 		{/if}
-
 		<br />
-		<div class="swap">
-			<label>Swap amount: </label>
-			<input type="number" bind:value={amount} min="0" max="10" onchange={() => updateSwap()} />
-		</div>
+
+		{#if balance > 0}
+			<div class="swap">
+				<label>Swap amount: </label>
+				<input type="number" bind:value={amount} min="0" max="10" onchange={() => updateSwap()} />
+			</div>
+		{:else}
+			<div class="swap">
+				<p><a href="/wallet">Deposit funds</a> to trade assets.</p>
+			</div>
+		{/if}
 		<br />
 		{#if transaction && transactionValid}
 			<div class="swap">
@@ -416,9 +438,18 @@
 		{/if}
 		{transactionError}
 
-		{#each orders as o}
-			<CatDexOrder {...o} {...{ isMainnet: isMainnet }} />
-		{/each}
+		<div class="orderBooks">
+			<div class="askBook">
+				{#each orders.filter((o) => o.quantity < 0) as o}
+					<CatDexOrder {...o} assetCategory={selectedAsset}  {...{ isMainnet: isMainnet }} />
+				{/each}
+			</div>
+			<div>
+				{#each orders.filter((o) => o.quantity > 0) as o}
+					<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+				{/each}
+			</div>
+		</div>
 
 		<h3>Advanced</h3>
 
@@ -426,44 +457,125 @@
 			<input type="checkbox" bind:checked={showSettings} />
 			<span class="slider round"></span>
 		</label>
+		<br />
+
 		{#if showSettings}
 			<br />
-			<div class="settings">
+			<div>
+				{#if myMembership < 1000}
+					<div>
+						<p>
+							You have a CatDex baton. <br />
+							For others to can find your orders, announce your membership in the CatDex.
+						</p>
+						<button onclick={() => announceAuthBaton(4364)}>Month (4364 sats)</button>
+						<button onclick={() => announceAuthBaton(52596)}>Year (52596 sats) </button>
+						<p>Membership fees are non-refundable and are claimed by miners.</p>
+						{#if myMembership > 0}
+							<b
+								>Membership expires in {myMembership} blocks. Renew now to have your orders discoverable.</b
+							>
+						{:else}
+							<b
+								>Membership expired {myMembership} blocks ago. Renew now to keep your orders discoverable.</b
+							>
+						{/if}
+					</div>
+
+					<br />
+				{/if}
+
 				{#if balance < 1000 && walletUnspent.length == 0}
 					<a href="/wallet">Deposit funds</a> to create a CatDex authentication baton.
 				{:else if myAuthBatons.length == 0}
 					<p>To write orders, you need to create a CatDex Authentication Baton (1000 sats).</p>
 					<button onclick={() => newAuthBaton()}>Create a new Baton</button>
-				{:else if authBatons.indexOf(myAuthBatons[0].token_data.category) == -1}
-					<p>
-						You have a CatDex baton. For others to can find your orders, announce your membership in
-						the CatDex.
-					</p>
-
-					<button onclick={() => announceAuthBaton(1008)}>Week (1008 sats)</button>
-					<button onclick={() => announceAuthBaton(4364)}>Month (4364 sats)</button>
-					<button onclick={() => announceAuthBaton(52596)}>Year (52596 sats) </button>
-					<p>Membership fees are non-refundable and are claimed by miners.</p>
 				{:else}
+					<h3>Your Decentralized Listing</h3>
 					{#each myAuthBatons as authBaton}
-						<TokenIcon size={32} category={authBaton.token_data.category}></TokenIcon>
+						<TokenIcon size={24} category={authBaton.token_data.category}></TokenIcon>
 					{/each}
-					<h3>Current Orders</h3>
+					<div class="swap">
+						<div>
+							<img width="24" src={bchIcon} alt={baseTicker} />
+							<br />
+							{myMarketSatoshis.toLocaleString()} sats {baseTicker}
+						</div>
+						<div>
+							<img
+								width="24"
+								src={bcmr.get(selectedAsset).uris.icon}
+								alt={bcmr.get(selectedAsset).token.symbol}
+							/>
+							<br />
+							{(
+								myMarketTokens / BigInt(Math.pow(10, bcmr.get(selectedAsset).token.decimals))
+							).toLocaleString()}
+							{bcmr.get(selectedAsset).token.symbol}
+						</div>
+					</div>
+
 					{#each myOrders as o}
-						<CatDexOrder {...o} {...{ isMainnet: isMainnet }} />
+						<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
 					{/each}
+
+					<br />
+					{#if myOrderBook.length > 0}
+						<button onclick={() => postOrders(true)}>Replace Orders</button>
+
+						<button onclick={() => postOrders()}>Append Orders</button>
+					{:else}
+						<button onclick={() => postOrders(true)}> Clear Orders </button>
+						<button onclick={() => addMyOrder(0)}>New Orders</button><br />
+					{/if}
+
+					{#if myOrderBook.length > 0}
+						<div class="orders">
+							<div class="in">
+								<b>type</b>
+							</div>
+							<div class="in">
+								<b>price</b>
+							</div>
+							<div class="in">
+								<b>quantity</b>
+							</div>
+							<div class="in"></div>
+							<div class="listButtons"></div>
+						</div>
+					{/if}
 					{#each myOrderBook as o, i}
 						<div class="orders">
-							<div>
-								<label for="quantity">quantity</label>
-								<input name="quantity" type="number" bind:value={o.quantity} /><br />
+							<div class="in">
+								{#if o.quantity > 0}
+									BID
+								{:else if o.quantity < 0}
+									ASK
+								{:else}
+									-
+								{/if}
 							</div>
-							<div>
-								<label for="quantity">price</label>
-								<input type="number" bind:value={o.price} min="1" max="100000" />
+							<div class="in">
+								<input
+									type="number"
+									placeholder="sats per"
+									bind:value={o.price}
+									min="1"
+									max="100000"
+								/>
 							</div>
-							<div>
-								<button onclick={() => addMyOrder(i+1)}>+</button><br />
+							<div class="in">
+								<input name="quantity" placeholder="qty" type="number" bind:value={o.quantity} />
+								<TokenIcon size={24} category={selectedAsset}></TokenIcon>
+							</div>
+
+							<div class="in">
+								{#if o.quantity * o.price > 0}
+									{Number(o.quantity * o.price).toLocaleString()} sats
+								{/if}
+							</div>
+							<div class="listButtons">
+								<button onclick={() => addMyOrder(i + 1)}>+</button>
 								<button
 									onclick={() => {
 										dropOrder(i);
@@ -474,17 +586,12 @@
 					{/each}
 
 					{#if myOrderBook.length > 0}
-						<button onclick={() => postOrders(true)}>Replace Orders</button>
-
-						<button onclick={() => postOrders()}>Append Orders</button>
-					{:else}
-						<button onclick={() => postOrders(true)}> Clear Orders </button>
-						<button onclick={() => addMyOrder(0)}>New Orders</button><br />
+						<p>
+							Sell is negative quantity.<br />
+							All prices in satoshis
+						</p>
 					{/if}
 					<br />
-					
-					<br />
-
 				{/if}
 			</div>
 		{/if}
@@ -551,19 +658,41 @@
 		display: flex;
 	}
 
+	.orderBooks {
+		justify-content: center;
+	}
+
+	.orderBooks div {
+		
+		align-items: center;
+	}
+
+	.orderBooks .askBook {
+	}
+
 	.orders {
 		display: flex;
 		margin: 5px;
 	}
 
-	.orders div {
+	.orders .in {
 		display: flex;
-		margin: 5px;
+		flex: 1;
 		align-items: center;
 	}
 
-	.orders div button {
-		margin: 5px;
+	.orders .in input {
+		max-width: 110px;
+		border-radius: 5px;
+	}
+	.orders .listButtons {
+		display: flex;
+		flex: 1;
+	}
+
+	.orders .listButtons button {
+		padding: 0px;
+		width: 40%;
 	}
 
 	.grid {
@@ -590,7 +719,7 @@
 		margin: 10px;
 	}
 	.settings button {
-		margin: 10px;
+		margin: 5px;
 	}
 	.switch {
 		position: relative;
