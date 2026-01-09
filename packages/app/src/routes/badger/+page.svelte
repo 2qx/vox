@@ -12,6 +12,8 @@
 	// @ts-ignore
 	import Readme from './README.md';
 
+	import Range from '$lib/Range.svelte';
+	import TokenIcon from '$lib/TokenIcon.svelte';
 	import BCH from '$lib/images/BCH.svg';
 	import tBCH from '$lib/images/tBCH.svg';
 	import tBADGER from '$lib/images/tBADGER.svg';
@@ -56,7 +58,7 @@
 	let walletScriptHash = $state('');
 
 	let balance = $state(0);
-	let stakeValue = $state();
+	let stakeValue: number | undefined = $state();
 	let stakeBlock = $state(1);
 
 	const isMainnet = page.url.hostname == 'vox.cash';
@@ -155,16 +157,18 @@
 
 	const lock = async function () {
 		if (stakeBlock < 32767) {
-			let lockResponse = BadgerStake.lock(
-				authUtxo,
-				Math.floor(stakeValue * 100_000_000),
-				stakeBlock,
-				walletUnspent,
-				key
-			);
-			let raw_tx = binToHex(encodeTransactionBch(lockResponse.transaction));
-			console.log(raw_tx);
-			await broadcast(raw_tx);
+			if (stakeValue && stakeValue > 0.0005) {
+				let lockResponse = BadgerStake.lock(
+					authUtxo,
+					Math.floor(stakeValue * 100_000_000),
+					stakeBlock,
+					walletUnspent,
+					key
+				);
+				let raw_tx = binToHex(encodeTransactionBch(lockResponse.transaction));
+				console.log(raw_tx);
+				await broadcast(raw_tx);
+			}
 		}
 	};
 
@@ -223,19 +227,23 @@
 	</div>
 	{page.error?.message}
 
-	<div class="grid">
-		<div class="stake">
-			<label for="quantity">BCH to Lock</label>
-			<input style="max-width: 60px" id="quantity" type="number" bind:value={stakeValue} /><br />
-			{#if stakeValue > 0 && stakeValue < 0.00005}
-				<span style="font-size:large; color: red;">Min stake is 0.00005 BCH!</span>
-			{:else if stakeValue > 0 && stakeBlock > 0}
-				Earn {stakeValue * stakeBlock} {ticker}
-			{/if}
+	<div class="stakeForm">
+		<div>
+				{#if stakeValue > 0 && stakeValue < 0.00005}
+					<span style="font-size:large; color: red;">Min stake is 0.00005 BCH!</span>
+				{:else if stakeValue > 0 && stakeBlock > 0}
+					<h3>Earn {(stakeValue * stakeBlock).toLocaleString()} {ticker} 				
+						<TokenIcon category={category} size={16} {isMainnet}></TokenIcon>
+					</h3>
+				{/if}
 		</div>
-		<div class="stake">
-			<label for="quantity"># Blocks</label>
-			<input type="number" bind:value={stakeBlock} min="1" max="32767" /><br />
+		<div class="purple-theme">
+			<label for="stakeValue">BCH to Lock</label>
+			<Range bind:value={stakeValue} id="stakeValue" min={0} max={balance / 100000000} />
+		</div>
+		<div class="purple-theme">
+			<label for="stakeBlock"># Blocks</label>
+			<Range bind:value={stakeBlock} id="stakeBlock" min={1} max={32767} />
 			{#if stakeBlock > 32767}
 				<span style="font-size:large; color: red;">Max duration is 32,767 blocks!</span>
 			{:else if stakeBlock < 1}
@@ -296,6 +304,12 @@
 		font-weight: 600;
 	}
 
+	.stakeForm {
+		text-align: end;
+	}
+	.stakeForm div {
+		margin: 2em;
+	}
 	.swap {
 		display: flex;
 		margin: auto;
@@ -378,5 +392,25 @@
 	}
 	button:hover {
 		background-color: #9933b3;
+	}
+
+	.purple-theme {
+		--track-focus: #c368ff;
+		--track-highlight-bgcolor: #c368ff;
+		--track-highlight-bg: linear-gradient(90deg, #c368ff, #c965ff);
+		--thumb-holding-outline: rgba(191, 102, 251, 0.3);
+		--tooltip-bgcolor: #c368ff;
+		--tooltip-bg: linear-gradient(45deg, #c368ff, #c965ff);
+	}
+
+	.theme-buttons {
+		display: flex;
+		justify-content: center;
+	}
+
+	label {
+		margin: 8px;
+		font-size: 16px;
+		font-weight: 600;
 	}
 </style>
