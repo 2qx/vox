@@ -99,7 +99,11 @@
 
 <svelte:head>
 	<title>VOX•CASH | A collection of small Bitcoin Cash web apps.</title>
-	<meta name="description" content="vox dot cash" />
+	<meta
+		name="description"
+		content="Save, trade, earn, learn, & communicate using VOX•CASH, a collection of 
+		bitcoin (cash) apps that can empower anyone on their journey to financial freedom."
+	/>
 </svelte:head>
 <section>
 	<div class="welcome">
