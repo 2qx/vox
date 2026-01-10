@@ -1,5 +1,5 @@
 {
-	"theme_color": "#dc8add",
+	"theme_color": "#d4bed5",
 	"background_color": "#ffbfff",
 	"icons": [
 		{
@@ -8,7 +8,7 @@
 			"src": "maskable-icon.png",
 			"type": "image/png"
 		},
-		{ "purpose": "any", "sizes": "512x512", "src": "maskable-icon.png", "type": "image/png" }
+		{ "purpose": "any", "sizes": "512x512", "src": "vox-splash.png", "type": "image/png" }
 	],
 	"orientation": "any",
 	"display": "standalone",

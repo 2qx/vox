@@ -185,13 +185,13 @@
 			<div>
 				<img width="50" src={bchIcon} alt={baseTicker} />
 				<br />
-				{(sumWallet / 100000000).toLocaleString()}
+				{(sumWallet / 100000000).toLocaleString(undefined,{minimumFractionDigits:2})}
 				{baseTicker}
 			</div>
 			<div>
 				<img width="50" src={icon} alt={ticker} />
 				<br />
-				{(sumWalletWrapped / 100000000n).toLocaleString()}
+				{(sumWalletWrapped / 100000000n).toLocaleString(undefined,{minimumFractionDigits:2})}
 				{ticker}
 			</div>
 		</div>
