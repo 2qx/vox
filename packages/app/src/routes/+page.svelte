@@ -98,7 +98,7 @@
 </script>
 
 <svelte:head>
-	<title>vox</title>
+	<title>VOX•CASH | A collection of small Bitcoin Cash web apps.</title>
 	<meta name="description" content="vox dot cash" />
 </svelte:head>
 <section>
