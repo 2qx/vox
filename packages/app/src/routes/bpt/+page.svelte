@@ -200,6 +200,12 @@
 	});
 </script>
 
+
+<svelte:head>
+	<title>🟦 Block Points</title>
+	<meta name="description" content="Claim rewards for coins held." />
+</svelte:head>
+
 <section>
 	<div class="status">
 		<BitauthLink template={BlockPoint.template} />

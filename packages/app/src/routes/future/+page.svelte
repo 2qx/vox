@@ -174,6 +174,13 @@
 	});
 </script>
 
+
+
+<svelte:head>
+	<title>🅵​​ʙᴄʜ</title>
+	<meta name="description" content="Swap coins for Futures." />
+</svelte:head>
+
 <section>
 	<div class="status">
 		{now.toLocaleString()}

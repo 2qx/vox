@@ -203,6 +203,13 @@
 	});
 </script>
 
+
+
+<svelte:head>
+	<title>🦡 Badgers</title>
+	<meta name="description" content="Stake coins for Badgers." />
+</svelte:head>
+
 <section>
 	<div class="status">
 		{now.toLocaleString()}

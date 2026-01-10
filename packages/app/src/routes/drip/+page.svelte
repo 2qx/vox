@@ -135,8 +135,8 @@
 </script>
 
 <svelte:head>
-	<title>Drip Mine</title>
-	<meta name="description" content="Release the miner extractable value (MEV)!" />
+	<title>💧 Drip Mine</title>
+	<meta name="description" content="Release miner extractable value (MEV)!" />
 </svelte:head>
 
 <section>
@@ -148,7 +148,7 @@
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
 	</div>
-	<h1>Release the miner extractable value (MEV)</h1>
+	<h1>Release miner extractable value (MEV)</h1>
 	{#if connectionStatus == 'CONNECTED'}
 		<div class="header">
 			<button onclick={() => processAllOutputs()}>Release all Miner Extractable Value (MEV)</button>
@@ -156,7 +156,7 @@
 		<h3>Unspent Transaction Outputs (utxos)</h3>
 		<div class="grid">
 			{#if unspent.filter((i: any) => i.height > 0).length > 0}
-				{#each unspent.filter((i: any) => i.height > 0) as item, index}
+				{#each unspent.filter((i: any) => i.height > 0).slice(0,45) as item, index}
 					<div class="row">
 						<button onclick={() => processOutput(item, index)}>
 							<img src={blo(`0x${item.tx_hash}`, 32)} alt={item.tx_hash} />

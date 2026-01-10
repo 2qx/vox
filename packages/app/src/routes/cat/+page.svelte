@@ -375,6 +375,15 @@
 	</div>
 {/if}
 
+<svelte:head>
+	<title>🐱 CatDex</title>
+	<meta
+		name="description"
+		content="CatDex - a decentralized limit order exchange and dex aggregator on Bitcoin Cash."
+	/>
+</svelte:head>
+
+
 <section>
 	<div class="status">
 		<BitauthLink template={CatDex.template} />

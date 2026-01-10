@@ -170,6 +170,14 @@
 	});
 </script>
 
+
+
+
+<svelte:head>
+	<title>🎁 Wrapped BCH</title>
+	<meta name="description" content="Wrap (or unwrap) Bitcoin Cash as a CashToken." />
+</svelte:head>
+
 <section>
 	<div class="status">
 		<BitauthLink template={Wrap.template} />
