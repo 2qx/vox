@@ -28,28 +28,28 @@
 		<div class="balance">
 			<div>
 				<FbchIcon time={locktime} size={48} /><br />
-				<img height={24} src={blo(`${tx_hash}:${tx_pos}`, 24)} /> ˣ {couponCount}
+				<img height={24} src={blo(`${tx_hash}:${tx_pos}`, 24)} /> <b>ˣ {couponCount}</b>
 			</div>
 			<div class="fill">
 				<div>
-					Place <b>{Number(placement / 1e8)} {ticker}</b> as
 					<a style="color:#75006b; font-weight:600;" href="/future/v?time={locktime}"
 						>{fTicker}-{String(locktime).padStart(7, '0')}</a
-					><br>
+					><br />
 
-					redeem after {dateLocale} 
+					redeem after {dateLocale}
 				</div>
 				<div class="rate">
-					
-                    APY: <i>{locale.ypa}%</i>
+					APY: <i>{locale.ypa}%</i>
 				</div>
 			</div>
 			<div class="end">
-					<img width="16px" src={bchIcon} />
-					{Number(value).toLocaleString(undefined, {})} sats
+				{Number(value).toLocaleString(undefined, {})} sats
 				<br />
+
+				<img width="16px" src={bchIcon} />
+				<span style="font-size:x-large">{Number(placement / 1e8)} {ticker}</span><br />
 				{#if balance + Number(value) > placement}
-					<button 
+					<button
 						class="action"
 						onclick={() => {
 							handlePlacement({
@@ -62,7 +62,7 @@
 						}}>claim</button
 					>
 				{:else}
-					<button class="action" disabled style="font-size:xx-small;">lo balance</button>
+					<button class="action" disabled style="font-size:xx-small;">low balance</button>
 				{/if}
 			</div>
 		</div>
@@ -95,8 +95,8 @@
 	.balance {
 		display: flex;
 	}
-    .balance div{
-        padding: 5px;
+	.balance div {
+		padding: 5px;
 	}
 	.hash {
 		font-size: xx-small;
@@ -131,9 +131,9 @@
 		border-radius: 50%;
 	}
 
-    .end{
-        text-align: end;
-    }
+	.end {
+		text-align: end;
+	}
 
 	.post :global {
 		p {
@@ -150,7 +150,7 @@
 		color: brown;
 	}
 
-    button {
+	button {
 		background-color: #a45eb6; /* Green */
 		border: none;
 		color: white;
@@ -160,5 +160,9 @@
 		text-decoration: none;
 		display: inline-block;
 		font-size: 16px;
+	}
+
+	button:disabled {
+		background-color: #777;
 	}
 </style>

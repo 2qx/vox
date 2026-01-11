@@ -248,8 +248,8 @@
 </script>
 
 <svelte:head>
-	{#if time > 858000}
-		<title>{baseSeries}-{time}</title>
+	{#if time > 1000}
+		<title>{baseSeries}-{time/1000}</title>
 		<meta name="description" content="Future Vault Series" />
 		<link rel="icon" type="image/svg" href="/FBCH-{time}.svg" />
 	{:else}
@@ -385,13 +385,13 @@
 										></td
 									>
 									<td class="r">
-										{(Number(c.value) / 1e8).toLocaleString(undefined, {})}
+										{(Number(c.value) / 1e8).toLocaleString(undefined, {minimumFractionDigits:1})}
 										<img width="15" src={bchIcon} alt="bchLogo" />
 									</td>
 									<td class="r"
 										><i>
 											{#if c.token_data}
-												{(Number(c.token_data.amount) / 1e8).toLocaleString(undefined, {})}
+												{(Number(c.token_data.amount) / 1e8).toLocaleString(undefined, {minimumFractionDigits:1})}
 											{/if}
 										</i>
 										<FbchIcon {time} size={15} />
