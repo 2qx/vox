@@ -10,8 +10,8 @@
 	<div class="local">This is a local development instance.</div>
 {:else if page.url.hostname.includes('unspent.dev')}
 	<div class="dev">
-		This is an <b>unstable</b> development version running on <b>chipnet</b>. Please go to
-		<a href="https://vox.cash">vox.cash</a> instead.
+		<b>Unstable</b> dev <b>chipnet</b> version. See:
+		<a href="https://vox.cash">vox.cash</a>.
 	</div>
 {:else}
 	<div class="dev">

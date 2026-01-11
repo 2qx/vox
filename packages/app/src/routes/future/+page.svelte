@@ -70,9 +70,11 @@
 			'include_tokens'
 		);
 
+		// filter out junk Utxos in vault. 
 		vaultUtxos = vaultUtxos.filter(
 			(u) => u.token_data?.category == SERIES_MAP.get(coupon.locktime)
 		);
+
 		let swapTx = Vault.swap(
 			coupon.placement,
 			vaultUtxos,
@@ -91,6 +93,7 @@
 		);
 		let transactionHex = binToHex(encodeTransactionBch(swapTx.transaction));
 		await broadcast(transactionHex);
+		walletUnspent = swapTx.walletUtxos
 	}
 
 	const broadcast = async function (raw_tx: string) {
@@ -126,9 +129,7 @@
 		);
 		if (response instanceof Error) throw response;
 		let walletUnspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
-		if (walletUnspent.length == 0) {
-			walletUnspent = response.filter((u: UtxoI) => !u.token_data);
-		}
+		walletUnspent = response.filter((u: UtxoI) => !u.token_data?.nft);
 		walletBalance = sumUtxoValue(walletUnspent, true);
 	};
 
@@ -177,7 +178,7 @@
 
 
 <svelte:head>
-	<title>🅵​​ʙᴄʜ</title>
+	<title>🅵​</title>
 	<meta name="description" content="Swap coins for Futures." />
 </svelte:head>
 

@@ -9,13 +9,18 @@ import {
     generateTransaction,
     hdPrivateKeyToP2pkhLockingBytecode,
     hexToBin,
+    hash256,
     InputTemplate,
     OutputTemplate,
     verifyTransactionTokens,
     Output,
     Transaction,
     CashAddressNetworkPrefix,
-    lockingBytecodeToCashAddress
+    lockingBytecodeToCashAddress,
+    swapEndianness,
+    encodeTransactionBch,
+    publicKeyToP2pkhLockingBytecode,
+    encodeTransactionOutput
 } from "@bitauth/libauth"
 
 import {
@@ -23,7 +28,8 @@ import {
     getScriptHash,
     UtxoI,
     sumSourceOutputValue,
-    sumSourceOutputTokenAmounts
+    sumSourceOutputTokenAmounts,
+    derivePublicKey
 } from '@unspent/tau';
 
 import { COUPON_SERIES, VAULT_SERIES } from "./constant.js";
@@ -34,6 +40,7 @@ import { getAllUnspentCoupons, getRates, getRateLocale, getFutureBlockDateLocale
 import { CouponDataI } from "./interface.js";
 import { Coupon } from './coupon.js'
 import Future from './auth.js'
+import { publicKeyToP2PKHLockingBytecode } from '@unspent/tau/signatureTemplate.js';
 
 export class Vault {
 
@@ -217,7 +224,7 @@ export class Vault {
      * @param locktime - filter to coupons for a single series
      */
 
-    public static async getAllCouponUtxos(electrumClient: any, height: number, seriesTimes?:number[]) {
+    public static async getAllCouponUtxos(electrumClient: any, height: number, seriesTimes?: number[]) {
         let couponSeries = Vault.getAllCouponSeries(height, seriesTimes)
         let allCoupons = await getAllUnspentCoupons(electrumClient, [...couponSeries.keys()])
         allCoupons.forEach((value, key, map) => {
@@ -430,6 +437,36 @@ export class Vault {
         }
     }
 
+    static getNewWalletUtxos(
+        transaction: Transaction,
+        privateKey: string,
+        addressIndex = 0
+    ): UtxoI[] {
+
+
+        let lockingBytecode = binToHex(hdPrivateKeyToP2pkhLockingBytecode({hdPrivateKey:privateKey, addressIndex}))
+        let txBin = encodeTransactionBch(transaction)
+        let newId = swapEndianness(binToHex(hash256(txBin)))
+        let copyItems: UtxoI[] = [];
+        transaction.outputs.forEach((o, i) => {
+            if (binToHex(o.lockingBytecode) == lockingBytecode) {
+                copyItems.push({
+                    tx_hash: newId,
+                    tx_pos: i,
+                    value: Number(o.valueSatoshis),
+                    token_data: o.token ? {
+                        category: binToHex(o.token.category),
+                        amount: String(o.token.amount),
+                        nft: undefined
+                    } : undefined,
+                    height: 0
+                })
+            }
+        })
+        return copyItems
+
+    }
+
 
     static getVaultLayers(
         utxos: UtxoI[],
@@ -512,24 +549,21 @@ export class Vault {
     ): {
         inputs: InputTemplate<CompilerBch>[],
         outputs: OutputTemplate<CompilerBch>[],
-        sourceOutputs: Output[]
+        sourceOutputs: Output[],
+        utxos: UtxoI[]
     } {
 
         let inputs: InputTemplate<CompilerBch>[] = [];
         let outputs: OutputTemplate<CompilerBch>[] = [];
 
         // Only use straight sat utxos if placing Bch
-        if (amount > 0) utxos = utxos.filter(u => !u.token_data)
-        if (amount < 0) utxos = utxos.filter(u => u.token_data?.category == binToHex(category))
+        // if (amount > 0) utxos = utxos.filter(u => !u.token_data)
+        // if (amount < 0) utxos = utxos.filter(u => u.token_data?.category == binToHex(category))
         if (utxos.length == 0) throw Error("no wallet utxos left, maximum recursion depth reached.");
 
 
-        // get a random utxo.
-        const randomIdx = Math.floor(Math.random() * utxos.length)
-        const randomUtxo = utxos[randomIdx]!
-
-        // remove the random utxo in place
-        utxos.splice(randomIdx, 1);
+        // get a random utxo.)
+        const randomUtxo = utxos.shift()!
 
         // spend the utxo
         inputs.push(this.getWalletInput(randomUtxo, privateKey))
@@ -572,7 +606,7 @@ export class Vault {
             outputs.push(...nextTry.outputs)
             sourceOutputs = nextTry.sourceOutputs
         }
-        return { inputs, outputs, sourceOutputs }
+        return { inputs, outputs, sourceOutputs, utxos }
     }
 
     /**
@@ -609,7 +643,7 @@ export class Vault {
 
 
         let unique = [...new Set(contractUtxos.map(u => u.token_data?.category))]
-        
+
         if (unique.length > 1) throw Error("Future vault UTXOs may only contain a single future token series")
         let category = unique.pop()!
 
@@ -622,8 +656,15 @@ export class Vault {
             outputs
         }
 
+
+        // Stash unsuitable utxos holding other assets
+        let stashedUtxos = walletUtxos.filter(u => (u.token_data?.category == category))
+
         // Don't use wallet utxos with other tokens for the swap
-        walletUtxos = walletUtxos.filter(u => u.token_data?.category == category || !u.token_data)
+        let cashUtxos = walletUtxos.filter(u => !u.token_data)
+        let matchingUtxos = walletUtxos.filter(u => u.token_data?.category == category)
+        console.log(matchingUtxos.length)
+        walletUtxos = [... cashUtxos, ... matchingUtxos]
 
 
         let vaultLayers = this.getVaultLayers([...contractUtxos], amount, time, fbchCat);
@@ -635,6 +676,8 @@ export class Vault {
         config.inputs.push(...walletLayers.inputs);
         config.outputs.push(...walletLayers.outputs);
         sourceOutputs.push(...walletLayers.sourceOutputs);
+        // unused suitable utxos are returned
+        walletUtxos = walletLayers.utxos
 
         const lastOutputIdx = config.outputs.length - 1
 
@@ -648,15 +691,14 @@ export class Vault {
 
 
         let result = generateTransaction(config);
-        if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+        if (!result.success) throw new Error('tx gen failed, errors: ' + JSON.stringify(result.errors, null, '  '));
 
         const estimatedFee = getTransactionFees(result.transaction, fee)
-
 
         config.outputs[lastOutputIdx]!.valueSatoshis = config.outputs[lastOutputIdx]!.valueSatoshis - estimatedFee
 
         result = generateTransaction(config);
-        if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+        if (!result.success) throw new Error('tx gen failed, errors: ' + JSON.stringify(result.errors, null, '  '));
 
         const transaction = result.transaction
 
@@ -682,6 +724,11 @@ export class Vault {
                 category
             )
         if (tokenDiff !== 0n) verify = `Swapping should not create destroy tokens, token difference: ${tokenDiff}`
+
+        walletUtxos.push(...stashedUtxos)
+
+        walletUtxos.push(...this.getNewWalletUtxos(transaction, privateKey!))
+
         return {
             sourceOutputs: sourceOutputs,
             transaction: transaction,

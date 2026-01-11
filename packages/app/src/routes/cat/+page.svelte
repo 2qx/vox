@@ -383,7 +383,6 @@
 	/>
 </svelte:head>
 
-
 <section>
 	<div class="status">
 		<BitauthLink template={CatDex.template} />
@@ -448,13 +447,13 @@
 		{transactionError}
 
 		<div class="orderBooks">
-			<div class="askBook">
-				{#each orders.filter((o) => o.quantity < 0) as o}
-					<CatDexOrder {...o} assetCategory={selectedAsset}  {...{ isMainnet: isMainnet }} />
-				{/each}
-			</div>
 			<div>
 				{#each orders.filter((o) => o.quantity > 0) as o}
+					<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+				{/each}
+			</div>
+			<div class="askBook">
+				{#each orders.filter((o) => o.quantity < 0).toReversed() as o}
 					<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
 				{/each}
 			</div>
@@ -668,11 +667,12 @@
 	}
 
 	.orderBooks {
+		display: flex;
 		justify-content: center;
+		flex-wrap: wrap;
 	}
 
 	.orderBooks div {
-		
 		align-items: center;
 	}
 

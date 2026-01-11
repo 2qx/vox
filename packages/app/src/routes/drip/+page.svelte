@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 
 	import {
-		decodeTransactionBCH,
+		decodeTransactionBch,
 		binToHex,
 		hexToBin,
 		swapEndianness,
@@ -72,7 +72,7 @@
 
 	const processOutput = async function (utxo: any, index: number) {
 		let txn_hex = Drip.processOutpoint(utxo);
-		let transaction = decodeTransactionBCH(hexToBin(txn_hex));
+		let transaction = decodeTransactionBch(hexToBin(txn_hex));
 		if (typeof transaction === 'string') throw transaction;
 		spent.add(`${utxo.tx_hash}":"${utxo.tx_pos}`);
 		debounceClearSpent();

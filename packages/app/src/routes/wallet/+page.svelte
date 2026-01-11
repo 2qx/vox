@@ -108,6 +108,7 @@
 		showInfo = !showInfo;
 	};
 
+	// TODO: clean this up by consolidating into one groupBy func
 	const classifyUtxos = function (unspent: UtxoI[]) {
 		let result = Object.groupBy(unspent, ({ token_data }) => (!token_data ? 'cash' : 'other'));
 		assetsCash = result.cash ? result.cash : [];
