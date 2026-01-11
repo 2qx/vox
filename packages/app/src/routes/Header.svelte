@@ -53,7 +53,6 @@
 	.dev {
 		background-color: rgb(255, 225, 0);
 		font-weight: 900;
-		min-height: 50px;
 		color: rgb(0, 0, 0);
 		text-align: center;
 	}
@@ -62,7 +61,6 @@
 		width: 100%;
 		background-color: rgb(255, 0, 255);
 		font-weight: 900;
-		max-height: 50px;
 		color: white;
 		text-align: center;
 	}
