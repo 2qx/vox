@@ -19,8 +19,6 @@ import {
     lockingBytecodeToCashAddress,
     swapEndianness,
     encodeTransactionBch,
-    publicKeyToP2pkhLockingBytecode,
-    encodeTransactionOutput
 } from "@bitauth/libauth"
 
 import {
@@ -40,7 +38,6 @@ import { getAllUnspentCoupons, getRates, getRateLocale, getFutureBlockDateLocale
 import { CouponDataI } from "./interface.js";
 import { Coupon } from './coupon.js'
 import Future from './auth.js'
-import { publicKeyToP2PKHLockingBytecode } from '@unspent/tau/signatureTemplate.js';
 
 export class Vault {
 
