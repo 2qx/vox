@@ -10,7 +10,7 @@
 </script>
 
 <svelte:head>
-	<title>📣 Vox Pop</title>
+	<title>📣 Pop</title>
 	<meta name="description" content="Let your voice be heard." />
 </svelte:head>
 

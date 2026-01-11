@@ -322,7 +322,7 @@ export default class BlockPoint {
         if (sumSourceOutputTokenAmounts(sourceOutputs, category) == 0n) verify = `Error checking token input`
         let tokenDiff = sumSourceOutputTokenAmounts(sourceOutputs, category) -
             sumSourceOutputTokenAmounts(transaction.outputs, category)
-        if (tokenDiff !== 0n) verify = `Swapping should not create destroy tokens, token difference: ${tokenDiff}`
+        if (tokenDiff !== 0n) throw Error(`Claiming should not create destroy tokens, token difference: ${tokenDiff}`)
         return {
             sourceOutputs: sourceOutputs,
             transaction: transaction,

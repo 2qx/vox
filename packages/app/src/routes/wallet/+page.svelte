@@ -195,6 +195,15 @@
 	});
 </script>
 
+
+
+
+<svelte:head>
+	<title>👛 Wallet</title>
+	<meta name="description" content="Vox Wallet." />
+</svelte:head>
+
+
 <section>
 	<div class="status">
 		{#if connectionStatus == 'CONNECTED'}
@@ -322,7 +331,7 @@
 				</button>
 				{#if showHistory}
 					<h3>History</h3>
-					{#await wallet!.getHistory('sat', 0, 10, true)}
+					{#await wallet!.getHistory({unit:'sat', fromHeight: now-10})}
 						<p>...getting history</p>
 					{:then history}
 						{#if history.length > 0}

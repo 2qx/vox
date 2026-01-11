@@ -87,7 +87,7 @@
 		text-align: end;
 	}
 	.price {
-		min-width: 45px;
+		min-width: 40px;
 		font-size: medium;
 		font-weight: 600;
 		text-align: end;

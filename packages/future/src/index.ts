@@ -4,6 +4,7 @@ import packageInfo from '../package.json' with { type: "json" };
 export * from './channel.js'
 export * from './constant.js';
 export * from './coupon.js'
+export * from './interface.js'
 export * from './vault.js'
 export * from './util.js'
 export const USER_AGENT = packageInfo.name;

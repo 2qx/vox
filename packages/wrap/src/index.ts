@@ -451,7 +451,7 @@ export default class Wrap {
                 transaction.outputs,
                 category
             )
-        if (tokenDiff !== 0n) verify = `Swapping should not create destroy tokens, token difference: ${tokenDiff}`
+        if (tokenDiff !== 0n) throw Error(`Swapping should not create destroy tokens, token difference: ${tokenDiff}`)
         return {
             sourceOutputs: sourceOutputs,
             transaction: transaction,

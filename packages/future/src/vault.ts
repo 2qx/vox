@@ -464,6 +464,31 @@ export class Vault {
 
     }
 
+    static getNewContractUtxos(
+        transaction: Transaction,
+        time: number
+    ): UtxoI[]{
+        let lockingBytecode = binToHex(this.getLockingBytecode(time))
+        let txBin = encodeTransactionBch(transaction)
+        let newId = swapEndianness(binToHex(hash256(txBin)))
+        let copyItems: UtxoI[] = [];
+        transaction.outputs.forEach((o, i) => {
+            if (binToHex(o.lockingBytecode) == lockingBytecode) {
+                copyItems.push({
+                    tx_hash: newId,
+                    tx_pos: i,
+                    value: Number(o.valueSatoshis),
+                    token_data: o.token ? {
+                        category: binToHex(o.token.category),
+                        amount: String(o.token.amount),
+                        nft: undefined
+                    } : undefined,
+                    height: 0
+                })
+            }
+        })
+        return copyItems
+    }
 
     static getVaultLayers(
         utxos: UtxoI[],
@@ -558,29 +583,28 @@ export class Vault {
         // if (amount < 0) utxos = utxos.filter(u => u.token_data?.category == binToHex(category))
         if (utxos.length == 0) throw Error("no wallet utxos left, maximum recursion depth reached.");
 
-
-        // get a random utxo.)
-        const randomUtxo = utxos.shift()!
+        // get the last utxo.)
+        const randomUtxo = utxos.pop()!
 
         // spend the utxo
         inputs.push(this.getWalletInput(randomUtxo, privateKey))
         sourceOutputs.push(this.getWalletSourceOutput(randomUtxo, privateKey));
         let sumSats = sumSourceOutputValue(sourceOutputs)
-        let sumWSats = sumSourceOutputTokenAmounts(sourceOutputs, binToHex(category))
+        let sumFSats = sumSourceOutputTokenAmounts(sourceOutputs, binToHex(category))
         if (
             // Redeeming WBch for Bch, and token amount is sufficient
-            (amount < 0 && sumWSats >= -amount) ||
+            (amount < 0 && sumFSats >= -amount) ||
             // Or if placing Bch for WBch, and utxo value is sufficient
             (amount > 0 && sumSats > amount)
         ) {
             // This utxo finally satisfied the swap 
             // There is FBch placed
             if (amount > 0) {
-                outputs.push(this.getFutureOutput(amount, category, privateKey, 0))
+                outputs.push(this.getFutureOutput(sumFSats + amount, category, privateKey, 0))
             }
             if (amount < 0) {
                 outputs.push(this.getFutureOutput(
-                    sumWSats + amount,
+                    sumFSats + amount,
                     category,
                     privateKey,
                     0
@@ -602,6 +626,7 @@ export class Vault {
             inputs.push(...nextTry.inputs)
             outputs.push(...nextTry.outputs)
             sourceOutputs = nextTry.sourceOutputs
+            utxos = nextTry.utxos
         }
         return { inputs, outputs, sourceOutputs, utxos }
     }
@@ -632,7 +657,8 @@ export class Vault {
         transaction: Transaction,
         sourceOutputs: Output[],
         verify: string | boolean,
-        walletUtxos: UtxoI[]
+        walletUtxos: UtxoI[],
+        contractUtxos: UtxoI[]
     } {
 
         const inputs: InputTemplate<CompilerBch>[] = [];
@@ -640,7 +666,6 @@ export class Vault {
 
 
         let unique = [...new Set(contractUtxos.map(u => u.token_data?.category))]
-
         if (unique.length > 1) throw Error("Future vault UTXOs may only contain a single future token series")
         let category = unique.pop()!
 
@@ -655,12 +680,11 @@ export class Vault {
 
 
         // Stash unsuitable utxos holding other assets
-        let stashedUtxos = walletUtxos.filter(u => (u.token_data?.category == category))
+        let stashedUtxos = walletUtxos.filter(u => (u.token_data && u.token_data?.category !== category))
 
         // Don't use wallet utxos with other tokens for the swap
         let cashUtxos = walletUtxos.filter(u => !u.token_data)
         let matchingUtxos = walletUtxos.filter(u => u.token_data?.category == category)
-        console.log(matchingUtxos.length)
         walletUtxos = [... cashUtxos, ... matchingUtxos]
 
 
@@ -720,17 +744,18 @@ export class Vault {
                 transaction.outputs,
                 category
             )
-        if (tokenDiff !== 0n) verify = `Swapping should not create destroy tokens, token difference: ${tokenDiff}`
+        if (tokenDiff !== 0n) throw Error(`Swapping should not create destroy tokens, token difference: ${tokenDiff}`)
 
         walletUtxos.push(...stashedUtxos)
 
         walletUtxos.push(...this.getNewWalletUtxos(transaction, privateKey!))
-
+        contractUtxos = this.getNewContractUtxos(transaction, time)
         return {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
             verify: verify,
-            walletUtxos: walletUtxos
+            walletUtxos: walletUtxos,
+            contractUtxos: contractUtxos
         }
     }
 }

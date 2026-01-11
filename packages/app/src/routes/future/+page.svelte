@@ -1,10 +1,8 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 
-	import { blo } from 'blo';
 
-	import SeriesIcon from '$lib/FbchIcon.svelte';
 	import Loading from '$lib/Loading.svelte';
 
 	// @ts-ignore
@@ -13,7 +11,8 @@
 	import BitauthLink from '$lib/BitauthLink.svelte';
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
-
+	import FutureCoupon from '$lib/FutureCoupon.svelte';
+	
 	import {
 		binToHex,
 		cashAddressToLockingBytecode,
@@ -26,23 +25,23 @@
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 
-	import bch from '$lib/images/BCH.svg';
 	import {
 		getScriptHash,
 		getHdPrivateKey,
 		sumUtxoValue,
-		sumTokenAmounts,
-		type UtxoI
+		type UtxoI,
+		sleep
 	} from '@unspent/tau';
-	import { Vault, USER_AGENT } from '@fbch/lib';
+	import { Vault, USER_AGENT, type CouponItemI } from '@fbch/lib';
 	import { TIMELOCK_MAP, TIMELOCK_MAP_CHIPNET } from '@fbch/lib';
 
 	let now: number = $state(0);
 
 	let key = $state('');
-	let coupons: any[] | undefined = $state();
+	let coupons: any[] | undefined = $state.raw();
 	let electrumClient: any;
-	let couponGrouped = $state();
+	let timer: any;
+	let couponGrouped: Map<string, CouponItemI[]> | undefined = $state();
 	let walletScriptHash = $state('');
 	let amount = $state(0);
 	let openCouponInterest = $state(0);
@@ -50,9 +49,9 @@
 	let connectionStatus = $state('');
 	let contractState = $state('');
 
-	let unspent: any[] = $state([]);
-	let walletUnspent: any[] = $state([]);
-
+	let walletUnspent: any[] = $state.raw([]);
+	let broadcastQueue: string[] = $state([]);
+	let vaultCache: Map<number, UtxoI[]> = new Map([]);
 	let walletBalance = $state(0);
 
 	const isMainnet = page.url.hostname == 'vox.cash';
@@ -62,18 +61,55 @@
 	const SERIES_MAP = isMainnet ? TIMELOCK_MAP : TIMELOCK_MAP_CHIPNET;
 
 	let wallet: any;
+	let disableUi = false;
+
+	const debounceUpdateWallet = () => {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			updateWallet();
+			updateCoupons();
+			disableUi = false;
+		}, 1000);
+	};
+	const debounceBroadcastQue = async () => {
+		clearTimeout(timer);
+		timer = setTimeout(async () => {
+			while (broadcastQueue.length) {
+				let tx = broadcastQueue.shift()!;
+				try {
+					await broadcast(tx);
+					await sleep(100);
+					console.log('broadcast');
+					debounceUpdateWallet();
+				} catch (e) {
+					// if one transaction failed, the whole chain is borked,
+					// start over.
+					console.error(e);
+					broadcastQueue = [];
+					walletUnspent = [];
+					vaultCache = new Map([]);
+					debounceUpdateWallet();
+				}
+			}
+		}, 500);
+	};
 
 	async function handlePlacement(coupon: any) {
-		let vaultUtxos = await electrumClient.request(
-			'blockchain.scripthash.listunspent',
-			Vault.getScriptHash(coupon.locktime),
-			'include_tokens'
-		);
+		if (!vaultCache.has(coupon.locktime)) {
+			vaultCache.set(
+				coupon.locktime,
+				await electrumClient.request(
+					'blockchain.scripthash.listunspent',
+					Vault.getScriptHash(coupon.locktime),
+					'include_tokens'
+				)
+			);
+		}
 
-		// filter out junk Utxos in vault. 
-		vaultUtxos = vaultUtxos.filter(
-			(u) => u.token_data?.category == SERIES_MAP.get(coupon.locktime)
-		);
+		// filter out junk Utxos in vault.
+		let vaultUtxos = vaultCache
+			.get(coupon.locktime)!
+			.filter((u) => u.token_data?.category == SERIES_MAP.get(coupon.locktime));
 
 		let swapTx = Vault.swap(
 			coupon.placement,
@@ -83,17 +119,18 @@
 			key,
 			coupon
 		);
-		let i = coupons!.findIndex(
-			(c: UtxoI) => c.tx_hash == coupon.tx_hash && c.tx_pos == coupon.tx_pos
-		);
-		if (i) coupons?.splice(i, 1);
-		couponGrouped = Object.groupBy(
+
+		let transactionHex = binToHex(encodeTransactionBch(swapTx.transaction));
+		broadcastQueue.push(transactionHex);
+		debounceBroadcastQue();
+
+		coupons = coupons?.filter((c) => !(c.tx_hash == coupon.tx_hash && c.tx_pos == coupon.tx_pos));
+		couponGrouped = Map.groupBy(
 			coupons!,
 			({ locktime, placement, value }) => `${locktime}-${placement}-${value}`
 		);
-		let transactionHex = binToHex(encodeTransactionBch(swapTx.transaction));
-		await broadcast(transactionHex);
-		walletUnspent = swapTx.walletUtxos
+		walletUnspent = swapTx.walletUtxos;
+		vaultCache.set(coupon.locktime, swapTx.contractUtxos);
 	}
 
 	const broadcast = async function (raw_tx: string) {
@@ -110,7 +147,7 @@
 			coupons = await Vault.getAllCouponUtxos(electrumClient, now);
 		}
 		if (coupons) {
-			couponGrouped = Object.groupBy(
+			couponGrouped = Map.groupBy(
 				coupons,
 				({ locktime, placement, value }) => `${locktime}-${placement}-${value}`
 			);
@@ -128,7 +165,7 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		let walletUnspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
+
 		walletUnspent = response.filter((u: UtxoI) => !u.token_data?.nft);
 		walletBalance = sumUtxoValue(walletUnspent, true);
 	};
@@ -138,13 +175,12 @@
 		if (data.method === 'blockchain.headers.subscribe') {
 			let d = data.params[0];
 			now = d.height;
-			updateCoupons();
-			updateWallet();
+			debounceUpdateWallet();
 		} else if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
 				amount = 0;
-				// debounceUpdateWallet();
+				debounceUpdateWallet();
 			}
 		} else {
 			console.log(data);
@@ -172,13 +208,14 @@
 
 		// Set up a subscription for new block headers.
 		await electrumClient.subscribe('blockchain.headers.subscribe');
+		await electrumClient.subscribe('blockchain.scripthash.subscribe', walletScriptHash);
+		updateWallet();
+		updateCoupons();
 	});
 </script>
 
-
-
 <svelte:head>
-	<title>🅵​</title>
+	<title>🅵​ BCH</title>
 	<meta name="description" content="Swap coins for Futures." />
 </svelte:head>
 
@@ -195,87 +232,20 @@
 
 	<h1>Stake coins for futures</h1>
 	{#if couponGrouped}
-		{#if Object.keys(couponGrouped).length > 0}
-			<table class="couponTable">
-				<thead>
-					<tr class="header">
-						<td></td>
-						<td>Qty</td>
-						<td>BCH</td>
-						<td colspan="2">FBCH</td>
-						<td colspan="2">Coupon </td>
-						<td>Matures</td>
-						<td>Action</td>
-					</tr>
-					<tr class="units">
-						<td></td>
-						<td></td>
-						<td><img width="15" src={bch} alt="bchLogo" /></td>
-						<td></td>
-						<td>series</td>
-						<td class="r">sats</td>
-						<td>apy</td>
-						<td> </td>
-						<td> </td>
-					</tr>
-				</thead>
-
-				<tbody>
-					{#each Object.values(couponGrouped) as subList}
-						{#each subList as c, i}
-							{#if i == 0}
-								<tr>
-									<td>
-										<img height={16} src={blo(`${c.tx_hash}:${c.tx_pos}`, 16)} alt={c.id} />
-									</td>
-									<td class="r">{subList.length} </td>
-									<td class="r">{Number(c.placement / 1e8)}</td>
-									<td class="r"><SeriesIcon time={c.locktime} size={15} /></td>
-									<td>
-										<a style="color:#75006b; font-weight:600;" href="/future/v?time={c.locktime}"
-											>{String(c.locktime).padStart(7, '0')}</a
-										>
-									</td>
-
-									<td class="sats">{Number(c.value / 1000).toLocaleString()}k </td>
-									<td class="r">
-										<i>{c.locale.ypa}%</i>
-									</td>
-									<td class="tiny">{c.dateLocale}</td>
-									{#if walletBalance + Number(c.value) > c.placement}
-										<td style="text-align:center;"
-											><button
-												class="action"
-												onclick={() => {
-													handlePlacement(c);
-												}}>claim</button
-											></td
-										>
-									{:else}
-										<td style="text-align:center;"
-											><button class="action" disabled style="font-size:xx-small;">lo bal</button
-											></td
-										>
-									{/if}
-								</tr>
-							{/if}
-						{/each}
-					{/each}
-					<tr style="border-top: solid thin;">
-						<td></td>
-						<td></td>
-						<td class="r">∑<b>{openCouponInterest.toFixed(0)} </b></td>
-						<td></td>
-						<td></td>
-						<td class="r">
-							<b>{couponTotal.toLocaleString()} </b>
-						</td>
-						<td></td>
-						<td></td>
-						<td></td>
-					</tr>
-				</tbody>
-			</table>
+		{#if couponGrouped.size > 0}
+			{#each couponGrouped.values() as subList}
+				{#each subList as c, i}
+					{#if i == 0}
+						<FutureCoupon
+							{handlePlacement}
+							{...c}
+							{isMainnet}
+							couponCount={subList.length}
+							balance={walletBalance}
+						/>
+					{/if}
+				{/each}
+			{/each}
 		{:else}
 			<p>no coupons available</p>
 		{/if}

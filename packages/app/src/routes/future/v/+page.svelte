@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 	import type { PageProps } from './$types';
 
@@ -13,22 +13,23 @@
 
 	import ExplorerLinks from '$lib/ExplorerLinks.svelte';
 
+	import FutureCoupon from '$lib/FutureCoupon.svelte';
 	import FbchIcon from '$lib/FbchIcon.svelte';
 	import Loading from '$lib/Loading.svelte';
 
-	import { Vault, getFutureBlockDate } from '@fbch/lib';
+	import { Vault, getFutureBlockDate, type CouponItemI } from '@fbch/lib';
 	import { COUPON_SERIES, USER_AGENT } from '@fbch/lib';
 	import { TIMELOCK_MAP, TIMELOCK_MAP_CHIPNET } from '@fbch/lib';
 
-	import { cashAddressToLockingBytecode } from '@bitauth/libauth';
+	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch } from '@bitauth/libauth';
 
 	import {
-		cashAssemblyToHex,
 		getScriptHash,
 		getHdPrivateKey,
 		sumUtxoValue,
 		sumTokenAmounts,
-		type UtxoI
+		type UtxoI,
+		sleep
 	} from '@unspent/tau';
 
 	let { data }: PageProps = $props();
@@ -45,6 +46,7 @@
 	let connectionStatus = $state('');
 	let contractState = $state('');
 	let timer: any;
+	let couponGrouped: Map<string, CouponItemI[]> | undefined = $state();
 
 	const isMainnet = page.url.hostname == 'vox.cash';
 	const prefix = isMainnet ? 'bitcoincash' : ('bchtest' as CashAddressNetworkPrefix);
@@ -52,31 +54,22 @@
 	const baseSeries = isMainnet ? 'FBCH' : 'tFBCH';
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 	const bchIcon = isMainnet ? BCH : tBCH;
-    const explorer = isMainnet ? "explorer.bch.ninja" : "chipnet.bch.ninja" 
+	const explorer = isMainnet ? 'explorer.bch.ninja' : 'chipnet.bch.ninja';
 	const SERIES_MAP = isMainnet ? TIMELOCK_MAP : TIMELOCK_MAP_CHIPNET;
 
-	let transaction_hex = '';
-	let transaction: any = $state(undefined);
-	let transactionValid = $state(false);
-	let sourceOutputs: any = $state();
-	let transactionError: string | boolean = $state('');
-
-	let requests: any[] = [];
-
 	let threads: UtxoI[] = $state([]);
-	let walletUnspent: UtxoI[] = $state([]);
+	let walletUnspent: any[] = $state.raw([]);
+	let broadcastQueue: string[] = $state([]);
+	let vaultCache: Map<number, UtxoI[]> = new Map([]);
 
 	let openCouponInterest: number = $state(0);
 	let couponTotal: number = $state(0);
-
-	let errorMessage = '';
 
 	let wallet: any;
 	let walletBalance: number = $state(0);
 	let sumVault: number;
 	let sumVaultTokens: bigint;
 	let vaultAddress = Vault.getAddress(time, prefix as CashAddressNetworkPrefix);
-	let walletError;
 
 	const updateVault = async function () {
 		let response = await electrumClient.request(
@@ -86,8 +79,7 @@
 		);
 		if (response instanceof Error) throw response;
 
-
-		threads = response.filter((u:UtxoI) => u.token_data?.category == SERIES_MAP.get(time));
+		threads = response.filter((u: UtxoI) => u.token_data?.category == SERIES_MAP.get(time));
 		sumVault = sumUtxoValue(threads, true);
 		sumVaultTokens = sumTokenAmounts(threads, SERIES_MAP.get(time)!);
 	};
@@ -97,11 +89,107 @@
 			coupons = await Vault.getAllCouponUtxos(electrumClient, now, [time]);
 		}
 		if (coupons) {
+			couponGrouped = Map.groupBy(
+				coupons,
+				({ locktime, placement, value }) => `${locktime}-${placement}-${value}`
+			);
+
 			coupons.sort((a: any, b: any) => parseFloat(b.spb) - parseFloat(a.spb));
 			openCouponInterest = Number(coupons.reduce((acc, c) => acc + c.placement, 0) / 1e8);
 			couponTotal = Number(coupons.reduce((acc, c) => acc + c.value, 0));
 		}
 	}
+
+	const debounceUpdateWallet = () => {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			updateWallet();
+			updateCoupons();
+		}, 1000);
+	};
+	const debounceBroadcastQue = async () => {
+		clearTimeout(timer);
+		timer = setTimeout(async () => {
+			while (broadcastQueue.length) {
+				let tx = broadcastQueue.shift()!;
+				try {
+					await broadcast(tx);
+					await sleep(100);
+					console.log('broadcast');
+					debounceUpdateWallet();
+				} catch (e) {
+					// if one transaction failed, the whole chain is borked,
+					// start over.
+					console.error(e);
+					broadcastQueue = [];
+					walletUnspent = [];
+					vaultCache = new Map([]);
+					debounceUpdateWallet();
+				}
+			}
+		}, 500);
+	};
+
+	async function handlePlacement(coupon: any) {
+		if (!vaultCache.has(coupon.locktime)) {
+			vaultCache.set(
+				coupon.locktime,
+				await electrumClient.request(
+					'blockchain.scripthash.listunspent',
+					Vault.getScriptHash(coupon.locktime),
+					'include_tokens'
+				)
+			);
+		}
+
+		// filter out junk Utxos in vault.
+		let vaultUtxos = vaultCache
+			.get(coupon.locktime)!
+			.filter((u) => u.token_data?.category == SERIES_MAP.get(coupon.locktime));
+
+		let swapTx = Vault.swap(
+			coupon.placement,
+			vaultUtxos,
+			walletUnspent,
+			coupon.locktime,
+			key,
+			coupon
+		);
+
+		let transactionHex = binToHex(encodeTransactionBch(swapTx.transaction));
+		broadcastQueue.push(transactionHex);
+		debounceBroadcastQue();
+
+		coupons = coupons?.filter((c) => !(c.tx_hash == coupon.tx_hash && c.tx_pos == coupon.tx_pos));
+		couponGrouped = Map.groupBy(
+			coupons!,
+			({ locktime, placement, value }) => `${locktime}-${placement}-${value}`
+		);
+		walletUnspent = swapTx.walletUtxos;
+		vaultCache.set(coupon.locktime, swapTx.contractUtxos);
+	}
+
+	const broadcast = async function (raw_tx: string) {
+		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
+		if (response instanceof Error) {
+			connectionStatus = ConnectionStatus[electrumClient.status];
+			throw response;
+		}
+		response as any[];
+	};
+
+	// async function doSwaps() {
+	// 	console.log('processing que data');
+	// 	console.log(requests);
+	// 	try {
+	// 		await Vault.swap();
+	// 		errorMessage = '';
+	// 	} catch (e: any) {
+	// 		errorMessage = e;
+	// 		console.log(e.message);
+	// 	}
+	// 	requests = [];
+	// }
 
 	const updateWallet = async function () {
 		let response = await electrumClient.request(
@@ -110,64 +198,9 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		let walletUnspentIds = new Set(response.map((utxo: any) => `${utxo.tx_hash}":"${utxo.tx_pos}`));
-		if (walletUnspent.length == 0) {
-			walletUnspent = response;
-		}
+
+		walletUnspent = response.filter((u: UtxoI) => !u.token_data?.nft);
 		walletBalance = sumUtxoValue(walletUnspent, true);
-	};
-
-	function debounce(func: any, timeout = 5000) {
-		let timer: any;
-		return (...args: any[]) => {
-			clearTimeout(timer);
-			timer = setTimeout(() => {
-				//@ts-ignore
-				func.apply(this, args);
-			}, timeout);
-		};
-	}
-
-	async function doSwaps() {
-		console.log('processing que data');
-		console.log(requests);
-		try {
-			await Vault.swap();
-			errorMessage = '';
-		} catch (e: any) {
-			errorMessage = e;
-			console.log(e.message);
-		}
-		requests = [];
-	}
-
-	const processQueue = debounce(() => doSwaps());
-
-	const handlePlacement = async function (coupon: any, id: string) {
-		walletBalance -= coupon.placement;
-		requests.push({
-			placement: BigInt(coupon.placement),
-			coupon: coupon.utxo,
-			locktime: coupon.locktime
-		});
-		console.log(requests);
-		coupons = coupons.filter((c) => c.id !== id);
-		processQueue();
-	};
-
-	const broadcast = async function (raw_tx: string) {
-		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
-		if (response instanceof Error) {
-			connectionStatus = ConnectionStatus[electrumClient.status];
-			transactionError = response.message;
-			throw response;
-		}
-		response as any[];
-		transaction = undefined;
-		sourceOutputs = undefined;
-		transaction_hex = '';
-		transactionValid = false;
-		return response;
 	};
 
 	const handleNotifications = function (data: any) {
@@ -175,12 +208,13 @@
 		if (data.method === 'blockchain.headers.subscribe') {
 			let d = data.params[0];
 			now = d.height;
+			debounceUpdateWallet();
 		} else if (data.method === 'blockchain.scripthash.subscribe') {
-			// data.params[0]
-			// TODO: only update matching utxos
-			debounce(updateCoupons);
-			debounce(updateWallet);
-			debounce(updateVault);
+			if (data.params[1] !== contractState) {
+				contractState = data.params[1];
+				walletBalance = 0;
+				debounceUpdateWallet();
+			}
 		} else {
 			console.log(data);
 		}
@@ -269,72 +303,30 @@
 				{baseTicker} into the vault; limit one coupon per transaction.
 			</p>
 
-			{#if coupons}
-				{#if coupons.length > 0}
-					<table class="couponTable">
-						<thead>
-							<tr class="header">
-								<td>{baseTicker}</td>
-								<td>coupon</td>
-								<td colspan="3">coupon rate </td>
-
-								<td>action</td>
-							</tr>
-							<tr class="units">
-								<td class="r"><img width="15" src={bchIcon} alt="bchLogo" /></td>
-								<td class="r">sats</td>
-								<td class="r">spb</td>
-								<td>per annum</td>
-								<td>to maturity</td>
-								<td> </td>
-							</tr>
-						</thead>
-
-						<tbody>
-							{#each coupons as c}
-								<tr>
-									<td class="r">{Number(c.placement / 1e8)}</td>
-									<td class="sats">{Number(c.value).toLocaleString()} </td>
-									<td class="sats">{c.locale.spb}</td>
-									<td class="r">
-										<i>{c.locale.ypa}%</i>
-									</td>
-									<td class="r">
-										<i>{c.locale.ytm}%</i>
-									</td>
-									{#if walletBalance + Number(c.value) > c.placement}
-										<td style="text-align:center;"
-											><button class="action" on:click={() => handlePlacement(c, c.id)}
-												>claim</button
-											></td
-										>
-									{:else}
-										<td style="text-align:center;"
-											><button class="action" disabled style="font-size:xx-small;">lo bal</button
-											></td
-										>
-									{/if}
-								</tr>
-							{/each}
-							<tr style="border-top: solid thin;">
-								<td class="r"><b>{openCouponInterest.toFixed(1)} </b></td>
-								<td class="r">
-									<b>{couponTotal.toLocaleString()} </b>
-								</td>
-								<td></td>
-								<td></td>
-								<td></td>
-							</tr>
-						</tbody>
-					</table>
+			{#if couponGrouped}
+				{#if couponGrouped.size > 0}
+					{#each couponGrouped.values() as subList}
+						{#each subList as c, i}
+							{#if i == 0}
+								<FutureCoupon
+									{handlePlacement}
+									{...c}
+									{isMainnet}
+									couponCount={subList.length}
+									balance={walletBalance}
+								/>
+							{/if}
+						{/each}
+					{/each}
 				{:else}
 					<p>no coupons available</p>
 				{/if}
 			{:else}
-				<Loading />
-				<p>loading coupons</p>
+				<div style="text-align:center">
+					<h2>loading coupons</h2>
+					<Loading />
+				</div>
 			{/if}
-
 			<h4>Coupon Contracts</h4>
 
 			<ul class="couponList">

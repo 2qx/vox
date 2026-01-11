@@ -517,6 +517,7 @@ export class Channel {
         let valueIn = sumSourceOutputValue(sourceOutputs)
         let valueOut = sumOutputValue(config.outputs)
         let change = valueIn - valueOut;
+        console.log(change)
         config.outputs.push(this.getChangeOutput(auth, change, key))
 
         return this.buildAndValidateTransaction(config, sourceOutputs, fee)

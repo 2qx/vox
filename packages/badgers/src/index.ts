@@ -520,7 +520,7 @@ export default class BadgerStake {
                 transaction.outputs,
                 assetCat
             )
-        if (tokenDiff !== 0n) verify = `Swapping should not create destroy tokens, token difference: ${tokenDiff}`
+        if (tokenDiff !== 0n) throw Error(`Claiming should not create destroy tokens, token difference: ${tokenDiff}`)
 
         return {
             sourceOutputs: sourceOutputs,

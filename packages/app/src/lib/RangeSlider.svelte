@@ -1182,12 +1182,12 @@
     display: block;
     position: absolute;
     left: 50%;
-    bottom: 1.75em;
+    bottom: 3em;
     font-size: 1em;
     text-align: center;
     pointer-events: none;
     white-space: nowrap;
-    font-size: 0.9em;
+    font-size: 1.2em;
     line-height: 1;
     padding: 0.33em 0.5em 0.5em;
     border-radius: 0.5em;
