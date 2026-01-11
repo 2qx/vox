@@ -43,11 +43,9 @@
 				</div>
 			</div>
 			<div class="end">
-				{Number(value).toLocaleString(undefined, {})} sats
+				<span style="font-size:x-large">{Number(value).toLocaleString(undefined, {})} sats</span>
 				<br />
-
-				<img width="16px" src={bchIcon} />
-				<span style="font-size:x-large">{Number(placement / 1e8)} {ticker}</span><br />
+				<span >on {Number(placement / 1e8)} {ticker}</span> <img width="16px" src={bchIcon} /><br />
 				{#if balance + Number(value) > placement}
 					<button
 						class="action"
@@ -59,7 +57,7 @@
 								placement: placement,
 								value: value
 							});
-						}}>claim</button
+						}}>place &amp; claim</button
 					>
 				{:else}
 					<button class="action" disabled style="font-size:xx-small;">low balance</button>
