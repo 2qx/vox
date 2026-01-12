@@ -197,8 +197,7 @@ export default class SmallIndex {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
-
-        if (typeof verify == "string") throw verify
+        if(typeof verify =="string") throw Error(verify)
 
         return {
             sourceOutputs: sourceOutputs,

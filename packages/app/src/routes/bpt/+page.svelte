@@ -305,10 +305,6 @@
 		text-align: center;
 	}
 
-	.swap input {
-		background-color: #ddd;
-	}
-
 	.action {
 		display: inline-block;
 		border-radius: 10px;

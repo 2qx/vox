@@ -67,8 +67,8 @@
 
 	let wallet: any;
 	let walletBalance: number = $state(0);
-	let sumVault: number;
-	let sumVaultTokens: bigint;
+	let sumVault: number = $state(0);
+	let sumVaultTokens: bigint  = $state(0n);
 	let vaultAddress = Vault.getAddress(time, prefix as CashAddressNetworkPrefix);
 
 	const updateVault = async function () {
@@ -225,9 +225,9 @@
 		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
-		let lockcodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
-		if (typeof lockcodeResult == 'string') throw lockcodeResult;
-		walletScriptHash = getScriptHash(lockcodeResult.bytecode);
+		let lockingBytecodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
+		if (typeof lockingBytecodeResult == 'string') throw lockingBytecodeResult;
+		walletScriptHash = getScriptHash(lockingBytecodeResult.bytecode);
 
 		// Initialize an electrum client.
 		electrumClient = new ElectrumClient(USER_AGENT, '1.4.1', server);
@@ -473,27 +473,6 @@
 		font-weight: 900;
 	}
 
-	.action {
-		display: inline-block;
-		border-radius: 10px;
-		background-color: #fa1ad5;
-		color: #fff;
-		margin: 1px;
-		padding: 0 5px 0 5px;
-		font-weight: 900;
-		font-size: small;
-	}
-
-	.action:disabled {
-		display: inline-block;
-		border-radius: 10px;
-		background-color: #80748069;
-		color: #ffffff;
-		margin: 1px;
-		padding: 0 5px 0 5px;
-		font-weight: 900;
-		font-size: small;
-	}
 
 	.couponList {
 		display: flex;
@@ -501,11 +480,7 @@
 		list-style-type: none;
 	}
 
-	.units {
-		text-align: center;
-		font-style: italic;
-		font-weight: 200;
-	}
+	
 	tbody tr:nth-child(odd) {
 		background-color: #ff33cc1f;
 	}
@@ -514,11 +489,6 @@
 	}
 	.r {
 		text-align: right;
-	}
-	.sats {
-		text-align: right;
-		font-weight: 300;
-		font-style: italic;
 	}
 
 	tbody tr td {

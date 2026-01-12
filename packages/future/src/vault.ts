@@ -441,7 +441,7 @@ export class Vault {
     ): UtxoI[] {
 
 
-        let lockingBytecode = binToHex(hdPrivateKeyToP2pkhLockingBytecode({hdPrivateKey:privateKey, addressIndex}))
+        let lockingBytecode = binToHex(hdPrivateKeyToP2pkhLockingBytecode({ hdPrivateKey: privateKey, addressIndex }))
         let txBin = encodeTransactionBch(transaction)
         let newId = swapEndianness(binToHex(hash256(txBin)))
         let copyItems: UtxoI[] = [];
@@ -467,7 +467,7 @@ export class Vault {
     static getNewContractUtxos(
         transaction: Transaction,
         time: number
-    ): UtxoI[]{
+    ): UtxoI[] {
         let lockingBytecode = binToHex(this.getLockingBytecode(time))
         let txBin = encodeTransactionBch(transaction)
         let newId = swapEndianness(binToHex(hash256(txBin)))
@@ -505,8 +505,9 @@ export class Vault {
         let inputs: InputTemplate<CompilerBch>[] = [];
         let outputs: OutputTemplate<CompilerBch>[] = [];
 
+        console.log(utxos)
         utxos = utxos.filter(u => u.token_data?.category == binToHex(category))
-        if (amount < 0) utxos = utxos.filter(u => u.value > 800)
+        if (amount < 0) utxos = utxos.filter(u => u.value > 1000)
         if (utxos.length == 0) throw Error("no vault utxos left, maximum recursion depth reached.");
 
         const randomIdx = Math.floor(Math.random() * utxos.length)
@@ -518,7 +519,7 @@ export class Vault {
         // Try to satisfy the swap with another utxos
         inputs.push(this.getInput(randomUtxo, time))
         sourceOutputs.push(this.getSourceOutput(randomUtxo, time));
-
+        
         if (
             // Redeeming FBch for Bch and this thread can satisfy the swap
             (amount < 0 && -(randomUtxo?.value) < amount) ||
@@ -526,13 +527,14 @@ export class Vault {
         ) {
             outputs.push(this.getOutput(randomUtxo, BigInt(amount), time))
         } else {
-            if (amount < 0 && amount < -(randomUtxo?.value! - 800)) {
+
+            if (amount < 0 && amount < -(randomUtxo?.value! - 1000)) {
                 // liquidate sats on this utxo 
-                outputs.push(this.getOutput(randomUtxo, -BigInt(randomUtxo?.value! - 800), time))
-                amount += randomUtxo?.value! - 800
+                outputs.push(this.getOutput(randomUtxo, -BigInt(randomUtxo?.value! - 1000), time))
+                amount += randomUtxo?.value! - 1000
             }
             // and try again
-            let nextTry = this.getVaultLayers([...utxos], amount, category, [...sourceOutputs])
+            let nextTry = this.getVaultLayers([...utxos], amount, time, category, [...sourceOutputs])
             inputs.push(...nextTry.inputs)
             outputs.push(...nextTry.outputs)
             sourceOutputs = nextTry.sourceOutputs
@@ -666,13 +668,13 @@ export class Vault {
 
 
         let unique = [...new Set(contractUtxos.map(u => u.token_data?.category))]
-        if (unique.length > 1) throw Error("Future vault UTXOs may only contain a single future token series")
+        if (unique.length > 1) throw Error("Future vault UTXOs may only contain a single future token series, please filter fake series.")
         let category = unique.pop()!
 
         let fbchCat = hexToBin(category)
 
         let config = {
-            locktime: 0,
+            locktime: amount > 0 ? 0 : time + 1,
             version: 2,
             inputs,
             outputs
@@ -685,7 +687,7 @@ export class Vault {
         // Don't use wallet utxos with other tokens for the swap
         let cashUtxos = walletUtxos.filter(u => !u.token_data)
         let matchingUtxos = walletUtxos.filter(u => u.token_data?.category == category)
-        walletUtxos = [... cashUtxos, ... matchingUtxos]
+        walletUtxos = [...cashUtxos, ...matchingUtxos]
 
 
         let vaultLayers = this.getVaultLayers([...contractUtxos], amount, time, fbchCat);
@@ -735,6 +737,7 @@ export class Vault {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
+        if (typeof verify == "string") throw Error(verify)
 
         let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
         if (feeEstimate > 5000) verify = `Excessive fees ${feeEstimate}`

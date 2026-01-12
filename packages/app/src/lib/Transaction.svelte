@@ -129,9 +129,6 @@ Version: {transaction.version}
 	table {
 		width: 100%;
 	}
-	.row {
-		display: flex;
-	}
 	.r {
 		min-width: 50%;
 		text-align: right;

@@ -316,6 +316,7 @@ export default class BlockPoint {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
+        if(typeof verify =="string") throw Error(verify)
 
         let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
         if (feeEstimate > 5000) verify = `Excessive fees ${feeEstimate}`

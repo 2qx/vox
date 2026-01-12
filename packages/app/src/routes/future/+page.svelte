@@ -12,7 +12,7 @@
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 	import FutureCoupon from '$lib/FutureCoupon.svelte';
-	
+
 	import {
 		binToHex,
 		cashAddressToLockingBytecode,
@@ -192,9 +192,9 @@
 		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
-		let lockcodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
-		if (typeof lockcodeResult == 'string') throw lockcodeResult;
-		walletScriptHash = getScriptHash(lockcodeResult.bytecode);
+		let lockingBytecodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
+		if (typeof lockingBytecodeResult == 'string') throw lockingBytecodeResult;
+		walletScriptHash = getScriptHash(lockingBytecodeResult.bytecode);
 
 		// Initialize an electrum client.
 		electrumClient = new ElectrumClient(USER_AGENT, '1.4.1', server);
@@ -274,69 +274,4 @@
 		font-weight: 600;
 	}
 
-	.couponTable {
-		width: 100%;
-		border-collapse: collapse;
-	}
-	thead tr td {
-		border: 2px ridge rgba(247, 202, 248, 0.6);
-		background-color: #ffffff5b;
-	}
-
-	thead tr:nth-child(odd) {
-		text-align: center;
-		font-weight: 900;
-		font-size: small;
-	}
-
-	.action {
-		display: inline-block;
-		border-radius: 10px;
-		background-color: #fa1ad5;
-		color: #fff;
-		margin: 1px;
-		padding: 0 5px 0 5px;
-		font-weight: 900;
-		font-size: small;
-	}
-
-	.action:disabled {
-		display: inline-block;
-		border-radius: 10px;
-		background-color: #80748069;
-		color: #ffffff;
-		margin: 1px;
-		padding: 0 5px 0 5px;
-		font-weight: 900;
-		font-size: small;
-	}
-
-	.units {
-		text-align: center;
-		font-style: italic;
-		font-weight: 200;
-	}
-	tbody tr:nth-child(odd) {
-		background-color: #ff33cc1f;
-	}
-	tbody tr:nth-child(even) {
-		background-color: #e495e41a;
-	}
-	.r {
-		text-align: right;
-	}
-	.tiny {
-		font-weight: 100;
-		font-size: small;
-		text-align: right;
-	}
-	.sats {
-		text-align: right;
-		font-weight: 300;
-		font-style: italic;
-	}
-
-	tbody tr td {
-		border: 2px ridge rgba(247, 202, 248, 0.6);
-	}
 </style>

@@ -6,18 +6,18 @@
 	import TokenAmount from './TokenAmount.svelte';
 	import TokenIcon from './TokenIcon.svelte';
 
-	let { tx_pos, tx_hash, height, value, token_data, isMainnet } = $props();
+	let { tx_pos, tx_hash, height, value, token_data, isMainnet, redeemFutures, locktime, now } =
+		$props();
 
 	let bchIcon = isMainnet ? BCH : tBCH;
 </script>
 
 <div class="container">
 	<div class="post">
-		
 		<div class="balance">
 			<div>
 				{#if token_data}
-				<TokenIcon category={token_data.category} size={16} {isMainnet}></TokenIcon>
+					<TokenIcon category={token_data.category} size={16} {isMainnet}></TokenIcon>
 				{/if}
 			</div>
 			<div class="fill">
@@ -36,6 +36,14 @@
 				{#if value > 1000n}
 					<img width="16px" src={bchIcon} /> <b>BCH</b>
 					{Number(value / 100_000_000).toLocaleString(undefined, {})}
+				{/if}
+				{#if now >= locktime}
+					<button
+						class="action"
+						onclick={() => {
+							redeemFutures(tx_hash, tx_pos, locktime, token_data.amount);
+						}}>redeem</button
+					>
 				{/if}
 			</div>
 		</div>
@@ -68,19 +76,21 @@
 	.balance {
 		display: flex;
 	}
+	
 	.fill {
 		flex: 1;
 		word-break: break-all;
 		display: flex;
 		flex-direction: column;
 	}
-
+	
 	.timestamp {
 		font-size: xx-small;
 		font-weight: 200;
 		color: #777;
 		word-break: break-all;
 	}
+	
 
 	.post :global {
 		p {
@@ -89,4 +99,20 @@
 		}
 	}
 
+	button {
+		background-color: #a45eb6; /* Green */
+		border: none;
+		color: white;
+		padding: 10px;
+		border-radius: 20px;
+		text-align: center;
+		text-decoration: none;
+		display: inline-block;
+		font-size: 16px;
+	}
+
+	button:disabled {
+		background-color: #777;
+	}
+	
 </style>

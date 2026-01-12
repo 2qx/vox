@@ -347,34 +347,7 @@
 		text-align: center;
 	}
 
-	.swap input {
-		background-color: #ddd;
-	}
-
-	.action {
-		display: inline-block;
-		border-radius: 10px;
-		background-color: rgba(255, 255, 255, 0.781);
-		/* color: #000000; */
-		border: #ffffff solid;
-		margin: auto;
-		padding: 10px;
-		font-weight: 900;
-		font-size: small;
-		filter: drop-shadow(8px 8px 16px #ffffff);
-	}
-
-	.action:disabled {
-		display: inline-block;
-		border-radius: 10px;
-		background-color: #adadad;
-		color: #000000;
-		margin: 1px;
-		padding: 0 5px 0 5px;
-		font-weight: 900;
-		font-size: small;
-	}
-
+	
 	.grid {
 		display: flex;
 		flex-direction: row;
@@ -382,13 +355,6 @@
 		align-items: flex-end;
 	}
 
-	.grid .stake {
-		flex: 1 1 160px;
-		padding: 5px;
-		justify-content: end;
-		align-items: end;
-		text-align: right;
-	}
 
 	.grid .row {
 		flex: 1 1 160px;
@@ -419,10 +385,7 @@
 		background-color: #9933b3;
 	}
 
-	.theme-buttons {
-		display: flex;
-		justify-content: center;
-	}
+	
 
 	label {
 		margin: 8px;

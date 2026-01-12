@@ -129,10 +129,6 @@
 		padding-top: 10px;
 	}
 
-	h1 {
-		width: 100%;
-	}
-
 	.welcome {
 		display: flex;
 		flex-direction: row;
@@ -155,7 +151,9 @@
 		border: none;
 		cursor: pointer;
 		overflow: hidden;
-		outline: none;
+		outline: none;h1 {
+		width: 100%;
+	}
 		font-weight: 500;
 		font-size: small;
 		filter: drop-shadow(5px 5px 5px #ffffffc4);

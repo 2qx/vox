@@ -1,26 +1,32 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
-	import walletIcon from '$lib/images/hot.svg';
 	import hot from '$lib/images/hot.svg';
 	import hotCT from '$lib/images/cashTokens.svg';
 
 	import BCMR from '$lib/bitcoin-cash-metadata-registry.json' with { type: 'json' };
 	import tBCMR from '$lib/chipnet-metadata-registry.json' with { type: 'json' };
-	import { CATEGORY_MAP, CATEGORY_MAP_CHIPNET } from '@fbch/lib';
+	import { Vault, CATEGORY_MAP, CATEGORY_MAP_CHIPNET } from '@fbch/lib';
 
-	import { cashAddressToLockingBytecode, stringify, swapEndianness } from '@bitauth/libauth';
+	import {
+		binToHex,
+		cashAddressToLockingBytecode,
+		encodeTransactionBch,
+		stringify,
+		swapEndianness
+	} from '@bitauth/libauth';
 
-	import { getScriptHash, sumUtxoValue, type UtxoI } from '@unspent/tau';
+	import { getScriptHash, sumUtxoValue, type UtxoI, getHdPrivateKey } from '@unspent/tau';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet, TokenSendRequest } from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet, TokenSendRequest, WalletTypeEnum } from 'mainnet-js';
 
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 	import Utxo from '$lib/Utxo.svelte';
+	import FutureUtxo from '$lib/FutureUtxo.svelte';
 
 	const isMainnet = page.url.hostname == 'vox.cash';
 	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
@@ -29,23 +35,23 @@
 
 	let now = $state(0);
 	let wallet: Wallet | TestNetWallet | undefined = $state();
+	let key = $state('');
 	let walletError = false;
 	let balance = $state(0);
 	let electrumClient: any;
 	let connectionStatus = $state('');
 	let connectionError = $state('');
 	let showTokenAddress = $state(true);
-	let history: any[];
-	let unspent: UtxoI[] = $state([]);
-	let assetsCash: UtxoI[] = $state([]);
-	let assetsCommodity: UtxoI[] = $state([]);
-	let assetsFuture: UtxoI[] = $state([]);
-	let assetsAuth: UtxoI[] = $state([]);
+	let unspent: UtxoI[] | undefined = $state([]);
+	let assetsCash: UtxoI[] | undefined = $state([]);
+	let assetsCommodity: UtxoI[] | undefined = $state([]);
+	let assetsFuture: UtxoI[] | undefined = $state([]);
+	let assetsAuth: UtxoI[] | undefined = $state([]);
+	let assetsOther: UtxoI[] | undefined = $state([]);
 	let showInfo = $state(false);
 	let scripthash = $state('');
 
 	let showHistory = $state(false);
-	let cancelWatch: any;
 
 	const bcmr = Object.entries(metadata.identities)
 		.map((o) => {
@@ -69,17 +75,45 @@
 		}
 	};
 
+	async function redeemFutures(tx_hash: string, tx_pos: number, locktime: number, amount: number) {
+		let utxoToRedeem = unspent?.filter((u) => (u.tx_hash == tx_hash && u.tx_pos == tx_pos)).pop();
+		let vaultUtxos = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			Vault.getScriptHash(locktime),
+			'include_tokens'
+		);
+
+		vaultUtxos = vaultUtxos.filter(
+			(u: UtxoI) => u.token_data?.category == utxoToRedeem?.token_data?.category
+		);
+
+
+		console.log(vaultUtxos)
+		if (utxoToRedeem) {
+			let walletUnspent = [...assetsCash!, utxoToRedeem];
+			let swapTx = Vault.swap(-amount, vaultUtxos, walletUnspent, locktime, key);
+			let transactionHex = binToHex(encodeTransactionBch(swapTx.transaction));
+			console.log(transactionHex);
+			broadcast(transactionHex);
+		}
+	}
 	async function consolidateFungibleTokens() {
 		const cashaddr = wallet!.getTokenDepositAddress();
 		let utxos = (await wallet!.getUtxos())
 			.filter((u: any) => u.token)
+			.filter((u: any) => u.token.amount > 0)
 			.filter((u: any) => !u.token.capability);
-		console.log(utxos);
+
+		let categoryIds = utxos.map((u) => u.token!.tokenId);
 		// Get a list of
+		let duplicateCategories = categoryIds.filter(
+			(item, index) => categoryIds.indexOf(item) !== index
+		);
+
 		const categories = [
 			...new Set(
-				utxos.map((u: any) => {
-					return u.token.tokenId;
+				duplicateCategories.map((cat: any) => {
+					return cat;
 				})
 			)
 		];
@@ -96,7 +130,6 @@
 				tokenId: tokenId
 			});
 		});
-
 		return await wallet!.send(sendRequests);
 	}
 
@@ -108,36 +141,35 @@
 		showInfo = !showInfo;
 	};
 
-	// TODO: clean this up by consolidating into one groupBy func
-	const classifyUtxos = function (unspent: UtxoI[]) {
-		let result = Object.groupBy(unspent, ({ token_data }) => (!token_data ? 'cash' : 'other'));
-		assetsCash = result.cash ? result.cash : [];
+	const broadcast = async function (raw_tx: string) {
+		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
+		if (response instanceof Error) {
+			connectionStatus = ConnectionStatus[electrumClient.status];
+			throw response;
+		}
+		response as any[];
+	};
 
-		let result2 = result.other
-			? Object.groupBy(result.other, ({ token_data }) =>
-					bcmr.has(token_data!.category) && Number(token_data?.amount) > 0 ? 'commodity' : 'other'
-				)
-			: { other: [], commodity: [] };
+	const classifyUtxos = function (unspent: UtxoI[] | undefined) {
+		let classifiedUtxos = Object.groupBy(unspent!, ({ token_data }) => {
+			if (!token_data) {
+				return 'cash';
+			} else if (bcmr.has(token_data!.category) && Number(token_data?.amount) > 0) {
+				return 'commodity';
+			} else if (SERIES_MAP.has(token_data!.category)) {
+				return 'future';
+			} else if (token_data!.nft?.commitment.startsWith('6a035533')) {
+				return 'auth';
+			} else {
+				return 'other';
+			}
+		});
 
-		assetsCommodity = result2.commodity ? result2.commodity : [];
-
-		let result3 = result2.other
-			? Object.groupBy(result2.other, ({ token_data }) =>
-					SERIES_MAP.has(token_data!.category) ? 'future' : 'other'
-				)
-			: { other: [], future: [] };
-
-		assetsFuture = result3.future ? result3.future : [];
-
-		let result4 = result3.other
-			? Object.groupBy(result3.other, ({ token_data }) =>
-					token_data!.nft?.commitment.startsWith('6a035533') ? 'auth' : 'other'
-				)
-			: { other: [], auth: [] };
-
-		assetsAuth = result4.auth ? result4.auth : [];
-
-		unspent = result4.other ? result4.other : [];
+		assetsCash = classifiedUtxos.cash;
+		assetsCommodity = classifiedUtxos.commodity;
+		assetsFuture = classifiedUtxos.future;
+		assetsAuth = classifiedUtxos.auth;
+		assetsOther = classifiedUtxos.other;
 		return unspent;
 	};
 
@@ -159,8 +191,7 @@
 			BaseWallet.StorageProvider = IndexedDBProvider;
 			wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 
-			//balance = (await wallet.getBalance('sat')) as number;
-
+			key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 			let lockingBytecode = cashAddressToLockingBytecode(wallet.getDepositAddress());
 			if (typeof lockingBytecode == 'string') throw lockingBytecode;
 			scripthash = getScriptHash(lockingBytecode.bytecode, true);
@@ -195,14 +226,10 @@
 	});
 </script>
 
-
-
-
 <svelte:head>
 	<title>👛 Wallet</title>
 	<meta name="description" content="Vox Wallet." />
 </svelte:head>
-
 
 <section>
 	<div class="status">
@@ -284,7 +311,13 @@
 			{#if assetsFuture.length > 0}
 				<h3>assets : commodities : futures</h3>
 				{#each assetsFuture as u, i (u.tx_hash + ':' + u.tx_pos)}
-					<Utxo {...u} {...{ isMainnet: isMainnet }} />
+					<FutureUtxo
+						{...u}
+						{...{ isMainnet: isMainnet }}
+						locktime={SERIES_MAP.get(u.token_data?.category)}
+						{now}
+						{redeemFutures}
+					/>
 				{/each}
 			{/if}
 
@@ -295,9 +328,9 @@
 				{/each}
 			{/if}
 
-			{#if unspent!.length > 0}
+			{#if assetsOther!.length > 0}
 				<h3>assets : other</h3>
-				{#each unspent! as u, i (u.tx_hash + ':' + u.tx_pos)}
+				{#each assetsOther! as u, i (u.tx_hash + ':' + u.tx_pos)}
 					<Utxo {...u} {isMainnet} />
 				{/each}
 			{/if}
@@ -331,7 +364,7 @@
 				</button>
 				{#if showHistory}
 					<h3>History</h3>
-					{#await wallet!.getHistory({unit:'sat', fromHeight: now-10})}
+					{#await wallet!.getHistory({ unit: 'sat', fromHeight: now - 10 })}
 						<p>...getting history</p>
 					{:then history}
 						{#if history.length > 0}
@@ -381,36 +414,11 @@
 		white-space: nowrap;
 	}
 
-	table {
-		width: 100%;
-		border-collapse: separate;
-	}
-	thead tr {
-		text-align: center;
-		font-weight: 900;
-	}
-
-	tbody tr:nth-child(odd) {
-		background-color: #fd70da2a;
-	}
-	tbody tr:nth-child(even) {
-		background-color: #e495e42c;
-	}
-	tbody tr {
-		border-radius: 10px;
-	}
-	tbody tr td {
-		padding: 4px;
-	}
-
 	.scanable {
 		padding: 60px;
 		background-color: white;
 		border-radius: 30px;
 		display: grid;
-	}
-	.scanable div {
-		text-align: center;
 	}
 
 	.scanable button {
@@ -438,15 +446,5 @@
 
 	.showSeed {
 		padding: 25px;
-	}
-
-	.r {
-		text-align: right;
-		vertical-align: middle;
-
-		max-width: 90px;
-		text-overflow: ellipsis;
-		overflow: hidden;
-		white-space: nowrap;
 	}
 </style>

@@ -442,7 +442,7 @@ export default class Wrap {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
-
+        if(typeof verify =="string") throw Error(verify)
         let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
         if (feeEstimate > 5000) verify = `Excessive fees ${feeEstimate}`
         if (sumSourceOutputTokenAmounts(sourceOutputs, category) == 0n) verify = `Error checking token input`

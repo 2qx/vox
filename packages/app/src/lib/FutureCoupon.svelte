@@ -96,38 +96,21 @@
 	.balance div {
 		padding: 5px;
 	}
-	.hash {
-		font-size: xx-small;
-		font-weight: 200;
-		align-content: flex-start;
-		color: #857070;
-		max-width: 70%;
-		word-break: break-all;
-	}
+	
 	.fill {
 		flex: 1;
 		word-break: break-all;
 		display: flex;
 		flex-direction: column;
 	}
-	.fill div {
-	}
-	.fill div p {
-		text-align: right;
-	}
+	
 	.timestamp {
 		font-size: xx-small;
 		font-weight: 200;
 		color: #777;
 		word-break: break-all;
 	}
-	.auth {
-		align-content: center;
-		padding: 5px 5px 5px 5px;
-	}
-	.auth img {
-		border-radius: 50%;
-	}
+	
 
 	.end {
 		text-align: end;
@@ -138,14 +121,6 @@
 			font-weight: 400;
 			line-height: 1;
 		}
-	}
-
-	.post.op {
-		background-color: #fff;
-	}
-
-	.error {
-		color: brown;
 	}
 
 	button {

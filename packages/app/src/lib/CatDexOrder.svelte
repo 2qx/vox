@@ -67,19 +67,6 @@
 		background-color: #9ef79e;
 	}
 
-	
-
-	.header {
-		display: flex;
-	}
-	.orderText {
-		display: flex;
-		flex-wrap: wrap;
-		padding: 0px;
-	}
-	.orderText div {
-		padding: 0px;
-	}
 	.quantity {
 		white-space: pre-wrap;
 		font-size: small;
@@ -95,14 +82,7 @@
 	.balance {
 		display: flex;
 	}
-	.hash {
-		font-size: xx-small;
-		font-weight: 200;
-		align-content: flex-start;
-		color: #857070;
-		max-width: 70%;
-		word-break: break-all;
-	}
+	
 	.order {
 		align-items: center;
 		flex: 1;
@@ -112,27 +92,16 @@
 		align-items: center;
 	}
 
-	.order pre {
-		margin: 0px;
-		font-weight: 700;
-		font-size: x-small;
-	}
+	
 	.order div {
 		padding: 2px;
 	}
-	.timestamp {
-		font-size: xx-small;
-		font-weight: 200;
-		color: #777;
-		word-break: break-all;
-	}
+	
 	.auth {
 		display: flex;
 		opacity: 0.9;
 		align-content: center;
 	}
 
-	.error {
-		color: brown;
-	}
+	
 </style>

@@ -652,19 +652,7 @@
 		text-align: end;
 	}
 
-	.auth {
-		align-content: center;
-		padding: 10px;
-	}
-	.auth img {
-		border-radius: 20%;
-	}
-
-	.fill {
-		flex: 1;
-		word-break: break-all;
-		display: flex;
-	}
+	
 
 	.orderBooks {
 		display: flex;
@@ -676,8 +664,6 @@
 		align-items: center;
 	}
 
-	.orderBooks .askBook {
-	}
 
 	.orders {
 		display: flex;
@@ -724,12 +710,6 @@
 		font-size: 16px;
 	}
 
-	.settings {
-		margin: 10px;
-	}
-	.settings button {
-		margin: 5px;
-	}
 	.switch {
 		position: relative;
 		display: inline-block;
