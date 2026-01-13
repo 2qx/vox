@@ -15,11 +15,11 @@ import {
     OutputTemplate,
     Output,
     padMinimallyEncodedVmNumber,
-    swapEndianness,
     Transaction,
     verifyTransactionTokens,
     vmNumberToBigInt,
-    stringify
+    stringify,
+    assertNonNull
 } from '@bitauth/libauth';
 
 import {
@@ -28,31 +28,48 @@ import {
     getLibauthCompiler,
     getScriptHash,
     getTransactionFees,
-    UtxoI,
+    listUnspentTokensWrap,
+    promiseAllInBatches,
     sumSourceOutputTokenAmounts,
     sumSourceOutputValue,
     sumOutputValue,
-    sumOutputTokenAmounts
+    sumOutputTokenAmounts,
+    UtxoI
 } from '@unspent/tau';
 
 const PRICE_MULTIPLIER = 100_000_000
 
 
 export interface OrderRequest {
-    amount: bigint;
-    price: bigint;
+    quantity: bigint;
+    price: number;
 }
 
 
 export interface CatDexOrder {
+
     authCategory: Uint8Array;
     assetCategory: Uint8Array;
+
     orderUtxo: UtxoI;
-    assetUtxo: UtxoI;
+
+    // An asset thread may or may not exist, 
+    // in the case an order is opening a position.
+    assetUtxo?: UtxoI;
+
+    // price per token
     price: number;
-    quantity: number;
-    value: bigint;
-    amount: bigint;
+
+    // tokens available on asset utxo
+    amount?: bigint;
+
+    // order amount remaining for fulfillment
+    quantity: bigint;
+
+    // satoshis available on order utxo
+    value: number;
+
+
 }
 
 
@@ -76,14 +93,14 @@ export default class CatDex {
     static getLockingBytecode(
         authCat: Uint8Array | string,
         assetCat: Uint8Array | string): Uint8Array {
-        if (typeof authCat == "string") authCat = hexToBin(swapEndianness(authCat))
-        if (typeof assetCat == "string") assetCat = hexToBin(swapEndianness(assetCat))
+        if (typeof authCat == "string") authCat = hexToBin(authCat)
+        if (typeof assetCat == "string") assetCat = hexToBin(assetCat)
         const lockingBytecodeResult = this.compiler.generateBytecode(
             {
                 data: {
                     "bytecode": {
-                        "auth_category": authCat,
-                        "asset_category": assetCat
+                        "auth_category": new Uint8Array(authCat).reverse(),
+                        "asset_category": new Uint8Array(assetCat).reverse()
                     }
                 },
                 scriptId: 'lock'
@@ -129,6 +146,50 @@ export default class CatDex {
     }
 
 
+    static getCatDexOrdersFromUtxos(
+        assetCat: Uint8Array | string,
+        utxos: UtxoI[],
+        excludeCompleted = true,
+    ): CatDexOrder[] {
+        if (typeof assetCat != "string") assetCat = binToHex(assetCat)
+
+        let orderUtxos = utxos.filter((u: UtxoI) => u.token_data && u.token_data?.category != assetCat)
+
+        let dexOrders = orderUtxos.map((u: UtxoI) => {
+            let orderData = this.parseNFT(u.token_data?.nft?.commitment!)
+            return {
+                authCategory: hexToBin(u.token_data?.category!),
+                assetCategory: hexToBin(assetCat),
+                orderUtxo: u,
+                assetUtxo: undefined,
+                price: orderData.price,
+                quantity: orderData.quantity,
+                value: u.value,
+                amount: undefined
+            }
+        })
+
+        dexOrders.sort((a: CatDexOrder, b: CatDexOrder) => Number(b.price) - Number(a.price))
+        if (excludeCompleted) dexOrders = dexOrders.filter((o) => o.quantity != 0n);
+
+        let matchedOrders: CatDexOrder[] = []
+        for (let order of dexOrders) {
+
+            let matchingIdx = utxos.findIndex((u: UtxoI) => u.tx_hash == order.orderUtxo.tx_hash && u.tx_pos == (order.orderUtxo.tx_pos + 1))
+            if (matchingIdx == -1) throw ("Couldn't find matching asset thread")
+
+            let assetInfo = {}
+            assetInfo = {
+                assetUtxo: utxos[matchingIdx],
+                amount: utxos[matchingIdx]?.token_data ? utxos[matchingIdx].token_data.amount : 0n
+            }
+            matchedOrders.push(
+                { ...order, ...assetInfo }
+            )
+        }
+        return matchedOrders
+    }
+
     static getSourceOutput(
         authCat: Uint8Array | string,
         assetCat: Uint8Array | string,
@@ -156,14 +217,15 @@ export default class CatDex {
      * @param commitment - nft commitment
      * @returns an order.
      */
-    static parseNFT(commitment: Uint8Array): OrderRequest {
+    static parseNFT(commitment: Uint8Array | string): OrderRequest {
 
+        if (typeof commitment == "string") commitment = hexToBin(commitment)
 
-        let amount = vmNumberToBigInt(commitment.slice(0, 16)!, { requireMinimalEncoding: false })
-        let price = vmNumberToBigInt(commitment.slice(-16)!, { requireMinimalEncoding: false })
+        let quantity = vmNumberToBigInt(commitment.slice(0, 16)!, { requireMinimalEncoding: false })
+        let encodedPrice = vmNumberToBigInt(commitment.slice(-16)!, { requireMinimalEncoding: false })
         return {
-            amount: BigInt(amount),
-            price: BigInt(price)
+            quantity: BigInt(quantity),
+            price: (Number(encodedPrice) / PRICE_MULTIPLIER)
         }
 
     }
@@ -177,8 +239,8 @@ export default class CatDex {
     static encodeNFT(order: OrderRequest): Uint8Array {
         return new Uint8Array(
             [
-                ...padMinimallyEncodedVmNumber(bigIntToVmNumber(order.amount), 16),
-                ...padMinimallyEncodedVmNumber(bigIntToVmNumber(order.price), 16)
+                ...padMinimallyEncodedVmNumber(bigIntToVmNumber(BigInt(order.quantity)), 16),
+                ...padMinimallyEncodedVmNumber(bigIntToVmNumber(BigInt(Math.trunc(order.price * PRICE_MULTIPLIER))), 16)
             ]
         )
     }
@@ -188,8 +250,8 @@ export default class CatDex {
         assetCat: Uint8Array | string,
         utxo: UtxoI
     ): InputTemplate<CompilerBch> {
-        if (typeof authCat == "string") authCat = hexToBin(swapEndianness(authCat))
-        if (typeof assetCat == "string") assetCat = hexToBin(swapEndianness(assetCat))
+        if (typeof authCat == "string") authCat = hexToBin(authCat)
+        if (typeof assetCat == "string") assetCat = hexToBin(assetCat)
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -197,8 +259,8 @@ export default class CatDex {
             unlockingBytecode: {
                 data: {
                     "bytecode": {
-                        "auth_category": authCat,
-                        "asset_category": assetCat
+                        "auth_category": new Uint8Array(authCat).reverse(),
+                        "asset_category": new Uint8Array(assetCat).reverse()
                     }
                 },
                 compiler: this.compiler,
@@ -217,22 +279,49 @@ export default class CatDex {
     }
 
 
-    static getOutput(
-        authCat: Uint8Array | string,
-        assetCat: Uint8Array | string,
-        utxo: UtxoI,
+    static getOrderOutput(
+        order: CatDexOrder,
         amount: bigint
-    ): OutputTemplate<CompilerBch> {
+    ): OutputTemplate<CompilerBch>[] {
 
-        return {
-            lockingBytecode: this.getLockingBytecode(authCat, assetCat),
-            valueSatoshis: BigInt(utxo.value) + amount,
-            token: {
-                category: hexToBin(utxo.token_data!.category!),
-                amount: BigInt(utxo.token_data?.amount!) - BigInt(amount)
-            }
+        let lockingBytecode = this.getLockingBytecode(order.authCategory, order.assetCategory)
+
+        let tokensOut = 0n;
+        if (order.amount! > 0) {
+            tokensOut = BigInt(order.assetUtxo!.token_data!.amount) - amount
+        } else {
+            tokensOut = -amount
         }
 
+        let out: OutputTemplate<CompilerBch>[] = [
+            {
+                lockingBytecode: lockingBytecode,
+                valueSatoshis: BigInt(order.orderUtxo.value) + BigInt(Number(amount) * order.price),
+                token: {
+                    amount: 0n,
+                    category: hexToBin(order.orderUtxo.token_data!.category!),
+                    nft: {
+                        commitment: CatDex.encodeNFT(
+                            {
+                                quantity: order.quantity + amount,
+                                price: order.price
+                            }
+                        ),
+                        capability: 'mutable'
+                    }
+                }
+            },
+            {
+                lockingBytecode: lockingBytecode,
+                valueSatoshis: BigInt(800n),
+                token: tokensOut != 0n ? {
+                    category: order.assetCategory,
+                    amount: BigInt(tokensOut)
+                } : undefined
+            }
+        ]
+
+        return out
     }
 
 
@@ -250,12 +339,15 @@ export default class CatDex {
         let cashReserves = 800n;
         let tokenReserves = 0n;
 
-        if (order.amount < 0) cashReserves += BigInt(order.price * -order.amount)
-        if (order.amount > 0) tokenReserves += BigInt(order.amount)
+        // If buying, have cash on hand
+        if (order.quantity > 0n) cashReserves += BigInt(Math.trunc(order.price * Number(order.quantity)))
+
+        // If selling, have tokens on hand to satisfy the negative order
+        if (order.quantity < 0n) tokenReserves = -BigInt(order.quantity)
 
         const orderCommitment = this.encodeNFT(order)
 
-        return [
+        let outputs: OutputTemplate<CompilerBch>[] = [
             {
                 lockingBytecode: lockingBytecode,
                 valueSatoshis: cashReserves,
@@ -266,18 +358,22 @@ export default class CatDex {
                         commitment: orderCommitment,
                         capability: 'mutable'
                     }
-
-                }
-            },
-            {
-                lockingBytecode: this.getLockingBytecode(authCat, assetCat),
-                valueSatoshis: 800n,
-                token: {
-                    category: assetCat,
-                    amount: tokenReserves
                 }
             }
         ]
+
+        // If the order is to sell tokens, add the correlated tokens to a utxo,
+        // otherwise, create an empty 800 say dust utxo to receive tokens.
+        outputs.push({
+            lockingBytecode: lockingBytecode,
+            valueSatoshis: 800n,
+            token: tokenReserves > 0n ? {
+                category: assetCat,
+                amount: tokenReserves
+            } : undefined
+        })
+
+        return outputs
     }
 
 
@@ -403,8 +499,6 @@ export default class CatDex {
     }
 
 
-
-
     static getAuthLayers(
         authUtxo: UtxoI,
         privateKey?: any,
@@ -440,13 +534,13 @@ export default class CatDex {
 
         inputs.push(...utxos.map(u => this.getInput(authCat, assetCat, u)))
         sourceOutputs.push(...utxos.map(u => this.getSourceOutput(authCat, assetCat, u)))
-        outputs.push(...orders.map(o => this.orderRequestToOutputs(authCat, assetCat, o)).flat(1))
+        outputs.push(...orders.map(o => this.orderRequestToOutputs(authCat, assetCat, o)).flat())
         return { inputs, outputs, sourceOutputs }
     }
 
     static getBlackBoardLayers(
         orders: CatDexOrder[],
-        amount: bigint,
+        tradeAmount: bigint,
         sourceOutputs: Output[] = []
     ): {
         inputs: InputTemplate<CompilerBch>[],
@@ -454,57 +548,54 @@ export default class CatDex {
         sourceOutputs: Output[]
     } {
 
+
         let inputs: InputTemplate<CompilerBch>[] = [];
         let outputs: OutputTemplate<CompilerBch>[] = [];
 
         // Filter available orders to match direction of trade
-        orders.filter(o => Math.sign(Number(o.amount)) == Math.sign(Number(amount)))
+        orders = orders.filter(o => Math.sign(Number(o.quantity)) != Math.sign(Number(tradeAmount)))
 
         // Check if we still have a market
         if (orders.length == 0) throw Error("no orders left, maximum recursion depth reached.");
 
-        const sortFn = amount > 0 ?
-            ((a: CatDexOrder, b: CatDexOrder) => a.price - b.price) :
-            ((a: CatDexOrder, b: CatDexOrder) => a.price + b.price)
+        const sortFn = tradeAmount > 0 ?
+            ((a: CatDexOrder, b: CatDexOrder) => Number(a.price - b.price)) :
+            ((a: CatDexOrder, b: CatDexOrder) => Number(a.price + b.price))
 
         // sort orders by price
         orders.sort(sortFn)
 
         // pop the best order
-        const best = orders.shift()!
+        const best = orders.shift()
 
-        // Load the order threads
-        inputs.push(
-            this.getInput(best.authCategory, best.assetCategory, best.orderUtxo)
-        )
-        sourceOutputs.push(
-            this.getSourceOutput(best.authCategory, best.assetCategory, best.orderUtxo)
-        );
+        if (!best) throw Error("No matching best order found.")
+        if (!best.assetUtxo) throw Error("Order missing asset utxo")
 
-        // Load the asset threads
-        inputs.push(
-            this.getInput(best.authCategory, best.assetCategory, best.assetUtxo)
-        )
-        sourceOutputs.push(
-            this.getSourceOutput(best.authCategory, best.assetCategory, best.assetUtxo)
-        );
+        // Push order thread inputs
+        inputs.push(this.getInput(best.authCategory, best.assetCategory, best.orderUtxo))
+        inputs.push(this.getInput(best.authCategory, best.assetCategory, best.assetUtxo))
 
-        // if the best order can satisfy the quantity requested token amount
-        if (best.amount < amount) {
+        // Push source outputs
+        sourceOutputs.push(this.getSourceOutput(best.authCategory, best.assetCategory, best.orderUtxo));
+        sourceOutputs.push(this.getSourceOutput(best.authCategory, best.assetCategory, best.assetUtxo));
+
+        // The best priced order satisfies the amount needed, and we go no further
+        if (Math.abs(Number(tradeAmount)) <= Math.abs(Number(best.quantity))) {
             outputs.push(
-                this.getOutput(best.authCategory, best.assetCategory, best.assetUtxo, amount)
+                ... this.getOrderOutput(best, tradeAmount)
             )
-            outputs.push(
-                this.getOutput(best.authCategory, best.assetCategory, best.assetUtxo, amount)
-            )
-        } else {
-            if (amount < 0 && amount < -(best.amount!)) {
-                // liquidate the best order
-                outputs.push(this.getOutput(best.authCategory, best.assetCategory, best.assetUtxo, -amount))
-                amount += best.amount
-            }
+        }
+
+        // The best priced order cannot satisfy the quantity needed, 
+        // so liquidate it and try again.
+        else {
+
+            // liquidate the best order
+            outputs.push(... this.getOrderOutput(best, -best.quantity))
+            tradeAmount += best.quantity
+
             // and try again
-            let nextTry = this.getBlackBoardLayers([...orders], amount, [...sourceOutputs])
+            let nextTry = this.getBlackBoardLayers([...orders], tradeAmount, [...sourceOutputs])
             inputs.push(...nextTry.inputs)
             outputs.push(...nextTry.outputs)
             sourceOutputs = nextTry.sourceOutputs
@@ -533,7 +624,13 @@ export default class CatDex {
         if (!category) {
             utxos = utxos.filter(u => !u.token_data)
         } else {
-            utxos = utxos.filter(u => u.token_data && u.token_data?.category == category)
+            console.log(utxos)
+            utxos = utxos
+                .filter(u => u.token_data && u.token_data?.category == category)
+
+                // Must not contain NFTs
+                .filter(u => u.token_data && !u.token_data.nft)
+            console.log(utxos)
         }
 
         // TODO: sort by highest value first
@@ -590,18 +687,22 @@ export default class CatDex {
         let sumSatsIn = sumSourceOutputValue(sourceOutputs)
         let satsRequired = sumSatsOut - sumSatsIn
 
+        const satsIn = this.getWalletInputs(walletUtxos, satsRequired, privateKey)
+        config.inputs.push(...satsIn.inputs);
+        sourceOutputs.push(...satsIn.sourceOutputs);
+
+
         let sumTokenAmountsOut = sumOutputTokenAmounts(config.outputs, assetCat)
         let sumTokenAmountsIn = sumSourceOutputTokenAmounts(sourceOutputs, assetCat)
         let tokensRequired = sumTokenAmountsOut - sumTokenAmountsIn
+        console.log("Tokens required:", tokensRequired)
 
+        if (tokensRequired > 0n) {
+            const tokensIn = this.getWalletInputs(walletUtxos, tokensRequired, privateKey, assetCat)
+            config.inputs.push(...tokensIn.inputs);
+            sourceOutputs.push(...tokensIn.sourceOutputs);
+        }
 
-        const satsIn = this.getWalletInputs(walletUtxos, satsRequired, privateKey)
-        const tokensIn = this.getWalletInputs(walletUtxos, tokensRequired, privateKey, assetCat)
-
-        config.inputs.push(...satsIn.inputs);
-        sourceOutputs.push(...satsIn.sourceOutputs);
-        config.inputs.push(...tokensIn.inputs);
-        sourceOutputs.push(...tokensIn.sourceOutputs);
 
         // Calculate excess cash and tokens to be returned as change
         sumSatsOut = sumOutputValue(config.outputs)
@@ -707,7 +808,8 @@ export default class CatDex {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
-
+        if(typeof verify =="string") throw Error(verify)
+            
         let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
         if (feeEstimate > 5000) verify = `Excessive fees ${feeEstimate}`
         if (sumSourceOutputTokenAmounts(sourceOutputs, assetCat) == 0n) verify = `Error checking token input`
@@ -732,10 +834,9 @@ export default class CatDex {
      * 
      * Buy tokens by specifying a positive amount, and a negative amount to sell.
      * 
-     * 
      *
-     * @param amount - token amount to buy, negative (-) to sell.
-     * @param catDexOrders - A multi-exchange list of available catdex orders.
+     * @param amount - token amount to buy, or sell negative (-).
+     * @param catDexOrders - A multi-exchange list of available catdex orders for a token.
      * @param walletUtxos - wallet outputs to use as input.
      * @param privateKey - private key to sign transaction wallet inputs.
      * @param fee - transaction fee to pay (per byte).
@@ -745,7 +846,7 @@ export default class CatDex {
      */
 
     static swap(
-        amount: bigint,
+        tradeAmount: bigint,
         catDexOrders: CatDexOrder[],
         walletUtxos: UtxoI[],
         privateKey?: string,
@@ -761,9 +862,12 @@ export default class CatDex {
 
         let sourceOutputs: Output[] = []
 
-        let authCat = catDexOrders[0]!.orderUtxo.token_data?.category!
-        let assetCat = catDexOrders[0]!.assetUtxo.token_data?.category!
+        let assetCat = binToHex(catDexOrders[0]?.assetCategory!)
 
+        let assetTypes = new Set(catDexOrders.map(o => binToHex(o.assetCategory)))
+        if (assetTypes.size > 1) throw ("A catdex swap may only trade one asset at a time, mixed assets found.")
+
+        // Check all catDex
 
         let config = {
             locktime: 0,
@@ -772,12 +876,12 @@ export default class CatDex {
             outputs
         }
 
-        // if selling tokens for Bch for WBch, don't use utxos with tokens
-        walletUtxos = walletUtxos.filter(u => u.token_data!.category == assetCat || !u.token_data)
+        // if selling tokens for Bch for tokens, don't use utxos with other tokens
+        walletUtxos = walletUtxos.filter(u => u.token_data?.category == assetCat || !u.token_data)
 
         let vaultLayers = this.getBlackBoardLayers(
             catDexOrders,
-            amount,
+            tradeAmount,
             sourceOutputs
         );
         config.inputs.push(...vaultLayers.inputs);
@@ -827,4 +931,14 @@ export default class CatDex {
             verify: verify
         }
     }
+
+
+
+}
+
+export async function getAllMarketOrders(electrumClient: any, scriptHashes: string[]): Promise<Map<string, UtxoI>> {
+    let allUnspent = (await promiseAllInBatches(listUnspentTokensWrap, scriptHashes.map(a => [electrumClient, a]))).flat()
+    var map = new Map();
+    allUnspent.map((obj: UtxoI) => map.set(obj.tx_hash + ":" + obj.tx_pos, obj));
+    return map as Map<string, any>
 }

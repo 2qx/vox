@@ -1,5 +1,5 @@
 //   
-// CatDex - WIP 20250115, Mock tested
+// CatDex - WIP 20251202, Mock, regtest
 //
 //   Parameters:
 //
@@ -26,13 +26,12 @@ contract CatDex(bytes32 authCat, bytes32 assetCat){
             // OP_INPUTINDEX OP_INPUTINDEX OP_2 OP_MOD OP_SUB 
             int orderIndex = this.activeInputIndex - (this.activeInputIndex % 2);  
 
-            // Require the order is mutable
-            // OP_DUP OP_UTXOTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUALVERIFY 
-            require(tx.inputs[orderIndex].tokenCategory == authCat + 0x01 );
-
-            // Require the mutable baton returns
-            // OP_DUP OP_OUTPUTTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUALVERIFY 
-            require(tx.outputs[orderIndex].tokenCategory == authCat + 0x01);
+            // OP_DUP OP_OUTPUTTOKENCATEGORY OP_2 OP_PICK OP_1 OP_CAT OP_EQUALVERIFY
+            require(tx.outputs[orderIndex].tokenCategory ==  authCat + 0x01);
+            
+            // Require order category is fixed
+            // OP_DUP OP_UTXOTOKENCATEGORY OP_OVER OP_OUTPUTTOKENCATEGORY OP_EQUALVERIFY
+            require(tx.inputs[orderIndex].tokenCategory == tx.outputs[orderIndex].tokenCategory);
 
             // Require the order baton be passed back to the contract
             // OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_UTXOBYTECODE OP_EQUALVERIFY 
@@ -52,7 +51,7 @@ contract CatDex(bytes32 authCat, bytes32 assetCat){
             // OP_DUP OP_OUTPUTTOKENAMOUNT OP_0 OP_GREATERTHAN OP_IF 
             if(tx.outputs[assetIndex].tokenAmount > 0){
               // require the asset output contain token category specified by the order
-              // OP_DUP OP_OUTPUTTOKENCATEGORY OP_4 OP_PICK OP_EQUALVERIFY 
+              // OP_DUP OP_OUTPUTTOKENCATEGORY OP_4 OP_PICK OP_EQUALVERIFY
               require(tx.outputs[assetIndex].tokenCategory == assetCat);
             } // OP_ENDIF 
 
@@ -90,9 +89,10 @@ contract CatDex(bytes32 authCat, bytes32 assetCat){
 
             // Verify the value returned with the order exceeds the quantity traded times the price.
             // OP_7 OP_PICK OP_OUTPUTVALUE OP_8 OP_PICK OP_UTXOVALUE OP_SUB
-            //  OP_2OVER OP_SWAP OP_MUL <100_000_000> OP_DIV OP_NEGATE OP_NUMEQUALVERIFY 
-            require((tx.outputs[orderIndex].value - tx.inputs[orderIndex].value) == -(tradeQuantity*price/100_000_000));
-            //
+            // OP_2OVER OP_SWAP OP_MUL <100_000_000> OP_DIV OP_NEGATE OP_NUMEQUALVERIFY 
+            require((tx.outputs[orderIndex].value - tx.inputs[orderIndex].value) >= -(tradeQuantity*price/100_000_000));
+
+            
         } // OP_2DROP OP_2DROP OP_2DROP OP_2DROP 
         //
     } 

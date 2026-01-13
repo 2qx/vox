@@ -3,11 +3,11 @@
 	const isMainnet = page.url.hostname == 'vox.cash';
 	let protocols = [
 		{
-			name: 'Badger',
+			name: 'Badgers',
 			description: 'Token rewards for time-locking BCH.',
 			image: '/badger.svg',
 			link: '/badger',
-			disabled: true
+			disabled: false
 		},
 		{
 			name: 'BPTS',
@@ -21,7 +21,7 @@
 			description: 'A limit order decentralized exchange.',
 			link: '/cat',
 			image: '/cat.svg',
-			disabled: true
+			disabled: false
 		},
 		{
 			name: 'Drip',
@@ -42,7 +42,7 @@
 			description: 'Tokenized timelocked BCH',
 			image: '/FBCH.svg',
 			link: '/future',
-			disabled: true
+			disabled: false
 		},
 
 		{
@@ -57,7 +57,7 @@
 			description: 'A small database.',
 			image: '/small.svg',
 			link: '/db',
-			disabled: true
+			disabled: false
 		},
 		{
 			name: 'Subscription',
@@ -98,8 +98,12 @@
 </script>
 
 <svelte:head>
-	<title>vox</title>
-	<meta name="description" content="vox dot cash" />
+	<title>VOX•CASH | A collection of small Bitcoin Cash web apps.</title>
+	<meta
+		name="description"
+		content="Save, trade, earn, learn, & communicate using VOX•CASH, a collection of 
+		bitcoin (cash) apps that can empower anyone on their journey to financial freedom."
+	/>
 </svelte:head>
 <section>
 	<div class="welcome">
@@ -122,11 +126,7 @@
 		align-items: center;
 		flex: 0.6;
 		display: flex;
-		padding: 0px;
-	}
-
-	h1 {
-		width: 100%;
+		padding-top: 10px;
 	}
 
 	.welcome {
@@ -151,7 +151,9 @@
 		border: none;
 		cursor: pointer;
 		overflow: hidden;
-		outline: none;
+		outline: none;h1 {
+		width: 100%;
+	}
 		font-weight: 500;
 		font-size: small;
 		filter: drop-shadow(5px 5px 5px #ffffffc4);

@@ -2,7 +2,6 @@ import {
   bigIntToVmNumber,
   binToHex,
   CashAddressType,
-  // CashAddressNetworkPrefix,
   cashAddressTypeBitsToType,
   cashAssemblyToBin,
   CompilerBch,
@@ -10,12 +9,7 @@ import {
   decodeCashAddressFormatWithoutPrefix,
   decodeCashAddressVersionByte,
   encodeTransactionBch,
-  // hexToBin,
-  // CompilerBch,
-  // generateTransaction,
-  // InputTemplate,
   lockingBytecodeToCashAddress,
-  // OutputTemplate,
   Output,
   OutputTemplate,
   sha256,
@@ -191,3 +185,4 @@ export function cashAssemblyToHex(str: string): string {
   if (typeof result === "string") throw result
   return binToHex(result)
 }
+

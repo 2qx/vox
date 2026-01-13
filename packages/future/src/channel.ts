@@ -189,8 +189,8 @@ export function buildChannel(
         .filter(p => p != undefined)
 
 
-    let likeOccurances = posts.filter(p => p.likes == 1).map(p => { return p.ref });
-    let likes = likeOccurances.reduce((acc, e) => acc.set(e, (acc.get(e) || 0) + 1), new Map());
+    let likeOccurrences = posts.filter(p => p.likes == 1).map(p => { return p.ref });
+    let likes = likeOccurrences.reduce((acc, e) => acc.set(e, (acc.get(e) || 0) + 1), new Map());
     for (const post of posts) {
         post.likes = likes.get(post.hash) ? likes.get(post.hash) : 0
     }
@@ -517,6 +517,7 @@ export class Channel {
         let valueIn = sumSourceOutputValue(sourceOutputs)
         let valueOut = sumOutputValue(config.outputs)
         let change = valueIn - valueOut;
+        console.log(change)
         config.outputs.push(this.getChangeOutput(auth, change, key))
 
         return this.buildAndValidateTransaction(config, sourceOutputs, fee)
@@ -631,6 +632,8 @@ export class Channel {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
+
+        if(typeof verify =="string") throw Error(verify)
 
         return {
             sourceOutputs: sourceOutputs,

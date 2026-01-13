@@ -1,5 +1,5 @@
 import test from 'ava';
-import { hexToBin } from "@bitauth/libauth";
+import { binToHex, encodeTransactionBch } from "@bitauth/libauth";
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
 import { RegTestWallet, mine, NFTCapability, TokenMintRequest, } from "mainnet-js";
@@ -33,9 +33,6 @@ test('test dropping function with index key', async t => {
         ]
     );
 
-
-
-
     await mine({
         /* cspell:disable-next-line */
         cashaddr: "bchreg:ppt0dzpt8xmt9h2apv9r60cydmy9k0jkfg4atpnp2f",
@@ -54,14 +51,14 @@ test('test dropping function with index key', async t => {
     let currentHeight = await provider.getBlockHeight()
     contractUtxos = contractUtxos.filter((u: any) => u.height + u.value < currentHeight)
     
-    let transaction = SmallIndex.drop("test", contractUtxos[0])
+    let response = SmallIndex.drop("test", contractUtxos)
 
     const oldLength =  contractUtxos.length
 
     // @ts-ignore
     await provider.performRequest(
         "blockchain.transaction.broadcast",
-        transaction
+        binToHex(encodeTransactionBch(response.transaction))
     )
 
 

@@ -2,9 +2,10 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 
-	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBCH } from '@bitauth/libauth';
+	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch } from '@bitauth/libauth';
 
-	import bch from '$lib/images/BCH.svg';
+	import BCH from '$lib/images/BCH.svg';
+	import tBCH from '$lib/images/tBCH.svg';
 	import tWBCH from '$lib/images/tWBCH.svg';
 	import WBCH from '$lib/images/WBCH.svg';
 
@@ -18,21 +19,22 @@
 	import { WBCH as wbchCat, tWBCH as twbchCat } from '@unspent/wrap';
 
 	import Readme from './README.md';
+
 	import BitauthLink from '$lib/BitauthLink.svelte';
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 
 	let connectionStatus = $state('');
 
-	let transaction_hex = '';
+	let transaction_hex = $state('');
 	let transaction: any = $state(undefined);
 	let transactionValid = $state(false);
-	let sourceOutputs: any = undefined;
+	let sourceOutputs: any = $state();
 
 	let unspent: any[] = $state([]);
 	let walletUnspent: any[] = $state([]);
 	let key = '';
-	let electrumClient:any = $state();
+	let electrumClient: any = $state();
 	let timer: any;
 	let scripthash = $state('');
 	let walletScriptHash = $state('');
@@ -52,6 +54,7 @@
 	const ticker = isMainnet ? 'WBCH' : 'tWBCH';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const bchIcon = isMainnet ? BCH : tBCH;
 
 	let spent = new Set();
 
@@ -125,7 +128,7 @@
 			let result = Wrap.swap(amount, unspent, walletUnspent, key, category);
 			transaction = result.transaction;
 			sourceOutputs = result.sourceOutputs;
-			transaction_hex = binToHex(encodeTransactionBCH(transaction));
+			transaction_hex = binToHex(encodeTransactionBch(transaction));
 			transactionValid = result.verify === true ? true : false;
 			if (result.verify === true) transactionError = '';
 		} catch (error: any) {
@@ -138,9 +141,8 @@
 	};
 
 	onMount(async () => {
-
 		BaseWallet.StorageProvider = IndexedDBProvider;
-		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`) ;
+		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 		let bytecodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
 		if (typeof bytecodeResult == 'string') throw bytecodeResult;
@@ -168,6 +170,14 @@
 	});
 </script>
 
+
+
+
+<svelte:head>
+	<title>🎁 Wrapped BCH</title>
+	<meta name="description" content="Wrap (or unwrap) Bitcoin Cash as a CashToken." />
+</svelte:head>
+
 <section>
 	<div class="status">
 		<BitauthLink template={Wrap.template} />
@@ -178,51 +188,58 @@
 		{/if}
 	</div>
 	<h1>Wrap Bitcoin Cash as a CashToken</h1>
-
-	<div class="swap">
-		<div>
-			<img width="50" src={bch} alt={baseTicker} />
-
-			<br />
-			{sumWallet.toLocaleString()} sats {baseTicker}
-		</div>
-		<div>
-			<img width="50" src={icon} alt={ticker} />
-			<br />
-			{sumWalletWrapped.toLocaleString()} sats {ticker}
-		</div>
-	</div>
-	<div class="swap">
-		<input
-			type="range"
-			bind:value={amount}
-			step="1000"
-			onchange={() => updateSwap()}
-			min={Number(-sumWalletWrapped)}
-			max={sumWallet - 2000}
-		/>
-	</div>
-
-	{#if transaction && transactionValid}
+	{#if connectionStatus == 'CONNECTED'}
 		<div class="swap">
 			<div>
-				{#if amount > 0}
-					place: {amount.toLocaleString()} sats
-				{:else if amount < 0}
-					redeem: {(-amount).toLocaleString()} wrapped sats
-				{/if}
+				<img width="50" src={bchIcon} alt={baseTicker} />
+				<br />
+				{(sumWallet / 100000000).toLocaleString(undefined,{maximumSignificantDigits:5})}
+				{baseTicker}
+			</div>
+			<div>
+				<img width="50" src={icon} alt={ticker} />
+				<br />
+
+				{(Number(sumWalletWrapped) / 100000000).toLocaleString(undefined,{maximumSignificantDigits:5})}
+				{ticker}
 			</div>
 		</div>
 		<div class="swap">
-			<button onclick={() => broadcast(transaction_hex)}>Broadcast</button>
+			{#if sumWallet > 0}
+				<input
+					class="slider"
+					type="range"
+					bind:value={amount}
+					step="1000"
+					onchange={() => updateSwap()}
+					min={Number(-sumWalletWrapped)}
+					max={sumWallet - 2000}
+				/>
+			{:else}
+				<p><a href="/wallet">Deposit funds</a> to wrap coins.</p>
+			{/if}
 		</div>
-	{/if}
-	<!-- {#if transaction}
-		<Transaction {transaction} {sourceOutputs} />
-	{/if} -->
-	{transactionError}
 
-	<!-- <div class="grid">
+		{#if transaction && transactionValid}
+			<div class="swap">
+				<div>
+					{#if amount > 0}
+						place {(amount / 100000000).toLocaleString()} {baseTicker} for {ticker}
+					{:else if amount < 0}
+						redeem {(-amount / 100000000).toLocaleString()} {ticker} for {baseTicker}
+					{/if}
+				</div>
+			</div>
+			<div class="swap">
+				<button onclick={() => broadcast(transaction_hex)}>Broadcast Transaction</button>
+			</div>
+		{/if}
+		<!-- {#if transaction}
+		    <Transaction {transaction} {sourceOutputs} />
+	    {/if} -->
+		{transactionError}
+
+		<!-- <div class="grid">
 		{#if walletUnspent.length > 0}
 			<h4>Wallet Unspent Transaction Outputs (coins)</h4>
 			<table>
@@ -278,7 +295,7 @@
 		{/if}
 	</div> -->
 
-	<!-- <div class="grid">
+		<!-- <div class="grid">
 		{#if unspent.length > 0}
 			<h4>{ticker} Vault Threads</h4>
 
@@ -326,6 +343,11 @@
 			<p>... getting wrapped vault threads.</p>
 		{/if}
 	</div> -->
+	{:else}
+		<div class="swap">
+			<p>Not connected?</p>
+		</div>
+	{/if}
 
 	<Readme />
 </section>
@@ -381,10 +403,6 @@
 		text-align: center;
 	}
 
-	.swap input {
-		background-color: #ddd;
-	}
-
 	.swap button {
 		background-color: #a45eb6; /* Green */
 		border: none;
@@ -398,5 +416,43 @@
 	}
 	.swap button:hover {
 		background-color: #9933b3;
+	}
+
+	/* The slider itself */
+	.slider {
+		-webkit-appearance: none; /* Override default CSS styles */
+		appearance: none;
+		width: 100%; /* Full-width */
+		height: 10px; /* Specified height */
+		background-color: #caa9cb; /* Grey background */
+		outline: none; /* Remove outline */
+		opacity: 0.7; /* Set transparency (for mouse-over effects on hover) */
+		-webkit-transition: 0.2s; /* 0.2 seconds transition on hover */
+		transition: opacity 0.2s;
+		border-radius: 5px;
+	}
+
+	/* Mouse-over effects */
+	.slider:hover {
+		opacity: 1; /* Fully shown on mouse-over */
+	}
+
+	/* The slider handle (use -webkit- (Chrome, Opera, Safari, Edge) and -moz- (Firefox) to override default look) */
+	.slider::-webkit-slider-thumb {
+		-webkit-appearance: none; /* Override default look */
+		appearance: none;
+		border-radius: 12px;
+		width: 25px; /* Set a specific slider handle width */
+		height: 25px; /* Slider handle height */
+		background: #d440c8; /* Green background */
+		cursor: pointer; /* Cursor on hover */
+	}
+
+	.slider::-moz-range-thumb {
+		width: 25px; /* Set a specific slider handle width */
+		height: 25px; /* Slider handle height */
+		border-radius: 10px;
+		background: #d440c8; /* Green background */
+		cursor: pointer; /* Cursor on hover */
 	}
 </style>

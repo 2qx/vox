@@ -316,13 +316,14 @@ export default class BlockPoint {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
+        if(typeof verify =="string") throw Error(verify)
 
         let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
         if (feeEstimate > 5000) verify = `Excessive fees ${feeEstimate}`
         if (sumSourceOutputTokenAmounts(sourceOutputs, category) == 0n) verify = `Error checking token input`
         let tokenDiff = sumSourceOutputTokenAmounts(sourceOutputs, category) -
             sumSourceOutputTokenAmounts(transaction.outputs, category)
-        if (tokenDiff !== 0n) verify = `Swapping should not create destroy tokens, token difference: ${tokenDiff}`
+        if (tokenDiff !== 0n) throw Error(`Claiming should not create destroy tokens, token difference: ${tokenDiff}`)
         return {
             sourceOutputs: sourceOutputs,
             transaction: transaction,

@@ -408,7 +408,6 @@ export default class Wrap {
         // if placing Bch for WBCH, don't use utxos with tokens
         walletUtxos = walletUtxos.filter(u => u.token_data?.category == category || !u.token_data)
 
-
         let vaultLayers = this.getVaultLayers([...contractUtxos], amount, wbchCat);
         config.inputs.push(...vaultLayers.inputs);
         config.outputs.push(...vaultLayers.outputs);
@@ -443,7 +442,7 @@ export default class Wrap {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
-
+        if(typeof verify =="string") throw Error(verify)
         let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
         if (feeEstimate > 5000) verify = `Excessive fees ${feeEstimate}`
         if (sumSourceOutputTokenAmounts(sourceOutputs, category) == 0n) verify = `Error checking token input`
@@ -452,7 +451,7 @@ export default class Wrap {
                 transaction.outputs,
                 category
             )
-        if (tokenDiff !== 0n) verify = `Swapping should not create destroy tokens, token difference: ${tokenDiff}`
+        if (tokenDiff !== 0n) throw Error(`Swapping should not create destroy tokens, token difference: ${tokenDiff}`)
         return {
             sourceOutputs: sourceOutputs,
             transaction: transaction,

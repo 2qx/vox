@@ -18,7 +18,7 @@ const config = {
 			fallback: '200.html'
 		}),
 		prerender:{
-			entries: ["*","/pop/"]
+			entries: ["*","/pop/","/future/"]
 		}
 	},
 	extensions: ['.svelte', '.svx', '.md']

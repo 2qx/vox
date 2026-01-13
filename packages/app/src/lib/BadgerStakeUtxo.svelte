@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { blo } from 'blo';
+	import { binToHex} from "@bitauth/libauth";
 	import bch from '$lib/images/BCH.svg';
-	import icon from '$lib/images/BADGER.svg';
+	import tbch from '$lib/images/tBCH.svg';
 
-	import { disassembleBytecodeBCH, hexToBin } from '@bitauth/libauth';
+	import {BADGER} from "@unspent/badgers";
 
-	import TokenNftData from './TokenNftData.svelte';
 	import TokenAmount from './TokenAmount.svelte';
 	import TokenIcon from './TokenIcon.svelte';
 
@@ -22,8 +22,11 @@
 		now
 	} = $props();
 
-	let hasMatured = $derived(height + stake < now);
+	let hasMatured = $derived( height > 0 && (height + stake) <= now);
+	let icon = $derived(token_data.category == BADGER ? bch: tbch)
+
 </script>
+
 
 <div class="container">
 	<div class="stake">
@@ -33,14 +36,14 @@
 					<div>
 						<TokenAmount amount={token_data.amount} category={token_data.category} />
 
-						<TokenIcon size="20" category={token_data.category}></TokenIcon>
+						<TokenIcon size={20} category={token_data.category}></TokenIcon>
 					</div>
 				{/if}
 			</div>
 			<div>
 				<div>
 					{Number(value / 100000000).toLocaleString(undefined, {})} <b>BCH</b>
-					<img width="20px" src={bch} />
+					<img width="20px" src={icon} />
 				</div>
 				<div class="auth">
 					{#if hasMatured}
@@ -54,11 +57,11 @@
 								});
 							}}
 						>
-							release
+							unlock
 						</button>
 					{/if}
 					{#if user_pkh}
-						<img height="32px" src={blo(user_pkh, 16)} alt={user_pkh} />
+						<img height="32px" src={blo(binToHex(user_pkh), 16)} alt={binToHex(user_pkh)} />
 					{/if}
 				</div>
 			</div>
@@ -89,8 +92,7 @@
 	.header {
 		display: flex;
 	}
-	.balance {
-	}
+
 	.hash {
 		font-size: xx-small;
 		font-weight: 200;
@@ -102,6 +104,7 @@
 	.fill {
 		flex: 1;
 		word-break: break-all;
+		font-size: small;
 	}
 	.fill div {
 	}
@@ -128,6 +131,21 @@
 			font-weight: 400;
 			line-height: 1;
 		}
+	}
+
+	button {
+		background-color: #a45eb6; /* Green */
+		border: none;
+		color: white;
+		padding: 5px;
+		border-radius: 20px;
+		text-align: center;
+		text-decoration: none;
+		display: inline-block;
+	}
+
+	button:hover {
+		background-color: #9933b3;
 	}
 
 	.stake.op {

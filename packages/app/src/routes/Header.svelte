@@ -10,8 +10,8 @@
 	<div class="local">This is a local development instance.</div>
 {:else if page.url.hostname.includes('unspent.dev')}
 	<div class="dev">
-		This is an <b>unstable</b> development version running on <b>chipnet</b>. Please go to
-		<a href="https://vox.cash">vox.cash</a> instead.
+		<b>Unstable</b> dev <b>chipnet</b> version. See:
+		<a href="https://vox.cash">vox.cash</a>.
 	</div>
 {:else}
 	<div class="dev">
@@ -53,7 +53,6 @@
 	.dev {
 		background-color: rgb(255, 225, 0);
 		font-weight: 900;
-		min-height: 50px;
 		color: rgb(0, 0, 0);
 		text-align: center;
 	}
@@ -62,7 +61,6 @@
 		width: 100%;
 		background-color: rgb(255, 0, 255);
 		font-weight: 900;
-		max-height: 50px;
 		color: white;
 		text-align: center;
 	}

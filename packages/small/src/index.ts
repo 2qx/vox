@@ -2,16 +2,18 @@ import template from './template.v3.json' with { type: "json" };
 import packageInfo from '../package.json' with { type: "json" };
 
 import {
-    binToHex,
     CompilerBch,
     createVirtualMachineBch,
-    encodeTransactionBch,
     generateTransaction,
     hexToBin,
     InputTemplate,
     OutputTemplate,
     Output,
-    verifyTransactionTokens
+    Transaction,
+    verifyTransactionTokens,
+    utf8ToBin,
+    isHex,
+    swapEndianness
 } from '@bitauth/libauth';
 
 import {
@@ -39,12 +41,26 @@ export default class SmallIndex {
 
     static vm = createVirtualMachineBch();
 
-    static getLockingBytecode(indexKey: string): Uint8Array {
+    static parseKey(indexKey: string | Uint8Array): Uint8Array{
+        if (typeof indexKey == "string") {
+            if (isHex(indexKey)) {
+                indexKey = hexToBin(indexKey)
+            } else {
+                indexKey = utf8ToBin(indexKey)
+            }
+        }
+        return indexKey
+    }
+
+
+    static getLockingBytecode(indexKey: string | Uint8Array): Uint8Array {
+        
+
         const lockingBytecodeResult = this.compiler.generateBytecode(
             {
                 data: {
                     "bytecode": {
-                        "key": hexToBin(indexKey)
+                        "key": this.parseKey(indexKey)
                     }
                 },
                 scriptId: 'lock'
@@ -75,11 +91,11 @@ export default class SmallIndex {
      * @throws {Error} if transaction generation fails.
      * @returns a cashaddress.
      */
-    static getAddress(indexKey: string, prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
+    static getAddress(indexKey: string | Uint8Array, prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
         return getAddress(this.getLockingBytecode(indexKey), prefix, this.tokenAware)
     }
 
-    static getSourceOutput(indexKey: string, utxo: UtxoI): Output {
+    static getSourceOutput(indexKey: string|Uint8Array, utxo: UtxoI): Output {
 
         return {
             lockingBytecode: this.getLockingBytecode(indexKey),
@@ -88,7 +104,13 @@ export default class SmallIndex {
 
     }
 
-    static getInput(indexKey: string, utxo: UtxoI): InputTemplate<CompilerBch> {
+     static getSourceOutputs(indexKey: string|Uint8Array, utxos: UtxoI[]): Output[]{
+        return utxos.map( (u:UtxoI) =>{
+            return this.getSourceOutput(indexKey, u)
+        })
+    }
+
+    static getInput(indexKey: string|Uint8Array, utxo: UtxoI): InputTemplate<CompilerBch> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
@@ -96,7 +118,7 @@ export default class SmallIndex {
             unlockingBytecode: {
                 data: {
                     "bytecode": {
-                        "key": hexToBin(indexKey)
+                        "key": this.parseKey(indexKey)
                     }
                 },
                 compiler: this.compiler,
@@ -104,6 +126,13 @@ export default class SmallIndex {
                 valueSatoshis: BigInt(utxo.value),
             },
         } as InputTemplate<CompilerBch>
+    }
+
+
+    static getInputs(indexKey: string|Uint8Array, utxos: UtxoI[]): InputTemplate<CompilerBch>[]{
+        return utxos.map( (u:UtxoI) =>{
+            return this.getInput(indexKey, u)
+        })
     }
 
     static getOutput(): OutputTemplate<CompilerBch> {
@@ -120,19 +149,23 @@ export default class SmallIndex {
     }
 
     /**
-     * Drop an expired record.
+     * Drop expired records.
      *
      * @param indexKey - The index key for the record being dropped 
-     * @param utxo - contract record to drop.
+     * @param utxos - List of records to drop.
      *
      * @throws {Error} if transaction generation fails.
      * @returns a transaction template.
      */
 
     static drop(
-        indexKey: string,
-        utxo: UtxoI
-    ): string {
+        indexKey: string|Uint8Array,
+        utxos: UtxoI[]
+    ): {
+        transaction: Transaction,
+        sourceOutputs: Output[],
+        verify: string | boolean
+    } {
 
         const inputs: InputTemplate<CompilerBch>[] = [];
         const outputs: OutputTemplate<CompilerBch>[] = [];
@@ -144,13 +177,13 @@ export default class SmallIndex {
             outputs
         }
 
-        config.inputs.push(this.getInput(indexKey, utxo));
+        config.inputs.push(... this.getInputs(indexKey, utxos));
         config.outputs.push(this.getOutput());
 
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
-        const sourceOutputs = [this.getSourceOutput(indexKey, utxo)];
+        const sourceOutputs = [... this.getSourceOutputs(indexKey, utxos)];
 
         const transaction = result.transaction
         const tokenValidationResult = verifyTransactionTokens(
@@ -164,9 +197,13 @@ export default class SmallIndex {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
+        if(typeof verify =="string") throw Error(verify)
 
-        if (typeof verify == "string") throw verify
-        return binToHex(encodeTransactionBch(transaction))
+        return {
+            sourceOutputs: sourceOutputs,
+            transaction: transaction,
+            verify: verify
+        }
     }
 
 }

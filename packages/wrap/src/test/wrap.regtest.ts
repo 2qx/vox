@@ -19,9 +19,13 @@ test('test wrap covenant address', async t => {
   const aliceBalance = await alice.getBalance('sats') as number
   t.is(aliceBalance, 500000);
 
+  /* cspell:disable-next-line */
   t.is(Wrap.getAddress(), "bitcoincash:r0ujgnc9jnyurzv99678fgac3fdrq8x3py9rlrg6dlnz96qxrdl02t6jek3sw")
+  /* cspell:disable-next-line */
   t.not(Wrap.getAddress("bchreg"), "bchreg:r0ujgnc9jnyurzv99678fgac3fdrq8x3py9rlrg6dlnz96qxrdl02t6jek3sw")
+  /* cspell:disable-next-line */
   t.is(Wrap.getAddress("bchreg"), "bchreg:r0ujgnc9jnyurzv99678fgac3fdrq8x3py9rlrg6dlnz96qxrdl02ah3df4j5")
+  /* cspell:disable-next-line */
   t.is(Wrap.getAddress("bchtest"), "bchtest:r0ujgnc9jnyurzv99678fgac3fdrq8x3py9rlrg6dlnz96qxrdl02gar8wz9u")
 
 });

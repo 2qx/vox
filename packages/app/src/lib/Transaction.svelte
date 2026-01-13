@@ -6,7 +6,7 @@
 
 Locktime: {transaction.locktime}<br />
 Version: {transaction.version}
-<div class="twoup">
+<div class="twoUp">
 	<div>
 		<h4>Inputs</h4>
 		<table>
@@ -119,18 +119,15 @@ Version: {transaction.version}
 </table>
 
 <style>
-	.twoup {
+	.twoUp {
 		display: flex;
 	}
-	.twoup div {
+	.twoUp div {
 		width: 50%;
 	}
 
 	table {
 		width: 100%;
-	}
-	.row {
-		display: flex;
 	}
 	.r {
 		min-width: 50%;

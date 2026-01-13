@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 
 	import {
-		decodeTransactionBCH,
+		decodeTransactionBch,
 		binToHex,
 		hexToBin,
 		swapEndianness,
@@ -72,7 +72,7 @@
 
 	const processOutput = async function (utxo: any, index: number) {
 		let txn_hex = Drip.processOutpoint(utxo);
-		let transaction = decodeTransactionBCH(hexToBin(txn_hex));
+		let transaction = decodeTransactionBch(hexToBin(txn_hex));
 		if (typeof transaction === 'string') throw transaction;
 		spent.add(`${utxo.tx_hash}":"${utxo.tx_pos}`);
 		debounceClearSpent();
@@ -132,12 +132,11 @@
 	onDestroy(async () => {
 		await electrumClient.disconnect();
 	});
-	
 </script>
 
 <svelte:head>
-	<title>Drip Mine</title>
-	<meta name="description" content="Release the miner extractable value (MEV)!" />
+	<title>💧 Drip Mine</title>
+	<meta name="description" content="Release miner extractable value (MEV)!" />
 </svelte:head>
 
 <section>
@@ -149,41 +148,46 @@
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
 	</div>
-	<h1>Release the miner extractable value (MEV)!</h1>
-	<div class="header">
-		<button onclick={() => processAllOutputs()}>Release all Miner Extractable Value (MEV)</button>
-	</div>
-	<h3>Unspent Transaction Outputs (utxos)</h3>
-	<div class="grid">
-		{#if unspent.filter((i: any) => i.height > 0).length > 0}
-			{#each unspent.filter((i: any) => i.height > 0) as item, index}
-				<div class="row">
-					<button onclick={() => processOutput(item, index)}>
-						<img src={blo(`0x${item.tx_hash}`, 32)} alt={item.tx_hash} />
-						<!-- <p>{Number(item.value).toLocaleString()}</p> -->
-					</button>
-				</div>
-			{/each}
-		{:else}
-			<p>No spendable outputs, check back in 10 minutes.</p>
-		{/if}
-	</div>
-	<h3>Mempool Transactions</h3>
-	<div class="grid">
-		{#if unspent.filter((i: any) => i.height <= 0).length > 0}
-			{#each unspent.filter((i: any) => i.height <= 0) as item, index}
-				<div class="row">
-					<button disabled>
-						<img src={blo(`0x${item.tx_hash}`, 32)} alt={item.tx_hash} />
-						<!-- <p>{Number(item.value).toLocaleString()}</p> -->
-					</button>
-				</div>
-			{/each}
-		{:else}
-			<p>No pending transactions</p>
-		{/if}
-	</div>
-
+	<h1>Release miner extractable value (MEV)</h1>
+	{#if connectionStatus == 'CONNECTED'}
+		<div class="header">
+			<button onclick={() => processAllOutputs()}>Release all Miner Extractable Value (MEV)</button>
+		</div>
+		<h3>Unspent Transaction Outputs (utxos)</h3>
+		<div class="grid">
+			{#if unspent.filter((i: any) => i.height > 0).length > 0}
+				{#each unspent.filter((i: any) => i.height > 0).slice(0,45) as item, index}
+					<div class="row">
+						<button onclick={() => processOutput(item, index)}>
+							<img src={blo(`0x${item.tx_hash}`, 32)} alt={item.tx_hash} />
+							<!-- <p>{Number(item.value).toLocaleString()}</p> -->
+						</button>
+					</div>
+				{/each}
+			{:else}
+				<p>No spendable outputs, check back in 10 minutes.</p>
+			{/if}
+		</div>
+		<h3>Mempool Transactions</h3>
+		<div class="grid">
+			{#if unspent.filter((i: any) => i.height <= 0).length > 0}
+				{#each unspent.filter((i: any) => i.height <= 0) as item, index}
+					<div class="row">
+						<button disabled>
+							<img src={blo(`0x${item.tx_hash}`, 32)} alt={item.tx_hash} />
+							<!-- <p>{Number(item.value).toLocaleString()}</p> -->
+						</button>
+					</div>
+				{/each}
+			{:else}
+				<p>No pending transactions</p>
+			{/if}
+		</div>
+	{:else}
+		<div class="swap">
+			<p>Not connected?</p>
+		</div>
+	{/if}
 	<Readme />
 	<qr-code
 		id="qr1"
@@ -197,7 +201,7 @@
 									margin: 0.5em auto;
 									background-color: #fff;"
 	>
-		<img src={dripIcon} slot="icon" alt="drip MEV icon"/>
+		<img src={dripIcon} width=50px slot="icon" alt="drip MEV icon" />
 	</qr-code>
 	<pre id="deposit">{Drip.getAddress(prefix)}</pre>
 </section>
@@ -211,6 +215,18 @@
 
 	.status {
 		text-align: end;
+	}
+
+	.swap {
+		display: flex;
+		margin: auto;
+		align-items: center;
+		justify-content: center;
+	}
+	.swap div {
+		padding: 20px;
+		justify-content: center;
+		text-align: center;
 	}
 
 	.grid {

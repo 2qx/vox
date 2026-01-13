@@ -1,35 +1,42 @@
 <script lang="ts">
-	import { disassembleBytecodeBCH, hexToBin } from '@bitauth/libauth';
-	import bch from '$lib/images/BCH.svg';
+	import BCH from '$lib/images/BCH.svg';
+	import tBCH from '$lib/images/tBCH.svg';
 
-    import TokenNftData from './TokenNftData.svelte'
+	import TokenNftData from './TokenNftData.svelte';
 	import TokenAmount from './TokenAmount.svelte';
 	import TokenIcon from './TokenIcon.svelte';
 
-	let { tx_pos, tx_hash, height, value, token_data } = $props();
+	let { tx_pos, tx_hash, height, value, token_data, isMainnet } = $props();
+
+	let bchIcon = isMainnet ? BCH : tBCH;
 </script>
 
 <div class="container">
 	<div class="post">
+		
 		<div class="balance">
+			<div>
+				{#if token_data}
+				<TokenIcon category={token_data.category} size={16} {isMainnet}></TokenIcon>
+				{/if}
+			</div>
 			<div class="fill">
 				{#if token_data}
 					<div>
-						<TokenAmount amount={token_data.amount} category={token_data.category}/><br/>
+						<TokenAmount amount={token_data.amount} category={token_data.category} {isMainnet} />
 					</div>
-
 					<div>
 						{#if token_data.nft}
-						<TokenNftData {... token_data.nft}/>
+							<TokenNftData {...token_data.nft} />
 						{/if}
-					</div>
-					<div>
-						<TokenIcon category={token_data.category}></TokenIcon>
 					</div>
 				{/if}
 			</div>
 			<div>
-				{Number(value).toLocaleString(undefined, {})} sats <img width="20px" src={bch} />
+				{#if value > 1000n}
+					<img width="16px" src={bchIcon} /> <b>BCH</b>
+					{Number(value / 100_000_000).toLocaleString(undefined, {})}
+				{/if}
 			</div>
 		</div>
 		<div class="header">
@@ -43,7 +50,7 @@
 <style>
 	.container {
 		display: flex;
-		padding: 5px;
+		padding: 2px;
 	}
 	.post {
 		border-radius: 10px;
@@ -61,37 +68,18 @@
 	.balance {
 		display: flex;
 	}
-	.hash {
-		font-size: xx-small;
-		font-weight: 200;
-		align-content: flex-start;
-		color: #857070;
-		max-width: 70%;
-		word-break: break-all;
-	}
 	.fill {
 		flex: 1;
 		word-break: break-all;
 		display: flex;
 		flex-direction: column;
 	}
-	.fill div {
-	}
-	.fill div p {
-		text-align: right;
-	}
+
 	.timestamp {
 		font-size: xx-small;
 		font-weight: 200;
 		color: #777;
 		word-break: break-all;
-	}
-	.auth {
-		align-content: center;
-		padding: 5px 5px 5px 5px;
-	}
-	.auth img {
-		border-radius: 50%;
 	}
 
 	.post :global {
@@ -101,11 +89,4 @@
 		}
 	}
 
-	.post.op {
-		background-color: #fff;
-	}
-
-	.error {
-		color: brown;
-	}
 </style>

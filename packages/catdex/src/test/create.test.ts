@@ -10,8 +10,6 @@ import { RegTestWallet, NFTCapability, SendRequest, TokenSendRequest } from "mai
 
 import { binToHex, encodeTransactionBch, stringify } from '@bitauth/libauth';
 
-
-import CadDex from '../index.js';
 import CatDex, { OrderRequest } from '../index.js';
 
 test('Should create a new blackboard with sell', async t => {
@@ -52,12 +50,12 @@ test('Should create a new blackboard with sell', async t => {
 
     let order: OrderRequest[] = [
         {
-            price: 20n,
-            amount: 10000n
+            price: 20,
+            quantity: 10000n
         }
     ]
 
-    const tx = CadDex.administer(authToken, assetCat, [], order, walletUtxos, privateKey);
+    const tx = CatDex.administer(authToken, assetCat, [], order, walletUtxos, privateKey);
 
     t.assert(encodeTransactionBch(tx.transaction).length > 0, "transaction hex have a non-zero length")
     t.is(tx.verify, true, "transaction if valid")
@@ -100,12 +98,12 @@ test('Should create a new blackboard with buy', async t => {
 
     let order: OrderRequest[] = [
         {
-            price: 20n,
-            amount: -500000n
+            price: 20,
+            quantity: -500000n
         }
     ]
 
-    const tx = CadDex.administer(authToken, assetCat, [], order, walletUtxos, privateKey);
+    const tx = CatDex.administer(authToken, assetCat, [], order, walletUtxos, privateKey);
     t.assert(encodeTransactionBch(tx.transaction).length > 0, "transaction hex have a non-zero length")
     t.is(tx.verify, true, "transaction if valid")
 
@@ -166,16 +164,16 @@ test('Should clear a new blackboard with buy & sell', async t => {
     let authToken = walletUtxos.filter((u: UtxoI) => u.token_data && u.token_data.category == authCat)[0]
     let orders: OrderRequest[] = [
         {
-            price: 20n,
-            amount: -500000n
+            price: 20,
+            quantity: -500000n
         },
         {
-            price: 20n,
-            amount: 100000n
+            price: 20,
+            quantity: 100000n
         }
     ]
 
-    const tx = CadDex.administer(authToken, assetCat, [], orders, walletUtxos, key);
+    const tx = CatDex.administer(authToken, assetCat, [], orders, walletUtxos, key);
 
     t.assert(encodeTransactionBch(tx.transaction).length > 0, "transaction hex have a non-zero length")
     t.is(tx.verify, true, "transaction if valid")
@@ -187,7 +185,7 @@ test('Should clear a new blackboard with buy & sell', async t => {
     )
     t.is(
         binToHex(tx.transaction.outputs[1]!.lockingBytecode!),
-        binToHex(CadDex.getLockingBytecode(authCat, assetCat)),
+        binToHex(CatDex.getLockingBytecode(authCat, assetCat)),
         "Dex locking bytecode should match"
     )
 
@@ -201,7 +199,7 @@ test('Should clear a new blackboard with buy & sell', async t => {
     // @ts-ignore
     let dexUtxos = await alice.provider.performRequest(
         "blockchain.scripthash.listunspent",
-        CadDex.getScriptHash(authCat, assetCat),
+        CatDex.getScriptHash(authCat, assetCat),
         "include_tokens"
     )
 
@@ -217,7 +215,7 @@ test('Should clear a new blackboard with buy & sell', async t => {
     authToken = walletUtxos.filter((u: UtxoI) => u.token_data && u.token_data.category == authCat)[0]
 
 
-    const tx2 = CadDex.administer(authToken, assetCat, dexUtxos, [], walletUtxos, key);
+    const tx2 = CatDex.administer(authToken, assetCat, dexUtxos, [], walletUtxos, key);
 
     t.assert(encodeTransactionBch(tx2.transaction).length > 0, "transaction hex have a non-zero length")
 

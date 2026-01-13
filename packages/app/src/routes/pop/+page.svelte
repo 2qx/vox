@@ -9,14 +9,21 @@
 	let postId = $derived(data.postId);
 </script>
 
-{#if postId}
-	You are viewing an archived post
-	{postId}
-{:else}
-	<Chat {topic}></Chat>
-{/if}
+<svelte:head>
+	<title>📣 Pop</title>
+	<meta name="description" content="Let your voice be heard." />
+</svelte:head>
 
-<Readme />
+<section>
+	{#if postId}
+		You are viewing an archived post
+		<ChatPost {postId}></ChatPost>
+	{:else}
+		<Chat {topic}></Chat>
+	{/if}
+
+	<Readme />
+</section>
 
 <style>
 </style>

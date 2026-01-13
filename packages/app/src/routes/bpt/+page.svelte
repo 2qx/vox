@@ -4,7 +4,8 @@
 
 	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBCH } from '@bitauth/libauth';
 
-	import bch from '$lib/images/BCH.svg';
+	import BCH from '$lib/images/BCH.svg';
+	import tBCH from '$lib/images/tBCH.svg';
 	import tBPTS from '$lib/images/tBPTS.svg';
 	import BPTS from '$lib/images/BPTS.svg';
 
@@ -59,6 +60,7 @@
 	const ticker = isMainnet ? 'BPTS' : 'tBPTS';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const bchIcon = isMainnet ? BCH : tBCH;
 
 	let spent = new Set();
 	let timer: any = 0;
@@ -168,7 +170,6 @@
 	};
 
 	onMount(async () => {
-		
 		BaseWallet.StorageProvider = IndexedDBProvider;
 		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 
@@ -199,6 +200,12 @@
 	});
 </script>
 
+
+<svelte:head>
+	<title>🟦 Block Points</title>
+	<meta name="description" content="Claim rewards for coins held." />
+</svelte:head>
+
 <section>
 	<div class="status">
 		<BitauthLink template={BlockPoint.template} />
@@ -210,69 +217,78 @@
 	</div>
 	<h1>Claim Block Point Rewards</h1>
 
-	<div class="swap">
-		<div>
-			<img width="50" src={bch} alt={baseTicker} />
-			<br />
-			{sumWallet.toLocaleString()} sats {baseTicker}
-		</div>
-		<div>
-			<img width="50" src={icon} alt={ticker} />
-			<br />
-			{sumWalletBlockPoint.toLocaleString()}
-			{ticker}
-		</div>
-	</div>
-
-	{transactionError}
-
-	{#if walletUnspent.length > 0}
+	{#if connectionStatus == 'CONNECTED'}
 		<div class="swap">
-			<button onclick={() => claimAll()}>Claim All Rewards</button>
+			<div>
+				<img width="50" src={bchIcon} alt={baseTicker} />
+				<br />
+				{sumWallet.toLocaleString()} sats {baseTicker}
+			</div>
+			<div>
+				<img width="50" src={icon} alt={ticker} />
+				<br />
+				{sumWalletBlockPoint.toLocaleString()}
+				{ticker}
+			</div>
 		</div>
-		<h4>Wallet Unspent Transaction Outputs (coins)</h4>
-		<div class="grid">
-			{#each walletUnspent as t, i}
-				{#if !t.token_data && unspent[i]}
-					<div class="row">
-						{#if Math.floor(((now - t.height) * t.value) / 100000000) >= 1}
-							<button class="action" onclick={() => claimReward(now, unspent[i], t, key, category)}>
-								<img width="100" src={icon} alt="bptLogo" /><br />
-								Claim {t.height > unspent[i].height
-									? Math.floor(((now - t.height) * t.value) / 100000000)
-									: Math.floor(((now - unspent[i].height) * t.value) / 100000000)}
-								{ticker}
-							</button>
-						{:else}
-							<button class="action" disabled>
-								<img width="100" src={icon} alt="bptLogo" /><br />
-								{t.height > unspent[i].height
-									? (((now - t.height) * t.value) / 100000000).toLocaleString(undefined, {
-											minimumFractionDigits: 4
-										})
-									: (((now - unspent[i].height) * t.value) / 100000000).toLocaleString(undefined, {
-											minimumFractionDigits: 4
-										})}
-								{ticker}
-							</button>
-						{/if}
-					</div>
-				{/if}
-			{/each}
-		</div>
+
+		{transactionError}
+
+		{#if walletUnspent.length > 0}
+			<div class="swap">
+				<button onclick={() => claimAll()}>Claim All Rewards</button>
+			</div>
+			<h4>Wallet Unspent Transaction Outputs (coins)</h4>
+			<div class="grid">
+				{#each walletUnspent as t, i}
+					{#if !t.token_data && unspent[i]}
+						<div class="row">
+							{#if Math.floor(((now - t.height) * t.value) / 100000000) >= 1}
+								<button
+									class="action"
+									onclick={() => claimReward(now, unspent[i], t, key, category)}
+								>
+									<img width="100" src={icon} alt="bptLogo" /><br />
+									Claim {t.height > unspent[i].height
+										? Math.floor(((now - t.height) * t.value) / 100000000)
+										: Math.floor(((now - unspent[i].height) * t.value) / 100000000)}
+									{ticker}
+								</button>
+							{:else}
+								<button class="action" disabled>
+									<img width="100" src={icon} alt="bptLogo" /><br />
+									{t.height > unspent[i].height
+										? (((now - t.height) * t.value) / 100000000).toLocaleString(undefined, {
+												minimumFractionDigits: 4
+											})
+										: (((now - unspent[i].height) * t.value) / 100000000).toLocaleString(
+												undefined,
+												{
+													minimumFractionDigits: 4
+												}
+											)}
+									{ticker}
+								</button>
+							{/if}
+						</div>
+					{/if}
+				{/each}
+			</div>
+		{:else }
+			<div class="swap">
+				<p><a href="/wallet">Deposit funds</a> to claim block points.</p>
+			</div>
+		{/if}
 	{:else}
 		<div class="swap">
-			<p>No confirmed coins to claim Block Points, check back in a few minutes.</p>
+			<p>Not connected.</p>
 		</div>
 	{/if}
-
 	<Readme />
 </section>
 
 <style>
-	.swap {
-		display: flex;
-	}
+	
 	.status {
 		text-align: end;
 	}
@@ -287,10 +303,6 @@
 		padding: 20px;
 		justify-content: center;
 		text-align: center;
-	}
-
-	.swap input {
-		background-color: #ddd;
 	}
 
 	.action {
