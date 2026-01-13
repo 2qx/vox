@@ -1,20 +1,21 @@
-<svg version="1.1" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+<svg version="1.1" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
  <defs>
   <linearGradient id="b" x1="7.95" x2="7.91" y1="16.1" y2="9.47" gradientUnits="userSpaceOnUse">
    <stop stop-color="#1500f1" offset="0"/>
    <stop offset="1"/>
   </linearGradient>
-  <linearGradient id="a" x1="8.04" x2="8.16" y1="13.8" y2="-18.8" gradientUnits="userSpaceOnUse">
+  <linearGradient id="a" x1="8.04" x2="8.025" y1="13.8" y2="-8.077" gradientUnits="userSpaceOnUse">
    <stop stop-color="#ffc407" offset="0"/>
    <stop stop-color="#ffc407" stop-opacity="0" offset="1"/>
   </linearGradient>
+  <linearGradient id="c" x1="8.014" x2="8.059" y1="14.83" y2="5.556" gradientUnits="userSpaceOnUse" xlink:href="#b"/>
  </defs>
  <rect width="16" height="16" rx="4" ry="4" fill="url(#b)"/>
  <path d="m7.3 2.99a2.2 1.72 57.4 0 0-1.41-1.57 2.2 1.72 57.4 0 0-1.7 0.221 2.2 1.72 57.4 0 0 1.41 1.57 2.2 1.72 57.4 0 0 1.7-0.218z" fill="#d2a61a" fill-opacity=".648" stroke="#000" stroke-linecap="square" stroke-linejoin="round" stroke-width=".7"/>
  <path d="m5.65 1.48a0.947 0.948 0 0 0-0.443 0.804 0.947 0.948 0 0 0 0.443 0.805 0.947 0.948 0 0 0 0.441-0.805 0.947 0.948 0 0 0-0.441-0.804z"/>
  <path d="m8.85 2.99a1.72 2.2 32.6 0 1 1.41-1.57 1.72 2.2 32.6 0 1 1.7 0.221 1.72 2.2 32.6 0 1-1.41 1.57 1.72 2.2 32.6 0 1-1.7-0.218z" fill="#d2a61a" fill-opacity=".648" stroke="#000" stroke-linecap="square" stroke-linejoin="round" stroke-width=".7"/>
  <path d="m0.601 13.7 7.52-10 7.3 10z" fill="url(#a)"/>
- <path d="m4.35 6.63v1.14h2.55v-1.14zm4.77 0v1.14h2.55v-1.14zm-6.52 1.82v1.28h3.69v-1.28zm7.13 0v1.28h3.69v-1.28zm-9.44 2v1.6h5.72v-1.6zm9.72 0v1.6h5.72v-1.6z" fill="#25009d" shape-rendering="auto" style="font-feature-settings:normal;font-variant-alternates:normal;font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal;font-variant-position:normal;font-variation-settings:normal;inline-size:0;isolation:auto;mix-blend-mode:normal;shape-margin:0;shape-padding:0;text-decoration-color:#000000;text-decoration-line:none;text-decoration-style:solid;text-indent:0;text-orientation:mixed;text-transform:none;white-space:normal"/>
- <path d="m10.9 10.6c0 1.4-2.82 1.84-2.82 1.84s-2.91-0.444-2.91-1.84c-1e-7 -0.65 0.0428-3.05 0.0428-3.05l1.37 0.918c0.455-0.133 0.868-0.378 1.37-0.397 0.492 0.0152 1.09 0.167 1.64 0.251l1.17-0.859s0.147 2.35 0.147 3.13z" fill="#ffc407"/>
+ <path d="m6.657 7.051a6.801 5.624 0 0 0-2.921 1.134h2.921zm2.695 0v1.134h2.921a6.801 5.624 0 0 0-2.921-1.134zm-6.475 1.817a6.801 5.624 0 0 0-1.018 1.287h4.055v-1.287zm7.217 0v1.287h4.057a6.801 5.624 0 0 0-1.02-1.287zm-8.577 2.009a6.801 5.624 0 0 0-0.3132 1.609h4.37v-1.609zm8.916 0v1.609h4.37a6.801 5.624 0 0 0-0.3132-1.609z" fill="url(#c)" style="font-feature-settings:normal;font-variant-alternates:normal;font-variant-caps:normal;font-variant-east-asian:normal;font-variant-ligatures:normal;font-variant-numeric:normal;font-variant-position:normal;font-variation-settings:normal;inline-size:0;isolation:auto;mix-blend-mode:normal;shape-margin:0;shape-padding:0;text-decoration-color:#000000;text-decoration-line:none;text-decoration-style:solid;text-indent:0;text-orientation:mixed;text-transform:none;white-space:normal"/>
+ <path d="m10.96 10.45c0 1.4-2.82 1.84-2.82 1.84s-2.91-0.444-2.91-1.84c-1e-7 -0.65 0.0428-3.05 0.0428-3.05l1.37 0.918c0.455-0.133 0.868-0.378 1.37-0.397 0.492 0.0152 1.09 0.167 1.64 0.251l1.17-0.859s0.147 2.35 0.147 3.13z" fill="#ffc407"/>
  <path d="m10.3 1.57a0.947 0.948 0 0 0-0.443 0.804 0.947 0.948 0 0 0 0.443 0.805 0.947 0.948 0 0 0 0.441-0.805 0.947 0.948 0 0 0-0.441-0.804z"/>
 </svg>

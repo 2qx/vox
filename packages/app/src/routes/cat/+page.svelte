@@ -108,6 +108,7 @@
 			return Object.values(Object.values(o[1]));
 		})
 		.flat()
+		.filter(o => o.extensions && o.extensions.exchanges == "catdex")
 		.reduce((acc, o) => {
 			acc.set(o.token.category, o);
 			return acc;
@@ -395,7 +396,7 @@
 
 	<h1>Trade CashTokens</h1>
 	{#if connectionStatus == 'CONNECTED'}
-		<b>Select an asset:</b>
+		<b>Asset:</b>
 		<select bind:value={selectedAsset} onchange={() => updateAsset()}>
 			{#each bcmr.keys() as token}
 				<option value={token}>

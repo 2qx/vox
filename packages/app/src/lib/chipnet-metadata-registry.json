@@ -20,7 +20,8 @@
           "category": "ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271",
           "decimals": 0
         },
-        "description": "A reward token for aged unspent outputs."
+        "description": "A reward token for aged unspent outputs.",
+        "extensions": {"exchanges":"catdex"}
       }
     },
     "7003b9e854d2abc855b2c20c9734c3dfe4ec3a4de573f7ebb9ce1be527a5bb36": {
@@ -36,7 +37,8 @@
           "category": "7003b9e854d2abc855b2c20c9734c3dfe4ec3a4de573f7ebb9ce1be527a5bb36",
           "decimals": 0,
           "symbol": "tBADGER"
-        }
+        },
+        "extensions": {"exchanges":"catdex"}
       }
     },
     "bb61cd7a6c8a3a3742d965dc7ac73c1117382a5c8930b68338deb881f75c0214": {
