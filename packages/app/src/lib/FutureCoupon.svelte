@@ -55,10 +55,15 @@
 								placement: placement,
 								value: value
 							});
-						}}>place <br><span style="font-weight:700">{Number(placement / 1e8)}</span> {ticker}  </button
-					>
+						}}
+						>place <br /><span style="font-weight:700">{Number(placement / 1e8)}</span> {ticker}
+					</button>
 				{:else}
-					<button class="action" disabled style="font-size:xx-small;">low balance</button>
+					<button class="action" disabled 
+						>low balance<br />
+						<span style="font-weight:600">{Number(placement / 1e8)}</span>
+						{ticker}
+					</button>
 				{/if}
 			</div>
 		</div>
@@ -92,23 +97,22 @@
 		display: flex;
 	}
 	.balance div {
-		padding: 5px;
+		padding: 2px;
 	}
-	
+
 	.fill {
 		flex: 1;
 		word-break: break-all;
 		display: flex;
 		flex-direction: column;
 	}
-	
+
 	.timestamp {
 		font-size: xx-small;
 		font-weight: 200;
 		color: #777;
 		word-break: break-all;
 	}
-	
 
 	.end {
 		text-align: end;
@@ -134,6 +138,7 @@
 	}
 
 	button:disabled {
+        color: #ddd;
 		background-color: #777;
 	}
 </style>
