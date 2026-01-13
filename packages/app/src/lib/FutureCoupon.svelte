@@ -35,17 +35,15 @@
 					<a style="color:#75006b; font-weight:600;" href="/future/v?time={locktime}"
 						>{fTicker}-{String(locktime).padStart(7, '0')}</a
 					><br />
-
-					redeem after {dateLocale}
+					{dateLocale}
 				</div>
 				<div class="rate">
 					APY: <i>{locale.ypa}%</i>
 				</div>
 			</div>
 			<div class="end">
-				<span style="font-size:x-large">{Number(value).toLocaleString(undefined, {})} sats</span>
+				<span style="font-size:large">{Number(value).toLocaleString(undefined, {})} sats</span>
 				<br />
-				<span >on {Number(placement / 1e8)} {ticker}</span> <img width="16px" src={bchIcon} /><br />
 				{#if balance + Number(value) > placement}
 					<button
 						class="action"
@@ -57,7 +55,7 @@
 								placement: placement,
 								value: value
 							});
-						}}>place &amp; claim</button
+						}}>place <br><span style="font-weight:700">{Number(placement / 1e8)}</span> {ticker}  </button
 					>
 				{:else}
 					<button class="action" disabled style="font-size:xx-small;">low balance</button>
@@ -127,7 +125,7 @@
 		background-color: #a45eb6; /* Green */
 		border: none;
 		color: white;
-		padding: 10px;
+		padding: 12px;
 		border-radius: 20px;
 		text-align: center;
 		text-decoration: none;
