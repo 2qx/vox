@@ -338,9 +338,11 @@
 			return u.token_data?.category;
 		});
 
-		myMarketRecord = marketMakers
-			.filter((u) => u.token_data?.category == myAuthBatons[0].token_data.category)
-			.pop();
+		if (myAuthBatons.length > 0) {
+			myMarketRecord = marketMakers
+				.filter((u) => u.token_data?.category == myAuthBatons[0].token_data.category)
+				.pop();
+		}
 
 		if (myMarketRecord) {
 			if (myMarketRecord.height <= 0) {
