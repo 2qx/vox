@@ -493,7 +493,7 @@
 							<b
 								>Membership expires in {myMembership} blocks. Renew now to have your orders discoverable.</b
 							>
-						{:else}
+						{:else if myMembership < -2}
 							<b
 								>Membership expired {myMembership} blocks ago. Renew now to keep your orders discoverable.</b
 							>
