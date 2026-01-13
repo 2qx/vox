@@ -341,10 +341,19 @@
 		myMarketRecord = marketMakers
 			.filter((u) => u.token_data?.category == myAuthBatons[0].token_data.category)
 			.pop();
-		myMembership =
-			myMarketRecord && myMarketRecord.height > 0
-				? myMarketRecord.height + myMarketRecord.value - now
-				: 0;
+
+		if (myMarketRecord) {
+			if (myMarketRecord.height <= 0) {
+				myMembership = 1000;
+			} else if (myMarketRecord.height > 0) {
+				myMembership = myMarketRecord.height + myMarketRecord.value - now;
+			} else {
+				myMembership = 0;
+			}
+		} else {
+			myMembership = 0;
+		}
+
 		let marketScriptHashes = authBatons.map((authCat: string) => {
 			return CatDex.getScriptHash(authCat, selectedAsset);
 		});
