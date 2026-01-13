@@ -19,11 +19,12 @@
 		amount,
 		stake,
 		user_pkh,
+		isMainnet,
 		now
 	} = $props();
 
 	let hasMatured = $derived( height > 0 && (height + stake) <= now);
-	let icon = $derived(token_data.category == binToHex(BADGER) ? bch: tbch)
+	let icon = $derived( isMainnet ? bch: tbch)
 
 </script>
 
