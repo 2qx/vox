@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { blo } from 'blo';
-	import { binToHex} from "@bitauth/libauth";
+	import { binToHex } from "@bitauth/libauth";
 	import bch from '$lib/images/BCH.svg';
 	import tbch from '$lib/images/tBCH.svg';
 
@@ -23,7 +23,7 @@
 	} = $props();
 
 	let hasMatured = $derived( height > 0 && (height + stake) <= now);
-	let icon = $derived(token_data.category == BADGER ? bch: tbch)
+	let icon = $derived(token_data.category == binToHex(BADGER) ? bch: tbch)
 
 </script>
 

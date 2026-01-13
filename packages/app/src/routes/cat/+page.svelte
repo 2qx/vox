@@ -649,6 +649,7 @@
 		bottom: 0px;
 		background: #ffffffbb;
 		z-index: 1;
+		max-width: 40em;
 	}
 	.swap {
 		display: flex;
