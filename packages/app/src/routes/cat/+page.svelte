@@ -108,7 +108,7 @@
 			return Object.values(Object.values(o[1]));
 		})
 		.flat()
-		.filter(o => o.extensions && o.extensions.exchanges == "catdex")
+		.filter((o) => o.extensions && o.extensions.exchanges == 'catdex')
 		.reduce((acc, o) => {
 			acc.set(o.token.category, o);
 			return acc;
@@ -471,7 +471,7 @@
 		{#if showSettings}
 			<br />
 			<div>
-				{#if myMembership < 1000}
+				{#if myAuthBatons.length > 0 && myMembership < 1000}
 					<div>
 						<p>
 							You have a CatDex baton. <br />
@@ -505,23 +505,27 @@
 						<TokenIcon size={24} category={authBaton.token_data.category}></TokenIcon>
 					{/each}
 					<div class="swap">
-						<div>
-							<img width="24" src={bchIcon} alt={baseTicker} />
-							<br />
-							{myMarketSatoshis.toLocaleString()} sats {baseTicker}
-						</div>
-						<div>
-							<img
-								width="24"
-								src={bcmr.get(selectedAsset).uris.icon}
-								alt={bcmr.get(selectedAsset).token.symbol}
-							/>
-							<br />
-							{(
-								myMarketTokens / BigInt(Math.pow(10, bcmr.get(selectedAsset).token.decimals))
-							).toLocaleString()}
-							{bcmr.get(selectedAsset).token.symbol}
-						</div>
+						{#if myMarketSatoshis}
+							<div>
+								<img width="24" src={bchIcon} alt={baseTicker} />
+								<br />
+								{myMarketSatoshis.toLocaleString()} sats {baseTicker}
+							</div>
+						{/if}
+						{#if myMarketTokens}
+							<div>
+								<img
+									width="24"
+									src={bcmr.get(selectedAsset).uris.icon}
+									alt={bcmr.get(selectedAsset).token.symbol}
+								/>
+								<br />
+								{(
+									myMarketTokens / BigInt(Math.pow(10, bcmr.get(selectedAsset).token.decimals))
+								).toLocaleString()}
+								{bcmr.get(selectedAsset).token.symbol}
+							</div>
+						{/if}
 					</div>
 
 					{#each myOrders as o}
@@ -653,8 +657,6 @@
 		text-align: end;
 	}
 
-	
-
 	.orderBooks {
 		display: flex;
 		justify-content: center;
@@ -664,7 +666,6 @@
 	.orderBooks div {
 		align-items: center;
 	}
-
 
 	.orders {
 		display: flex;
