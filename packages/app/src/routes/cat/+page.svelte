@@ -43,7 +43,10 @@
 		getHdPrivateKey,
 		sumUtxoValue,
 		sumTokenAmounts,
-		type UtxoI
+		type UtxoI,
+
+		sleep
+
 	} from '@unspent/tau';
 	import TokenIcon from '$lib/TokenIcon.svelte';
 	import Ticker from '$lib/Ticker.svelte';
@@ -124,6 +127,7 @@
 
 	async function updateOrders() {
 		if (electrumClient && now > 1000) {
+
 			let marketMakers = await electrumClient.request(
 				'blockchain.scripthash.listunspent',
 				SmallIndex.getScriptHash(CatDex.PROTOCOL_IDENTIFIER),
@@ -206,6 +210,8 @@
 				value: duration
 			})
 		]);
+		sleep(500)
+		await updateOrders()
 	};
 
 	const updateAsset = async function () {
@@ -495,7 +501,7 @@
 							<b
 								>Membership expires in {myMembership} blocks. Renew now to have your orders discoverable.</b
 							>
-						{:else if myMembership < -2}
+						{:else if myMembership < -20}
 							<b
 								>Membership expired {myMembership} blocks ago. Renew now to keep your orders discoverable.</b
 							>
@@ -539,10 +545,19 @@
 						{/if}
 					</div>
 
-					{#each myOrders as o}
-						<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
-					{/each}
-
+					<div class="orderBooks">
+					<div>
+						{#each myOrders.filter((o) => o.quantity > 0) as o}
+							<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+						{/each}
+					</div>
+					<div class="askBook">
+						{#each myOrders.filter((o) => o.quantity < 0).toReversed() as o}
+							<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+						{/each}
+					</div>
+				</div>
+				
 					<br />
 					{#if myOrderBook.length > 0}
 						<button onclick={() => postOrders(true)}>Replace Orders</button>

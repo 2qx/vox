@@ -106,7 +106,6 @@
 		display: flex;
 		flex-direction: column;
 	}
-
 	.timestamp {
 		font-size: xx-small;
 		font-weight: 200;

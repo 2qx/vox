@@ -59,7 +59,9 @@
 	const bchIcon = isMainnet ? BCH : tBCH;
 
 	let wallet: any;
+	let disableUi = false;
 
+	
 	const debounceUpdateWallet = () => {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
