@@ -296,7 +296,7 @@ export default class CatDex {
         let out: OutputTemplate<CompilerBch>[] = [
             {
                 lockingBytecode: lockingBytecode,
-                valueSatoshis: BigInt(order.orderUtxo.value) + BigInt(Number(amount) * order.price),
+                valueSatoshis: BigInt(order.orderUtxo.value) + BigInt(Math.trunc(Number(amount) * order.price)),
                 token: {
                     amount: 0n,
                     category: hexToBin(order.orderUtxo.token_data!.category!),
@@ -695,7 +695,6 @@ export default class CatDex {
         let sumTokenAmountsOut = sumOutputTokenAmounts(config.outputs, assetCat)
         let sumTokenAmountsIn = sumSourceOutputTokenAmounts(sourceOutputs, assetCat)
         let tokensRequired = sumTokenAmountsOut - sumTokenAmountsIn
-        console.log("Tokens required:", tokensRequired)
 
         if (tokensRequired > 0n) {
             const tokensIn = this.getWalletInputs(walletUtxos, tokensRequired, privateKey, assetCat)

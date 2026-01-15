@@ -2,7 +2,6 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/state';
 
-
 	import Loading from '$lib/Loading.svelte';
 
 	// @ts-ignore
@@ -25,15 +24,12 @@
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 
-	import {
-		getScriptHash,
-		getHdPrivateKey,
-		sumUtxoValue,
-		type UtxoI,
-		sleep
-	} from '@unspent/tau';
+	import { getScriptHash, getHdPrivateKey, sumUtxoValue, type UtxoI, sleep } from '@unspent/tau';
 	import { Vault, USER_AGENT, type CouponItemI } from '@fbch/lib';
 	import { TIMELOCK_MAP, TIMELOCK_MAP_CHIPNET } from '@fbch/lib';
+
+	import BCH from '$lib/images/BCH.svg';
+	import tBCH from '$lib/images/tBCH.svg';
 
 	let now: number = $state(0);
 
@@ -55,22 +51,25 @@
 	let walletBalance = $state(0);
 
 	const isMainnet = page.url.hostname == 'vox.cash';
+	const ticker = isMainnet ? 'BCH' : 'tBCH';
 	const baseTicker = isMainnet ? 'FBCH' : 'tFBCH';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 	const SERIES_MAP = isMainnet ? TIMELOCK_MAP : TIMELOCK_MAP_CHIPNET;
+	const bchIcon = isMainnet ? BCH : tBCH;
 
 	let wallet: any;
 	let disableUi = false;
 
+	
 	const debounceUpdateWallet = () => {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			updateWallet();
 			updateCoupons();
-			disableUi = false;
-		}, 1000);
+		}, 5000);
 	};
+
 	const debounceBroadcastQue = async () => {
 		clearTimeout(timer);
 		timer = setTimeout(async () => {
@@ -78,9 +77,8 @@
 				let tx = broadcastQueue.shift()!;
 				try {
 					await broadcast(tx);
-					await sleep(100);
+					await sleep(400);
 					console.log('broadcast');
-					debounceUpdateWallet();
 				} catch (e) {
 					// if one transaction failed, the whole chain is borked,
 					// start over.
@@ -131,6 +129,7 @@
 		);
 		walletUnspent = swapTx.walletUtxos;
 		vaultCache.set(coupon.locktime, swapTx.contractUtxos);
+		walletBalance -= coupon.placement
 	}
 
 	const broadcast = async function (raw_tx: string) {
@@ -231,6 +230,14 @@
 	</div>
 
 	<h1>Stake coins for futures</h1>
+
+	<div class="swap">
+		<div>
+			{Number(walletBalance / 100_000_000).toLocaleString(undefined, { maximumFractionDigits: 1 })}
+			{ticker} <img width="20" src={bchIcon} alt={ticker} />
+		</div>
+	</div>
+
 	{#if couponGrouped}
 		{#if couponGrouped.size > 0}
 			{#each couponGrouped.values() as subList}
@@ -274,4 +281,13 @@
 		font-weight: 600;
 	}
 
+	.swap {
+		display: flex;
+		margin: auto;
+		align-items: center;
+		justify-content: center;
+	}
+	.swap div {
+		font-size: x-large;
+	}
 </style>

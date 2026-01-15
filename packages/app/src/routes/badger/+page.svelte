@@ -303,7 +303,7 @@
 			{#if unspent.length > 0}
 				{#each unspent as item, index}
 					<div class="row">
-						<BadgerStakeButton {unlock} {...item} />
+						<BadgerStakeButton {unlock} {isMainnet} {...item} />
 					</div>
 				{/each}
 			{:else}

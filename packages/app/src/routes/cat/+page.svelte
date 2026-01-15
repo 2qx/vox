@@ -43,7 +43,10 @@
 		getHdPrivateKey,
 		sumUtxoValue,
 		sumTokenAmounts,
-		type UtxoI
+		type UtxoI,
+
+		sleep
+
 	} from '@unspent/tau';
 	import TokenIcon from '$lib/TokenIcon.svelte';
 	import Ticker from '$lib/Ticker.svelte';
@@ -108,7 +111,7 @@
 			return Object.values(Object.values(o[1]));
 		})
 		.flat()
-		.filter(o => o.extensions && o.extensions.exchanges == "catdex")
+		.filter((o) => o.extensions && o.extensions.exchanges == 'catdex')
 		.reduce((acc, o) => {
 			acc.set(o.token.category, o);
 			return acc;
@@ -124,6 +127,7 @@
 
 	async function updateOrders() {
 		if (electrumClient && now > 1000) {
+
 			let marketMakers = await electrumClient.request(
 				'blockchain.scripthash.listunspent',
 				SmallIndex.getScriptHash(CatDex.PROTOCOL_IDENTIFIER),
@@ -206,6 +210,8 @@
 				value: duration
 			})
 		]);
+		sleep(500)
+		await updateOrders()
 	};
 
 	const updateAsset = async function () {
@@ -338,13 +344,24 @@
 			return u.token_data?.category;
 		});
 
-		myMarketRecord = marketMakers
-			.filter((u) => u.token_data?.category == myAuthBatons[0].token_data.category)
-			.pop();
-		myMembership =
-			myMarketRecord && myMarketRecord.height > 0
-				? myMarketRecord.height + myMarketRecord.value - now
-				: 0;
+		if (myAuthBatons.length > 0) {
+			myMarketRecord = marketMakers
+				.filter((u) => u.token_data?.category == myAuthBatons[0].token_data.category)
+				.pop();
+		}
+
+		if (myMarketRecord) {
+			if (myMarketRecord.height <= 0) {
+				myMembership = 1000;
+			} else if (myMarketRecord.height > 0) {
+				myMembership = myMarketRecord.height + myMarketRecord.value - now;
+			} else {
+				myMembership = 0;
+			}
+		} else {
+			myMembership = 0;
+		}
+
 		let marketScriptHashes = authBatons.map((authCat: string) => {
 			return CatDex.getScriptHash(authCat, selectedAsset);
 		});
@@ -471,7 +488,7 @@
 		{#if showSettings}
 			<br />
 			<div>
-				{#if myMembership < 1000}
+				{#if myAuthBatons.length > 0 && myMembership < 1000}
 					<div>
 						<p>
 							You have a CatDex baton. <br />
@@ -484,7 +501,7 @@
 							<b
 								>Membership expires in {myMembership} blocks. Renew now to have your orders discoverable.</b
 							>
-						{:else}
+						{:else if myMembership < -20}
 							<b
 								>Membership expired {myMembership} blocks ago. Renew now to keep your orders discoverable.</b
 							>
@@ -505,29 +522,42 @@
 						<TokenIcon size={24} category={authBaton.token_data.category}></TokenIcon>
 					{/each}
 					<div class="swap">
-						<div>
-							<img width="24" src={bchIcon} alt={baseTicker} />
-							<br />
-							{myMarketSatoshis.toLocaleString()} sats {baseTicker}
-						</div>
-						<div>
-							<img
-								width="24"
-								src={bcmr.get(selectedAsset).uris.icon}
-								alt={bcmr.get(selectedAsset).token.symbol}
-							/>
-							<br />
-							{(
-								myMarketTokens / BigInt(Math.pow(10, bcmr.get(selectedAsset).token.decimals))
-							).toLocaleString()}
-							{bcmr.get(selectedAsset).token.symbol}
-						</div>
+						{#if myMarketSatoshis}
+							<div>
+								<img width="24" src={bchIcon} alt={baseTicker} />
+								<br />
+								{myMarketSatoshis.toLocaleString()} sats {baseTicker}
+							</div>
+						{/if}
+						{#if myMarketTokens}
+							<div>
+								<img
+									width="24"
+									src={bcmr.get(selectedAsset).uris.icon}
+									alt={bcmr.get(selectedAsset).token.symbol}
+								/>
+								<br />
+								{(
+									myMarketTokens / BigInt(Math.pow(10, bcmr.get(selectedAsset).token.decimals))
+								).toLocaleString()}
+								{bcmr.get(selectedAsset).token.symbol}
+							</div>
+						{/if}
 					</div>
 
-					{#each myOrders as o}
-						<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
-					{/each}
-
+					<div class="orderBooks">
+					<div>
+						{#each myOrders.filter((o) => o.quantity > 0) as o}
+							<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+						{/each}
+					</div>
+					<div class="askBook">
+						{#each myOrders.filter((o) => o.quantity < 0).toReversed() as o}
+							<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+						{/each}
+					</div>
+				</div>
+				
 					<br />
 					{#if myOrderBook.length > 0}
 						<button onclick={() => postOrders(true)}>Replace Orders</button>
@@ -636,6 +666,7 @@
 		bottom: 0px;
 		background: #ffffffbb;
 		z-index: 1;
+		max-width: 40em;
 	}
 	.swap {
 		display: flex;
@@ -653,8 +684,6 @@
 		text-align: end;
 	}
 
-	
-
 	.orderBooks {
 		display: flex;
 		justify-content: center;
@@ -664,7 +693,6 @@
 	.orderBooks div {
 		align-items: center;
 	}
-
 
 	.orders {
 		display: flex;
