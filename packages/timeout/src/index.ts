@@ -3,6 +3,7 @@ import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
+    binToNumberInt16LE,
     CompilerBch,
     createVirtualMachineBch,
     encodeDataPush,
@@ -46,6 +47,23 @@ export default class Timeout {
 
     static vm = createVirtualMachineBch();
 
+
+    static parseNFT(utxo: UtxoI): TimeoutData {
+
+
+        if (utxo.token_data?.nft) {
+            return {
+                recipient: utxo.token_data?.nft?.commitment.slice(0, 40),
+                timeout: binToNumberInt16LE(hexToBin(utxo.token_data?.nft?.commitment.slice(-4)!)),
+                auth: utxo.token_data?.category!
+            } as TimeoutData
+        }  else {
+            throw Error("Nft was not minting nor mutable")
+        }
+
+    }
+
+    
     static dataToBytecode(data: TimeoutData) {
         return {
             "recipient": hexToBin(data.recipient),

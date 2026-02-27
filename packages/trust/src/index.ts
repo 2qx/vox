@@ -2,15 +2,16 @@ import templateV3 from './template.v3.json' with { type: "json" };
 import packageInfo from '../package.json' with { type: "json" };
 
 import {
-  binToHex,
   hexToBin,
   CompilerBch,
   generateTransaction,
-  encodeTransaction,
   InputTemplate,
   CashAddressNetworkPrefix,
+  createVirtualMachineBch,
+  Output,
   OutputTemplate,
   stringify,
+  Transaction
 } from '@bitauth/libauth';
 
 import {
@@ -31,14 +32,29 @@ const RETURN_DENOMINATOR = 1000000;
 export default class Trust {
 
   static USER_AGENT = packageInfo.name;
-  
-  static template = templateV3
 
-  static compiler: CompilerBch = getLibauthCompiler(this.template)
+  static PROTOCOL_IDENTIFIER = "U3P";
 
-  static getLockingBytecode(data = {}): Uint8Array {
+  static VERSION = "1.0.0";
+
+  static tokenAware = true;
+
+  static template = templateV3;
+
+  static compiler: CompilerBch = getLibauthCompiler(this.template);
+
+  static vm = createVirtualMachineBch();
+
+  static getLockingBytecode(receiptBytecode: Uint8Array | string): Uint8Array {
+
+    if (typeof receiptBytecode == "string") receiptBytecode = hexToBin(receiptBytecode)
+
     const lockingBytecodeResult = this.compiler.generateBytecode({
-      data: data,
+      data: {
+        "bytecode": {
+          "recipient": receiptBytecode
+        }
+      },
       scriptId: 'lock'
     })
 
@@ -49,27 +65,57 @@ export default class Trust {
     return lockingBytecodeResult.bytecode
   }
 
-  static getScriptHash(reversed = true): string {
-    return getScriptHash(this.getLockingBytecode(), reversed)
+  static getScriptHash(receiptBytecode: Uint8Array | string, reversed = true): string {
+    return getScriptHash(this.getLockingBytecode(receiptBytecode), reversed)
   }
 
-  static getAddress(prefix = "bitcoincash"): string {
-    return getAddress(this.getLockingBytecode(), prefix as CashAddressNetworkPrefix)
+  static getAddress(receiptBytecode: Uint8Array | string, prefix = "bitcoincash"): string {
+    return getAddress(this.getLockingBytecode(receiptBytecode), prefix as CashAddressNetworkPrefix)
   }
 
-  static getOutput(utxo: UtxoI): OutputTemplate<CompilerBch> {
+  static getSourceOutput(receipt: string | Uint8Array, utxo: UtxoI): Output {
+
+    return {
+      lockingBytecode: this.getLockingBytecode(receipt),
+      valueSatoshis: BigInt(utxo.value)
+    }
+
+  }
+
+  static getSourceOutputs(receipts: string[] | Uint8Array[], utxos: UtxoI[]): Output[] {
+    return utxos.map((u: UtxoI, i) => {
+      return this.getSourceOutput(receipts[i]!, u)
+    })
+  }
+
+
+  static getOutput(receiptBytecode: string | Uint8Array, utxo: UtxoI): OutputTemplate<CompilerBch> {
+
+    if (typeof receiptBytecode == "string") receiptBytecode = hexToBin(receiptBytecode)
 
     let outputValue = Math.round((utxo.value * RETURN_NUMERATOR) / RETURN_DENOMINATOR) - 1
 
     return {
-        lockingBytecode: {
-          compiler: this.compiler,
-          script: 'lock'
+      lockingBytecode: {
+        data: {
+          "bytecode": {
+            "receipt": receiptBytecode
+          }
         },
-        valueSatoshis: BigInt(outputValue),
-      }
-    
+        compiler: this.compiler,
+        script: 'lock'
+      },
+      valueSatoshis: BigInt(outputValue),
+    }
+
   }
+
+  static getOutputs(receiptBytecodes: string[] | Uint8Array[], utxos: UtxoI[]): OutputTemplate<CompilerBch>[] {
+    return utxos.map((u: UtxoI, i) => {
+      return this.getOutput(receiptBytecodes[i]!, u)
+    })
+  }
+
 
   static getInput(utxo: UtxoI): InputTemplate<CompilerBch> {
     return {
@@ -84,23 +130,54 @@ export default class Trust {
     } as InputTemplate<CompilerBch>
   }
 
-  static processOutpoint(utxo: UtxoI): string {
+  static getInputs(utxos: UtxoI[]): InputTemplate<CompilerBch>[] {
+    return utxos.map((u: UtxoI) => {
+      return this.getInput(u)
+    })
+  }
+
+  static processOutpoints(
+    receipts: string[] | Uint8Array[],
+    utxos: UtxoI[]
+  ): {
+    transaction: Transaction,
+    sourceOutputs: Output[],
+    verify: string | boolean
+  } {
+
 
     const inputs: InputTemplate<CompilerBch>[] = [];
     const outputs: OutputTemplate<CompilerBch>[] = [];
-
-    outputs.push(this.getOutput(utxo));
-    inputs.push(this.getInput(utxo));
 
     const config = {
       locktime: 0,
       version: 2,
       inputs, outputs,
     }
+
+    const sourceOutputs = [... this.getSourceOutputs(receipts, utxos)];
+
+    inputs.push(... this.getInputs(utxos));
+    outputs.push(... this.getOutputs(receipts, utxos));
+
     const result = generateTransaction(config);
-    if (!result.success) throw new Error('generate transaction failed!, errors: '+ stringify(result.errors));
+    if (!result.success) throw new Error('generate transaction failed!, errors: ' + stringify(result.errors));
+    const transaction = result.transaction
+
+    let verify = this.vm.verify({
+      sourceOutputs: sourceOutputs,
+      transaction: transaction,
+    })
     
-    return binToHex(encodeTransaction(result.transaction))
+    if (typeof verify == "string") throw Error(verify)
+
+    return {
+      sourceOutputs: sourceOutputs,
+      transaction: transaction,
+      verify: verify
+    }
+
+
   }
 
 }

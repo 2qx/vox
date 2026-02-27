@@ -186,3 +186,23 @@ export function cashAssemblyToHex(str: string): string {
   return binToHex(result)
 }
 
+
+export function catUint8(uint8arrays:Uint8Array[]) {
+  // Determine the length of the result.
+  const totalLength = uint8arrays.reduce(
+    (total, uint8array) => total + uint8array.byteLength,
+    0
+  );
+
+  // Allocate the result.
+  const result = new Uint8Array(totalLength);
+
+  // Copy each Uint8Array into the result.
+  let offset = 0;
+  uint8arrays.forEach((uint8array) => {
+    result.set(uint8array, offset);
+    offset += uint8array.byteLength;
+  });
+
+  return result;
+}

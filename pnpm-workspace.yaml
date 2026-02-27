@@ -1,5 +1,6 @@
 packages:
   #- 'packages/badgers'
   #- 'packages/catdex'
+  #- 'packages/common'
   - 'packages/*'
   - 'packages/app'

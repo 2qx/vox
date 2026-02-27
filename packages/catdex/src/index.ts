@@ -558,15 +558,13 @@ export default class CatDex {
         // Check if we still have a market
         if (orders.length == 0) throw Error("no orders left, maximum recursion depth reached.");
 
-        const sortFn = tradeAmount > 0 ?
-            ((a: CatDexOrder, b: CatDexOrder) => Number(a.price - b.price)) :
-            ((a: CatDexOrder, b: CatDexOrder) => Number(a.price + b.price))
-
-        // sort orders by price
-        orders.sort(sortFn)
-
-        // pop the best order
-        const best = orders.shift()
+        orders.sort((a: CatDexOrder, b: CatDexOrder) => Number(a.price - b.price))
+        let best
+        if (tradeAmount > 0) {
+            best = orders.shift()
+        } else {
+            best = orders.pop()
+        }
 
         if (!best) throw Error("No matching best order found.")
         if (!best.assetUtxo) throw Error("Order missing asset utxo")
@@ -807,8 +805,8 @@ export default class CatDex {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
-        if(typeof verify =="string") throw Error(verify)
-            
+        if (typeof verify == "string") throw Error(verify)
+
         let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
         if (feeEstimate > 5000) verify = `Excessive fees ${feeEstimate}`
         if (sumSourceOutputTokenAmounts(sourceOutputs, assetCat) == 0n) verify = `Error checking token input`
@@ -914,6 +912,7 @@ export default class CatDex {
             transaction: transaction,
         })
 
+        console.log(verify)
         let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
         if (feeEstimate > 5000) verify = `Excessive fees ${feeEstimate}`
         if (sumSourceOutputTokenAmounts(sourceOutputs, assetCat) == 0n) verify = `Error checking token input`
