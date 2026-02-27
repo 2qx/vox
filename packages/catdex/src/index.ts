@@ -558,16 +558,14 @@ export default class CatDex {
         // Check if we still have a market
         if (orders.length == 0) throw Error("no orders left, maximum recursion depth reached.");
 
-        const sortFn = tradeAmount > 0 ?
-            ((a: CatDexOrder, b: CatDexOrder) => Number(a.price - b.price)) :
-            ((a: CatDexOrder, b: CatDexOrder) => Number(a.price + b.price))
-
-        // sort orders by price
-        orders.sort(sortFn)
-
-        // pop the best order
-        const best = orders.shift()
-
+        orders.sort((a: CatDexOrder, b: CatDexOrder) => Number(a.price - b.price))
+        let best
+        if (tradeAmount > 0) {
+            best = orders.shift()
+        } else {
+            best = orders.pop()
+        }
+        
         if (!best) throw Error("No matching best order found.")
         if (!best.assetUtxo) throw Error("Order missing asset utxo")
 
