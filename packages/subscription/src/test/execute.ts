@@ -1,13 +1,12 @@
 import test from 'ava';
 
-import { binToHex, encodeTransactionBch, hexToBin, stringify } from "@bitauth/libauth";
+import { binToHex, encodeTransactionBch, hexToBin, publicKeyToP2pkhLockingBytecode } from "@bitauth/libauth";
 
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
 import { Wallet, RegTestWallet, mine, NFTCapability, TokenMintRequest, TokenSendRequest } from "mainnet-js";
 import { sleep, UtxoI, getHdPrivateKey } from "@unspent/tau";
 import Subscription from "../index.js";
-import { publicKeyToP2PKHLockingBytecode } from '@unspent/tau/signatureTemplate.js';
 
 
 test('test executing some subscriptions', async t => {
@@ -17,8 +16,8 @@ test('test executing some subscriptions', async t => {
 
 
     const charlie = await RegTestWallet.newRandom()
-    let charlie_pkh = charlie.getPublicKeyHash(false) as Uint8Array
-    let charlie_lockingBytecode = publicKeyToP2PKHLockingBytecode(charlie_pkh)
+    
+    let charlie_lockingBytecode = publicKeyToP2pkhLockingBytecode( {publicKey: charlie.publicKey, throwErrors:false}) as Uint8Array
 
     const aliceAuthResponse = await alice.tokenGenesis({
         capability: NFTCapability.minting,

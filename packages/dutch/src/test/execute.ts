@@ -1,13 +1,12 @@
 import test from 'ava';
 
-import { binToHex, encodeTransactionBch, hexToBin } from "@bitauth/libauth";
+import { binToHex, encodeTransactionBch, hexToBin, publicKeyToP2pkhLockingBytecode } from "@bitauth/libauth";
 
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
 import { Wallet, RegTestWallet, mine, NFTCapability, TokenMintRequest, TokenSendRequest } from "mainnet-js";
 import { sleep, UtxoI, getHdPrivateKey } from "@unspent/tau";
 import Dutch from "../index.js";
-import { publicKeyToP2PKHLockingBytecode } from '@unspent/tau/signatureTemplate.js';
 
 
 test('test buying an NFT at auction', async t => {
@@ -19,8 +18,8 @@ test('test buying an NFT at auction', async t => {
     let provider = alice.provider!
 
 
-    let alice_pkh = alice.getPublicKeyHash(false) as Uint8Array
-    let alice_lockingBytecode = publicKeyToP2PKHLockingBytecode(alice_pkh)
+
+    let alice_lockingBytecode = publicKeyToP2pkhLockingBytecode( {publicKey: alice.publicKey, throwErrors:false}) as Uint8Array
     // Make a "main" badger token.
 
     let data = {
