@@ -13,6 +13,7 @@ import {
   Output,
   OutputTemplate,
   sha256,
+  hash256,
   swapEndianness,
   Transaction,
 } from '@bitauth/libauth';
@@ -34,6 +35,11 @@ export function getAddress(lockingBytecode: Uint8Array, prefix = "bitcoincash" a
   if (typeof result === 'string') throw (result)
   return result.address
 }
+
+export function getTransactionId(txn: Uint8Array): string{
+  return swapEndianness(binToHex(hash256(txn)))
+}
+
 
 export function isTokenaddr(address: string): boolean {
   let result:

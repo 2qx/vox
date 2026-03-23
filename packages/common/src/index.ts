@@ -1,5 +1,7 @@
+export * from './auth.js';
 export * from './batch.js';
 export * from './compiler.js';
+export * from './encode.js';
 export * from './key.js';
 export * from './types.js';
 export * from './constant.js';

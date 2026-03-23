@@ -22,7 +22,7 @@
         }
       }
     },
-    "bidder": {
+    "wallet": {
       "description": "The entity buying tokens.",
       "name": "Funding Entity",
       "scripts": [

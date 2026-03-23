@@ -2,17 +2,22 @@ import template from './template.v3.json' with { type: "json" };
 import packageInfo from '../package.json' with { type: "json" };
 
 import {
+    binToHex,
     bigIntToVmNumber,
     CompilerBch,
-    createVirtualMachineBch,
+    createVirtualMachineBch2025,
     deriveHdPublicKey,
     generateTransaction,
     hexToBin,
     InputTemplate,
     OutputTemplate,
     Output,
+    stringify,
+    stringifyDebugTraceSummary,
+    summarizeDebugTrace,
     Transaction,
-    verifyTransactionTokens
+    verifyTransactionTokens,
+    encodeTransactionBch
 } from '@bitauth/libauth';
 
 import {
@@ -39,7 +44,7 @@ export default class BlockTop {
 
     static compiler: CompilerBch = getLibauthCompiler(this.template);
 
-    static vm = createVirtualMachineBch();
+    static vm = createVirtualMachineBch2025();
 
     static getLockingBytecode(data = {}): Uint8Array {
         const lockingBytecodeResult = this.compiler.generateBytecode(
@@ -195,11 +200,10 @@ export default class BlockTop {
 
         let btopCat = category ? hexToBin(category) : BTOP
 
-        const youngerUtxo =  contractUtxo.height
+        const youngerUtxo = contractUtxo.height
 
         const age = now - youngerUtxo;
-        const amount = Math.floor(contractUtxo.value / 420768)
-
+        const rewardAmount = Math.floor(Number(BigInt(contractUtxo.token_data!.amount!) / 420768n)) -1
         let config = {
             locktime: 0,
             version: 2,
@@ -208,27 +212,44 @@ export default class BlockTop {
         }
 
         config.inputs.push(this.getInput(contractUtxo, age));
-        config.outputs.push(this.getOutput(contractUtxo, amount, age));
-        config.outputs.push(this.getRewardOutput(amount, key, 0, btopCat));
+        config.outputs.push(this.getOutput(contractUtxo, rewardAmount, age));
+        console.log(rewardAmount)
+        config.outputs.push(this.getRewardOutput(rewardAmount, key, 0, btopCat));
 
 
         let result = generateTransaction(config);
-        
+
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
-        
+
         //const estimatedFee = getTransactionFees(result.transaction, fee)
 
         // subtract fees off the change output
         // config.outputs[2]!.valueSatoshis = config.outputs[2]!.valueSatoshis - estimatedFee
 
-        result = generateTransaction(config);
-        if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+        // result = generateTransaction(config);
+        // if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
 
-        const sourceOutputs = [ this.getSourceOutput(contractUtxo) ];
+        const sourceOutputs = [this.getSourceOutput(contractUtxo)];
 
         const transaction = result.transaction
+        //console.log("transaction result:", stringify(transaction))
 
+        let unexpectedFailingIndexDebugTrace = this.vm.debug({
+            inputIndex: Number(0),
+            sourceOutputs,
+            transaction,
+        })
+
+        //console.log("debug: ",unexpectedFailingIndexDebugTrace)
+
+        console.log(binToHex(transaction.inputs[0]?.unlockingBytecode!))
+        let trace = stringifyDebugTraceSummary(
+            summarizeDebugTrace(unexpectedFailingIndexDebugTrace.slice(-9)),
+        )
+
+        encodeTransactionBch(transaction)
+        console.log(trace)
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
             sourceOutputs,
@@ -246,7 +267,7 @@ export default class BlockTop {
         if (sumSourceOutputTokenAmounts(sourceOutputs, category) == 0n) verify = `Error checking token input`
         let tokenDiff = sumSourceOutputTokenAmounts(sourceOutputs, category) -
             sumSourceOutputTokenAmounts(transaction.outputs, category)
-        if (tokenDiff !== 0n) throw Error(`Claiming should not create destroy tokens, token difference: ${tokenDiff}`)
+        if (tokenDiff !== 0n) throw Error(`Claiming should not create or destroy tokens, token difference: ${tokenDiff}`)
         return {
             sourceOutputs: sourceOutputs,
             transaction: transaction,

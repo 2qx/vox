@@ -1,5 +1,5 @@
 import test from 'ava';
-import { encodeTransactionBCH, binToHex } from '@bitauth/libauth';
+import { encodeTransactionBch, binToHex } from '@bitauth/libauth';
 import { getHdPrivateKey, TransactionRequest } from "@unspent/tau";
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
@@ -64,7 +64,7 @@ test('test claim function with key', async t => {
     tokenId
   )
   
-  let tx_raw = binToHex(encodeTransactionBCH(tx.transaction))
+  let tx_raw = binToHex(encodeTransactionBch(tx.transaction))
   await provider.sendRawTransaction(tx_raw)
 });
 

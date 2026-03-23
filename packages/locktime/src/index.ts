@@ -3,21 +3,26 @@ import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
+    binToUtf8,
+    binToNumberUintLE,
+    cashAddressToLockingBytecode,
+    cashAssemblyToBin,
     CompilerBch,
     createVirtualMachineBch,
-    encodeTransactionBch,
     generateTransaction,
     hexToBin,
     InputTemplate,
     OutputTemplate,
     Output,
-    verifyTransactionTokens,
-    numberToBinUint16LE,
-    bigIntToVmNumber
+    Transaction,
+    verifyTransactionTokens
 } from '@bitauth/libauth';
 
 import {
+    BytecodeDataI,
+    decodePushBytes,
     getAddress,
+    getTransactionFees,
     type CashAddressNetworkPrefix,
     getLibauthCompiler,
     getScriptHash,
@@ -31,11 +36,19 @@ export interface LocktimeData {
 }
 
 
+export type LocktimeJob = {
+    record: UtxoI,
+    utxo: UtxoI
+}
+
+
 export default class Locktime {
 
     static USER_AGENT = packageInfo.name;
 
     static PROTOCOL_IDENTIFIER = "U3L";
+
+    static EXECUTOR_FEE = 2500;
 
     static tokenAware = true;
 
@@ -52,13 +65,36 @@ export default class Locktime {
         }
     }
 
+    static parseNFT(utxo: UtxoI): BytecodeDataI {
+
+        if (utxo.token_data?.nft?.commitment) {
+            let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment))
+            if (binToUtf8(byteData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error("Non-locktime record NFT passed as locktime")
+            return {
+                "recipient": byteData[1]!,
+                "locktime": byteData[2]!,
+            }
+        } else {
+            throw Error("Could not parse locktime NFT")
+        }
+    }
+
+    static encodeCommitment(data: LocktimeData) {
+        let commitment = cashAssemblyToBin(
+            `<"${this.PROTOCOL_IDENTIFIER}"><0x${data.recipient}><${data.locktime}>`
+        )
+        if (typeof commitment === "string") throw commitment
+        return binToHex(commitment)
+    }
+
+
     static getLockingBytecode(
-        data: LocktimeData
+        data: BytecodeDataI
     ): Uint8Array {
         const lockingBytecodeResult = this.compiler.generateBytecode(
             {
                 data: {
-                    "bytecode": this.dataToBytecode(data)
+                    "bytecode": data
                 },
                 scriptId: 'lock'
             })
@@ -78,9 +114,12 @@ export default class Locktime {
      * @returns a cashaddress.
      */
     static getScriptHash(
-        data: LocktimeData,
+        record: UtxoI,
         reversed = true): string {
-        return getScriptHash(this.getLockingBytecode(data), reversed)
+        return getScriptHash(
+            this.getLockingBytecode(this.parseNFT(record)),
+            reversed
+        )
     }
 
     /**
@@ -95,102 +134,157 @@ export default class Locktime {
     static getAddress(
         data: LocktimeData,
         prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
-        return getAddress(this.getLockingBytecode(data), prefix, this.tokenAware)
+        let bytecode = this.dataToBytecode(data)
+        return getAddress(this.getLockingBytecode(bytecode), prefix, this.tokenAware)
     }
 
     static getSourceOutput(
-        data: LocktimeData,
+        data: BytecodeDataI,
         utxo: UtxoI): Output {
 
         return {
             lockingBytecode: this.getLockingBytecode(data),
-            valueSatoshis: BigInt(utxo.value)
+            valueSatoshis: BigInt(utxo.value),
+            token: utxo.token_data ? {
+                category: hexToBin(utxo.token_data!.category!),
+                amount: BigInt(utxo.token_data!.amount),
+                nft: utxo.token_data.nft ? {
+                    commitment: hexToBin(utxo.token_data.nft.commitment!),
+                    capability: utxo.token_data.nft.capability,
+                } : undefined
+            } : undefined
         }
 
     }
 
     static getInput(
-        data: LocktimeData,
+        data: BytecodeDataI,
         utxo: UtxoI): InputTemplate<CompilerBch> {
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
-            sequenceNumber: utxo.value,
+            sequenceNumber: 0,
             unlockingBytecode: {
                 data: {
-                    "bytecode": this.dataToBytecode(data)
+                    "bytecode": data
                 },
                 compiler: this.compiler,
                 script: 'unlock',
                 valueSatoshis: BigInt(utxo.value),
+                token: utxo.token_data ? {
+                    category: hexToBin(utxo.token_data!.category!),
+                    amount: BigInt(utxo.token_data!.amount),
+                    nft: utxo.token_data.nft ? {
+                        commitment: hexToBin(utxo.token_data.nft.commitment!),
+                        capability: utxo.token_data.nft.capability,
+                    } : undefined
+                } : undefined
             },
         } as InputTemplate<CompilerBch>
     }
 
-    static getOutput(): OutputTemplate<CompilerBch> {
+    static getOutput(
+        data: BytecodeDataI,
+        utxo: UtxoI
+    ): OutputTemplate<CompilerBch> {
+
+        // If the utxo does not contain enough sats to pay the fee, create an output with min sats.
+        let outputValue = utxo.value > this.EXECUTOR_FEE + 800 ? utxo.value - this.EXECUTOR_FEE : 800n
 
         return {
-            lockingBytecode: {
-                data: {},
-                compiler: this.compiler,
-                script: 'op_return'
-            },
-            valueSatoshis: BigInt(0)
+            lockingBytecode: data["recipient"]!,
+            valueSatoshis: BigInt(outputValue),
+            token: utxo.token_data ? {
+                category: hexToBin(utxo.token_data!.category!),
+                amount: BigInt(utxo.token_data!.amount),
+                nft: utxo.token_data.nft ? {
+                    commitment: hexToBin(utxo.token_data.nft.commitment!),
+                    capability: utxo.token_data.nft.capability,
+                } : undefined
+            } : undefined
         }
 
     }
 
-    /**
-     * Get source outputs, transform contract & wallet outpoints for spending verification.
-     *
-     * @param contractUtxo - contract outputs to use as input.
-     * @param walletUtxo - wallet outputs to use as input.
-     * @param key - private key to sign transaction wallet inputs.
-     *
-     * @returns a transaction template.
-     */
+    static getExecutorOutput(
+        cashaddr: string,
+        amount: number
+    ): OutputTemplate<CompilerBch> {
 
-    static getSourceOutputs(
-        data: LocktimeData,
-        valueUtxos: UtxoI[]
-    ): Output[] {
-        const sourceOutputs: Output[] = [];
-        sourceOutputs.push(...valueUtxos.map((u: UtxoI) => this.getSourceOutput(data, u)));
-        return sourceOutputs
+        let lockingBytecode = cashAddressToLockingBytecode(cashaddr)
+        if (typeof lockingBytecode == "string") throw lockingBytecode
+
+        return {
+            lockingBytecode: lockingBytecode.bytecode,
+            valueSatoshis: BigInt(amount)
+        }
+
     }
+
 
     /**
      * Drop expired records.
      *
-     * @param data - The parameters of the locktime contract.
-     * @param valueUtxos[] - contract records to drop.
+     * @param jobs[] - a list of locktime records and utxos to execute
      *
      * @throws {Error} if transaction generation fails.
      * @returns a transaction template.
      */
 
-    static unlock(
-        data: LocktimeData,
-        utxo: UtxoI
-    ): string {
+    static execute(
+        jobs: LocktimeJob[],
+        height: number,
+        executorCashaddress?: string,
+        fee = 1
+    ): {
+        transaction: Transaction,
+        sourceOutputs: Output[],
+        verify: string | boolean
+    } {
 
         const inputs: InputTemplate<CompilerBch>[] = [];
         const outputs: OutputTemplate<CompilerBch>[] = [];
+        let sourceOutputs = []
+
 
         let config = {
-            locktime: 0,
+            locktime: height,
             version: 2,
             inputs,
             outputs
         }
 
-        config.inputs.push(this.getInput(data, utxo));
-        config.outputs.push(this.getOutput());
+        for (let job of jobs) {
+            let data = this.parseNFT(job.record)
+            // if the job is not in mempool
+            if (binToNumberUintLE(data["locktime"]!) <= height) {
+                config.inputs.push(this.getInput(data, job.utxo));
+                config.outputs.push(this.getOutput(data, job.utxo));
+                sourceOutputs.push(this.getSourceOutput(data, job.utxo));
+            }
+        }
+
+        if (executorCashaddress && config.inputs.length > 0) {
+            config.outputs.push(
+                this.getExecutorOutput(
+                    executorCashaddress,
+                    (config.inputs.length * this.EXECUTOR_FEE)
+                )
+            )
+        }
 
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
-        const sourceOutputs = [this.getSourceOutput(data, utxo)];
+        if (executorCashaddress && config.inputs.length > 0) {
+            const estimatedFee = getTransactionFees(result.transaction, fee) + 1n
+
+            const lastIdx = config.outputs.length - 1
+            config.outputs[lastIdx]!.valueSatoshis = config.outputs[lastIdx]!.valueSatoshis - estimatedFee
+        }
+
+        result = generateTransaction(config);
+        if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
         const transaction = result.transaction
         const tokenValidationResult = verifyTransactionTokens(
@@ -206,7 +300,14 @@ export default class Locktime {
         })
 
         if (typeof verify == "string") throw verify
-        return binToHex(encodeTransactionBch(transaction))
+
+        return {
+            sourceOutputs: sourceOutputs,
+            transaction: transaction,
+            verify: verify
+        }
+
+
     }
 
 }

@@ -1,16 +1,21 @@
 import test from 'ava';
-import { encodeTransactionBch, binToHex, swapEndianness, OpcodeDescriptionsBch2023 } from '@bitauth/libauth';
-import { getHdPrivateKey, TransactionRequest } from "@unspent/tau";
+import {
+  encodeTransactionBch,
+  binToHex,
+  swapEndianness,
+  OpcodeDescriptionsBch2023
+} from '@bitauth/libauth';
+import { getHdPrivateKey, getTransactionId, sleep } from "@unspent/tau";
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
 import { RegTestWallet, mine } from "mainnet-js";
 
 import BlockTop from "../index.js";
 
-test.skip('test mine function', async t => {
+test('test mine function', async t => {
 
 
-  const alice = await getAnAliceWallet(100_003_000)
+  const alice = await getAnAliceWallet(100_010_000)
 
   let contract = BlockTop.getAddress("bchreg")
   const genesisResponse = await alice.tokenGenesis({
@@ -18,14 +23,14 @@ test.skip('test mine function', async t => {
     amount: BigInt(21e14),   // fungible token amount
     value: 1000,             // Satoshi value
     capability: "mutable",
-    commitment:"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+    commitment: "beefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef"
   });
   const tokenId = genesisResponse.tokenIds![0]!;
 
-  console.log(swapEndianness(tokenId))
   const bob = await RegTestWallet.newRandom();
   await alice.sendMax(bob.getDepositAddress())
 
+  await sleep(200);
   let key = getHdPrivateKey(bob.mnemonic!, bob.derivationPath.slice(0, -2), bob.isTestnet)
 
   const bobBalance = await bob.getBalance('sats') as number
@@ -65,9 +70,12 @@ test.skip('test mine function', async t => {
     key,
     tokenId
   )
-  
+
+  console.log("tx: ", binToHex(encodeTransactionBch(tx.transaction)))
+  console.log("tx id: ", getTransactionId(encodeTransactionBch(tx.transaction)))
+
   let tx_raw = binToHex(encodeTransactionBch(tx.transaction))
-  // console.log(tx_raw)
+  await sleep(3000)
   //await provider.sendRawTransaction(tx_raw)
 });
 

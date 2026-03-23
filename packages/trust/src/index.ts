@@ -2,16 +2,21 @@ import templateV3 from './template.v3.json' with { type: "json" };
 import packageInfo from '../package.json' with { type: "json" };
 
 import {
-  hexToBin,
-  CompilerBch,
-  generateTransaction,
-  InputTemplate,
+  binToHex,
+  binToUtf8,
   CashAddressNetworkPrefix,
+  cashAssemblyToBin,
+  cashAddressToLockingBytecode,
+  CompilerBch,
   createVirtualMachineBch,
+  generateTransaction,
+  hexToBin,
+  InputTemplate,
   Output,
   OutputTemplate,
   stringify,
-  Transaction
+  Transaction,
+  verifyTransactionTokens
 } from '@bitauth/libauth';
 
 import {
@@ -19,15 +24,24 @@ import {
 } from '@unspent/tau';
 
 import {
-  UtxoI,
+  BytecodeDataI,
+  decodePushBytes,
+  getTransactionFees,
   getScriptHash,
-  getAddress
+  getAddress,
+  sumOutputValue,
+  sumSourceOutputValue,
+  UtxoI
 } from '@unspent/tau';
 
-const PERIOD = 4383;
-const RETURN_NUMERATOR = 989995;
-const RETURN_DENOMINATOR = 1000000;
+export interface TrustData {
+  recipient: string
+}
 
+export type TrustJob = {
+  record: UtxoI,
+  utxo: UtxoI
+}
 
 export default class Trust {
 
@@ -37,7 +51,7 @@ export default class Trust {
 
   static VERSION = "1.0.0";
 
-  static tokenAware = true;
+  static tokenAware = false;
 
   static template = templateV3;
 
@@ -45,18 +59,49 @@ export default class Trust {
 
   static vm = createVirtualMachineBch();
 
-  static getLockingBytecode(receiptBytecode: Uint8Array | string): Uint8Array {
+  static PERIOD = 4383;
+  static INSTALLMENT_DENOMINATOR = 100;
+  static RETURN_NUMERATOR = 9_899;
+  static RETURN_DENOMINATOR = 10_000;
 
-    if (typeof receiptBytecode == "string") receiptBytecode = hexToBin(receiptBytecode)
+  static dataToBytecode(data: TrustData) {
+    return {
+      "recipient": hexToBin(data.recipient)
+    }
+  }
 
-    const lockingBytecodeResult = this.compiler.generateBytecode({
-      data: {
-        "bytecode": {
-          "recipient": receiptBytecode
-        }
-      },
-      scriptId: 'lock'
-    })
+
+
+  static parseNFT(utxo: UtxoI): BytecodeDataI {
+
+    if (utxo.token_data?.nft?.commitment) {
+      let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment))
+      if (binToUtf8(byteData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error("Non-annuity record NFT passed as annuity")
+      return {
+        "recipient": byteData[1]!
+      }
+    } else {
+      throw Error("Could not parse annuity NFT")
+    }
+  }
+
+  static encodeCommitment(data: TrustData) {
+    let commitment = cashAssemblyToBin(
+      `<"${this.PROTOCOL_IDENTIFIER}"><0x${data.recipient}>`)
+    if (typeof commitment === "string") throw commitment
+    return binToHex(commitment)
+  }
+
+  static getLockingBytecode(data: BytecodeDataI): Uint8Array {
+
+    const lockingBytecodeResult = this.compiler.generateBytecode(
+      {
+        data: {
+          "bytecode": data
+        },
+        scriptId: 'lock'
+      }
+    )
 
     if (!lockingBytecodeResult.success) {
       /* c8 ignore next */
@@ -65,42 +110,62 @@ export default class Trust {
     return lockingBytecodeResult.bytecode
   }
 
-  static getScriptHash(receiptBytecode: Uint8Array | string, reversed = true): string {
-    return getScriptHash(this.getLockingBytecode(receiptBytecode), reversed)
+  /**
+     * Get getScriptHash
+     *
+     * @param record - a utxo parameters of the subscription.
+     * @param reversed - whether to reverse the hash.
+     * @throws {Error} if transaction generation fails.
+     * @returns a cashaddress.
+     */
+  static getScriptHash(
+    record: UtxoI,
+    reversed = true
+  ): string {
+    return getScriptHash(
+      this.getLockingBytecode(
+        this.parseNFT(record)
+      ),
+      reversed
+    )
   }
 
-  static getAddress(receiptBytecode: Uint8Array | string, prefix = "bitcoincash"): string {
-    return getAddress(this.getLockingBytecode(receiptBytecode), prefix as CashAddressNetworkPrefix)
+  static getAddress(data: TrustData, prefix = "bitcoincash"): string {
+    let bytecodeData = this.dataToBytecode(data)
+    return getAddress(
+      this.getLockingBytecode(bytecodeData),
+      prefix as CashAddressNetworkPrefix
+    )
   }
 
-  static getSourceOutput(receipt: string | Uint8Array, utxo: UtxoI): Output {
+  static getSourceOutput(data: BytecodeDataI, utxo: UtxoI): Output {
 
     return {
-      lockingBytecode: this.getLockingBytecode(receipt),
+      lockingBytecode: this.getLockingBytecode(data),
       valueSatoshis: BigInt(utxo.value)
     }
 
   }
 
-  static getSourceOutputs(receipts: string[] | Uint8Array[], utxos: UtxoI[]): Output[] {
-    return utxos.map((u: UtxoI, i) => {
-      return this.getSourceOutput(receipts[i]!, u)
-    })
+  static getInstallmentOutput(data: BytecodeDataI, utxo: UtxoI): OutputTemplate<CompilerBch> {
+
+    let outputValue = Math.round((utxo.value) / this.INSTALLMENT_DENOMINATOR) 
+
+    return {
+      lockingBytecode: data["recipient"]!,
+      valueSatoshis: BigInt(outputValue),
+    }
+
   }
 
+  static getReturnOutput(data: BytecodeDataI, utxo: UtxoI): OutputTemplate<CompilerBch> {
 
-  static getOutput(receiptBytecode: string | Uint8Array, utxo: UtxoI): OutputTemplate<CompilerBch> {
-
-    if (typeof receiptBytecode == "string") receiptBytecode = hexToBin(receiptBytecode)
-
-    let outputValue = Math.round((utxo.value * RETURN_NUMERATOR) / RETURN_DENOMINATOR) - 1
+    let outputValue = Math.round((utxo.value * this.RETURN_NUMERATOR) / this.RETURN_DENOMINATOR) 
 
     return {
       lockingBytecode: {
         data: {
-          "bytecode": {
-            "receipt": receiptBytecode
-          }
+          "bytecode": data
         },
         compiler: this.compiler,
         script: 'lock'
@@ -110,19 +175,35 @@ export default class Trust {
 
   }
 
-  static getOutputs(receiptBytecodes: string[] | Uint8Array[], utxos: UtxoI[]): OutputTemplate<CompilerBch>[] {
-    return utxos.map((u: UtxoI, i) => {
-      return this.getOutput(receiptBytecodes[i]!, u)
-    })
+  static getExecutorOutput(
+    cashaddr: string,
+    amount: bigint
+  ): OutputTemplate<CompilerBch> {
+
+    let lockingBytecode = cashAddressToLockingBytecode(cashaddr)
+    if (typeof lockingBytecode == "string") throw lockingBytecode
+
+    return {
+      lockingBytecode: lockingBytecode.bytecode,
+      valueSatoshis: amount
+    }
+
   }
 
 
-  static getInput(utxo: UtxoI): InputTemplate<CompilerBch> {
+  static getInput(
+    data: BytecodeDataI,
+    utxo: UtxoI,
+    sequenceNumberOverride = this.PERIOD
+  ): InputTemplate<CompilerBch> {
     return {
       outpointIndex: utxo.tx_pos,
       outpointTransactionHash: hexToBin(utxo.tx_hash),
-      sequenceNumber: PERIOD,
+      sequenceNumber: sequenceNumberOverride,
       unlockingBytecode: {
+        data: {
+          "bytecode": data
+        },
         compiler: this.compiler,
         script: 'unlock',
         valueSatoshis: BigInt(utxo.value),
@@ -130,15 +211,22 @@ export default class Trust {
     } as InputTemplate<CompilerBch>
   }
 
-  static getInputs(utxos: UtxoI[]): InputTemplate<CompilerBch>[] {
-    return utxos.map((u: UtxoI) => {
-      return this.getInput(u)
-    })
-  }
+  /**
+     * Step annuity installments forward 
+     *
+     * @param jobs - a list of trust records and utxos.
+     * @param height - the current block height.
+     * @param executorCashaddress - address to receive excess fees, if any.
+     * @param sequenceNumberOverride - override the default period (dev only).
+     * @throws {Error} if transaction generation fails.
+     * @returns a cashaddress.
+     */
 
-  static processOutpoints(
-    receipts: string[] | Uint8Array[],
-    utxos: UtxoI[]
+  static execute(
+    jobs: TrustJob[],
+    height: number,
+    executorCashaddress?: string,
+    fee = 1
   ): {
     transaction: Transaction,
     sourceOutputs: Output[],
@@ -148,6 +236,7 @@ export default class Trust {
 
     const inputs: InputTemplate<CompilerBch>[] = [];
     const outputs: OutputTemplate<CompilerBch>[] = [];
+    let sourceOutputs = [];
 
     const config = {
       locktime: 0,
@@ -155,28 +244,83 @@ export default class Trust {
       inputs, outputs,
     }
 
-    const sourceOutputs = [... this.getSourceOutputs(receipts, utxos)];
+    // add sources, inputs, and installment outputs to the config
+    for (let job of jobs) {
+      let data = this.parseNFT(job.record)
+      // if the job is not in mempool
+      if (job.utxo.height > 0) {
+        const age = height - job.utxo.height
 
-    inputs.push(... this.getInputs(utxos));
-    outputs.push(... this.getOutputs(receipts, utxos));
+        // if the subscription is ready to be processed
+        if (age >= this.PERIOD) {
+          config.inputs.push(this.getInput(data, job.utxo, this.PERIOD));
+          config.outputs.push(this.getInstallmentOutput(data, job.utxo));
+          sourceOutputs.push(this.getSourceOutput(data, job.utxo));
+        }
+      }
+    }
 
-    const result = generateTransaction(config);
+    // add principal return outputs
+    for (let job of jobs) {
+      let data = this.parseNFT(job.record)
+      // if the job is not in mempool
+      if (job.utxo.height > 0) {
+        const age = height - job.utxo.height
+        // if the subscription is ready to be processed
+        if (age >= this.PERIOD) {
+          config.outputs.push(this.getReturnOutput(data, job.utxo));
+        }
+      }
+    }
+
+    if (executorCashaddress && config.inputs.length > 0) {
+      let sumSatsOut = sumOutputValue(config.outputs)
+      let sumSatsIn = sumSourceOutputValue(sourceOutputs)
+      let executorBonus = sumSatsIn - sumSatsOut 
+      if (executorBonus > 0) {
+        config.outputs.push(
+          this.getExecutorOutput(
+            executorCashaddress,
+            executorBonus
+          )
+        )
+      }
+    }
+
+    let result = generateTransaction(config);
     if (!result.success) throw new Error('generate transaction failed!, errors: ' + stringify(result.errors));
-    const transaction = result.transaction
+    let transaction = result.transaction
+
+    if (executorCashaddress && config.inputs.length > 0) {
+      const estimatedFee = getTransactionFees(result.transaction, fee) + 1n
+      console.log(estimatedFee)
+      const lastIdx = config.outputs.length - 1
+      config.outputs[lastIdx]!.valueSatoshis = config.outputs[lastIdx]!.valueSatoshis - estimatedFee
+    }
+
+    result = generateTransaction(config);
+    if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+
+    transaction = result.transaction
+    const tokenValidationResult = verifyTransactionTokens(
+      transaction,
+      sourceOutputs,
+      { maximumTokenCommitmentLength: 40 }
+    );
+    if (tokenValidationResult !== true) throw tokenValidationResult;
 
     let verify = this.vm.verify({
       sourceOutputs: sourceOutputs,
       transaction: transaction,
     })
-    
-    if (typeof verify == "string") throw Error(verify)
+
+    if (typeof verify == "string") throw verify
 
     return {
       sourceOutputs: sourceOutputs,
       transaction: transaction,
       verify: verify
     }
-
 
   }
 

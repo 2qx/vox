@@ -83,6 +83,8 @@ export enum HashType {
 }
 
 
+export interface BytecodeDataI { [fullIdentifier: string]: Uint8Array<ArrayBufferLike>; }
+
 /**
  * Structured token data used in various electrum cash methods.
  */

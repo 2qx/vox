@@ -37,6 +37,7 @@
         "GREATERTHAN",
         "GREATERTHANOREQUAL",
         "healthcheck",
+        "hodl",
         "indexeddb",
         "INPUTBYTECODE",
         "INPUTINDEX",

@@ -3,7 +3,9 @@ import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
+    binToUtf8,
     binToNumberInt16LE,
+    cashAssemblyToBin,
     CompilerBch,
     createVirtualMachineBch,
     encodeDataPush,
@@ -18,6 +20,8 @@ import {
 } from '@bitauth/libauth';
 
 import {
+    BytecodeDataI,
+    decodePushBytes,
     getAddress,
     type CashAddressNetworkPrefix,
     getLibauthCompiler,
@@ -37,7 +41,10 @@ export interface TimeoutData {
 
 export default class Timeout {
 
+    static PROTOCOL_IDENTIFIER = "U3T"
     static USER_AGENT = packageInfo.name;
+
+    static EXECUTOR_FEE = 2500;
 
     static tokenAware = true;
 
@@ -48,22 +55,23 @@ export default class Timeout {
     static vm = createVirtualMachineBch();
 
 
-    static parseNFT(utxo: UtxoI): TimeoutData {
+    static parseNFT(utxo: UtxoI): BytecodeDataI {
 
-
-        if (utxo.token_data?.nft) {
+        if (utxo.token_data?.nft?.commitment) {
+            let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment))
+            if (binToUtf8(byteData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error("Non-subscription record NFT passed as subscription")
             return {
-                recipient: utxo.token_data?.nft?.commitment.slice(0, 40),
-                timeout: binToNumberInt16LE(hexToBin(utxo.token_data?.nft?.commitment.slice(-4)!)),
-                auth: utxo.token_data?.category!
-            } as TimeoutData
-        }  else {
-            throw Error("Nft was not minting nor mutable")
+                "recipient": byteData[1]!,
+                "timeout": byteData[2]!,
+                "auth": hexToBin(utxo.token_data.category)
+            }
+        } else {
+            throw Error("Could not parse subscription NFT")
         }
-
     }
 
-    
+
+
     static dataToBytecode(data: TimeoutData) {
         return {
             "recipient": hexToBin(data.recipient),
@@ -72,21 +80,24 @@ export default class Timeout {
         }
     }
 
-    static dataToCommitmentRecord(data: TimeoutData): Uint8Array {
-        const byteData = this.dataToBytecode(data)
-        return Uint8Array.from([
-            ...encodeDataPush(byteData.recipient),
-            ...encodeDataPush(byteData.timeout)
-        ])
+
+    static encodeCommitment(data: TimeoutData): Uint8Array {
+        let commitment = cashAssemblyToBin(
+            `<"${this.PROTOCOL_IDENTIFIER}"><0x${data.recipient}><${data.timeout}>
+        `)
+        if (typeof commitment === "string") throw commitment
+        return commitment
     }
 
+
+
     static getLockingBytecode(
-        data: TimeoutData,
+        data: BytecodeDataI,
     ): Uint8Array {
         const lockingBytecodeResult = this.compiler.generateBytecode(
             {
                 data: {
-                    "bytecode": this.dataToBytecode(data)
+                    "bytecode": data
                 },
                 scriptId: 'lock'
             })
@@ -98,12 +109,12 @@ export default class Timeout {
 
 
     static getUnlockingBytecode(
-        data: TimeoutData
+        data: BytecodeDataI
     ): Uint8Array {
         const bytecodeResult = this.compiler.generateBytecode(
             {
                 data: {
-                    "bytecode": this.dataToBytecode(data)
+                    "bytecode": data
                 },
                 scriptId: 'unlock'
             })
@@ -122,7 +133,7 @@ export default class Timeout {
      * @returns a cashaddress.
      */
     static getScriptHash(
-        data: TimeoutData,
+        data: BytecodeDataI,
         reversed = true): string {
         return getScriptHash(this.getLockingBytecode(data), reversed)
     }
@@ -136,13 +147,13 @@ export default class Timeout {
      * @returns a cashaddress.
      */
     static getAddress(
-        data: TimeoutData,
+        data: BytecodeDataI,
         prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
         return getAddress(this.getLockingBytecode(data), prefix, this.tokenAware)
     }
 
     static getSourceOutput(
-        data: TimeoutData,
+        data: BytecodeDataI,
         utxo: UtxoI): Output {
 
         return {
@@ -153,7 +164,7 @@ export default class Timeout {
     }
 
     static getInput(
-        data: TimeoutData,
+        data: BytecodeDataI,
         utxo: UtxoI): InputTemplate<CompilerBch> {
         return {
             outpointIndex: utxo.tx_pos,
@@ -161,7 +172,7 @@ export default class Timeout {
             sequenceNumber: utxo.value,
             unlockingBytecode: {
                 data: {
-                    "bytecode": this.dataToBytecode(data)
+                    "bytecode": data
                 },
                 compiler: this.compiler,
                 script: 'unlock',
@@ -170,19 +181,22 @@ export default class Timeout {
         } as InputTemplate<CompilerBch>
     }
 
-    static getOutput(): OutputTemplate<CompilerBch> {
+    static getOutput(
+        data: BytecodeDataI,
+        utxo: UtxoI
+    ): OutputTemplate<CompilerBch> {
 
         return {
-            lockingBytecode: {
-                data: {
-                    // "bytecode": {
-                    //     "key": hexToBin(indexKey)
-                    // }
-                },
-                compiler: this.compiler,
-                script: 'op_return'
-            },
-            valueSatoshis: BigInt(0)
+            lockingBytecode: data["recipient"]!,
+            valueSatoshis: BigInt(utxo.value - this.EXECUTOR_FEE),
+            token: utxo.token_data ? {
+                category: hexToBin(utxo.token_data!.category!),
+                amount: BigInt(utxo.token_data!.amount),
+                nft: utxo.token_data.nft ? {
+                    commitment: hexToBin(utxo.token_data.nft.commitment!),
+                    capability: utxo.token_data.nft.capability,
+                } : undefined
+            } : undefined
         }
 
     }
@@ -198,7 +212,7 @@ export default class Timeout {
      */
 
     static getSourceOutputs(
-        data: TimeoutData,
+        data: BytecodeDataI,
         valueUtxos: UtxoI[]
     ): Output[] {
         const sourceOutputs: Output[] = [];
@@ -209,7 +223,7 @@ export default class Timeout {
     /**
      * Liquidate the contact upon timeout.
      *
-     * @param data - The 
+     * @param record - The utxo carrying the NFT record of the contract
      * @param utxo - contract record to pay out.
      *
      * @throws {Error} if transaction generation fails.
@@ -217,7 +231,7 @@ export default class Timeout {
      */
 
     static liquidate(
-        data: TimeoutData,
+        record: UtxoI,
         utxo: UtxoI
     ): string {
 
@@ -231,8 +245,10 @@ export default class Timeout {
             outputs
         }
 
+        let data = this.parseNFT(record)
+
         config.inputs.push(this.getInput(data, utxo));
-        config.outputs.push(this.getOutput());
+        config.outputs.push(this.getOutput(data, utxo));
 
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));

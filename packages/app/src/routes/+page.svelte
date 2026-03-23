@@ -35,7 +35,7 @@
 			description: 'Token auction',
 			image: '/dutch.svg',
 			link: '/dutch',
-			disabled: true
+			disabled: false
 		},
 		{
 			name: 'FBCH',
@@ -50,7 +50,7 @@
 			description: 'Timed vault.',
 			image: '/locktime.svg',
 			link: '/locktime',
-			disabled: true
+			disabled: false
 		},
 		{
 			name: 'SmallDB',
@@ -64,7 +64,7 @@
 			description: 'Token auto-payments.',
 			image: '/subscription.svg',
 			link: '/subscription',
-			disabled: true
+			disabled: false
 		},
 		{
 			name: 'Timeout',
@@ -85,7 +85,7 @@
 			description: 'Get one percent of a fund monthly in perpetuity.',
 			image: '/unspent.svg',
 			link: '/trust',
-			disabled: true
+			disabled: false
 		},
 		{
 			name: 'Vox',
@@ -112,7 +112,7 @@
 				<a href={item.link}>
 					<button class:disabled={item.disabled}>
 						<img width="80px" src={item.image} alt={item.description} /><br />
-						{item.name}
+						<!-- {item.name} -->
 					</button>
 				</a>
 			</div>
