@@ -44,9 +44,7 @@
 		sumUtxoValue,
 		sumTokenAmounts,
 		type UtxoI,
-
 		sleep
-
 	} from '@unspent/tau';
 	import TokenIcon from '$lib/TokenIcon.svelte';
 	import Ticker from '$lib/Ticker.svelte';
@@ -127,7 +125,6 @@
 
 	async function updateOrders() {
 		if (electrumClient && now > 1000) {
-
 			let marketMakers = await electrumClient.request(
 				'blockchain.scripthash.listunspent',
 				SmallIndex.getScriptHash(CatDex.PROTOCOL_IDENTIFIER),
@@ -210,8 +207,8 @@
 				value: duration
 			})
 		]);
-		sleep(500)
-		await updateOrders()
+		sleep(500);
+		await updateOrders();
 	};
 
 	const updateAsset = async function () {
@@ -260,15 +257,22 @@
 	};
 
 	const updateSwap = function () {
+		
 		if (amount) {
 			try {
 				let result = CatDex.swap(BigInt(amount), orders, walletUnspent, key);
 				transaction = result.transaction;
 				sourceOutputs = result.sourceOutputs;
 				transaction_hex = binToHex(encodeTransactionBch(transaction));
+				console.log(transaction_hex.length)
 				transactionValid = result.verify === true ? true : false;
-				if (result.verify === true) transactionError = '';
+				if (result.verify === true) {
+					transactionError = "";
+				} else {
+					transactionError = result.verify;
+				}
 			} catch (error: any) {
+				console.log(error);
 				transaction = undefined;
 				sourceOutputs = undefined;
 				transaction_hex = '';
@@ -448,7 +452,7 @@
 		{#if balance > 0}
 			<div class="swap">
 				<label>Swap amount: </label>
-				<input type="number" bind:value={amount} min="0" max="10" onchange={() => updateSwap()} />
+				<input type="number" bind:value={amount}  onchange={() => updateSwap()} />
 			</div>
 		{:else}
 			<div class="swap">
@@ -546,18 +550,18 @@
 					</div>
 
 					<div class="orderBooks">
-					<div>
-						{#each myOrders.filter((o) => o.quantity > 0) as o}
-							<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
-						{/each}
+						<div>
+							{#each myOrders.filter((o) => o.quantity > 0) as o}
+								<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+							{/each}
+						</div>
+						<div class="askBook">
+							{#each myOrders.filter((o) => o.quantity < 0).toReversed() as o}
+								<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+							{/each}
+						</div>
 					</div>
-					<div class="askBook">
-						{#each myOrders.filter((o) => o.quantity < 0).toReversed() as o}
-							<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
-						{/each}
-					</div>
-				</div>
-				
+
 					<br />
 					{#if myOrderBook.length > 0}
 						<button onclick={() => postOrders(true)}>Replace Orders</button>

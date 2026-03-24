@@ -241,7 +241,7 @@ export default class CatDex {
         return new Uint8Array(
             [
                 ...padMinimallyEncodedVmNumber(bigIntToVmNumber(BigInt(order.quantity)), 16),
-                ...padMinimallyEncodedVmNumber(bigIntToVmNumber(BigInt(Math.trunc(order.price * PRICE_MULTIPLIER))), 16)
+                ...padMinimallyEncodedVmNumber(bigIntToVmNumber(BigInt(Math.round(order.price * PRICE_MULTIPLIER))), 16)
             ]
         )
     }
@@ -297,7 +297,7 @@ export default class CatDex {
         let out: OutputTemplate<CompilerBch>[] = [
             {
                 lockingBytecode: lockingBytecode,
-                valueSatoshis: BigInt(order.orderUtxo.value) + BigInt(Math.trunc(Number(amount) * order.price)),
+                valueSatoshis: BigInt(order.orderUtxo.value) + BigInt(Math.round(Number(amount) * order.price)),
                 token: {
                     amount: 0n,
                     category: hexToBin(order.orderUtxo.token_data!.category!),
@@ -662,9 +662,10 @@ export default class CatDex {
             transaction: transaction,
         })
         if (typeof verify == "string") throw Error(verify)
+        
 
         let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
-        if (feeEstimate > 5000) verify = `Excessive fees ${feeEstimate}`
+        if (feeEstimate > estimatedFee + 10n) verify = `Excessive fees: ${feeEstimate} for ${estimatedFee} byte tx`
         if (sumSourceOutputTokenAmounts(sourceOutputs, assetCat) == 0n) verify = `Error checking token input`
         let tokenDiff = sumSourceOutputTokenAmounts(sourceOutputs, assetCat) -
             sumSourceOutputTokenAmounts(
@@ -769,7 +770,7 @@ export default class CatDex {
         })
 
         let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
-        if (feeEstimate > 5000) verify = `Excessive fees ${feeEstimate}`
+        if (feeEstimate > estimatedFee + 10n) verify = `Excessive fees: ${feeEstimate} for ${estimatedFee} byte tx`
         if (sumSourceOutputTokenAmounts(sourceOutputs, assetCat) == 0n) verify = `Error checking token input`
         let tokenDiff = sumSourceOutputTokenAmounts(sourceOutputs, assetCat) -
             sumSourceOutputTokenAmounts(
