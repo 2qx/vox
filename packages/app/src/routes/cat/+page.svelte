@@ -267,7 +267,11 @@
 				sourceOutputs = result.sourceOutputs;
 				transaction_hex = binToHex(encodeTransactionBch(transaction));
 				transactionValid = result.verify === true ? true : false;
-				if (result.verify === true) transactionError = '';
+				if (result.verify === true){
+					transactionError = '';
+				} else{
+					transactionError = result.verify
+				}
 			} catch (error: any) {
 				transaction = undefined;
 				sourceOutputs = undefined;
@@ -448,7 +452,7 @@
 		{#if balance > 0}
 			<div class="swap">
 				<label>Swap amount: </label>
-				<input type="number" bind:value={amount} min="0" max="10" onchange={() => updateSwap()} />
+				<input type="number" bind:value={amount} onchange={() => updateSwap()} />
 			</div>
 		{:else}
 			<div class="swap">
