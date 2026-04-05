@@ -2,7 +2,7 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 
-	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBCH } from '@bitauth/libauth';
+	import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch } from '@bitauth/libauth';
 
 	import BCH from '$lib/images/BCH.svg';
 	import tBCH from '$lib/images/tBCH.svg';
@@ -156,7 +156,7 @@
 			let result = BlockPoint.claim(now, utxo, walletUtxo, key, category);
 			transaction = result.transaction;
 			sourceOutputs = result.sourceOutputs;
-			transaction_hex = binToHex(encodeTransactionBCH(transaction));
+			transaction_hex = binToHex(encodeTransactionBch(transaction));
 			broadcast(transaction_hex);
 			transactionValid = result.verify === true ? true : false;
 			if (result.verify === true) transactionError = '';

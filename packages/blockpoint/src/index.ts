@@ -31,7 +31,7 @@ import {
 } from '@unspent/tau';
 
 export const BPTS = hexToBin('7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c')
-export const tBPTS = hexToBin('ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271')
+export const tBPTS = hexToBin('8214f234225e5f555663290e0fb7b7b607bf0778221e6da97248bf020306831b')
 
 
 export default class BlockPoint {
