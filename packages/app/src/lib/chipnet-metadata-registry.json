@@ -6,9 +6,9 @@
     "patch": 0
   },
   "latestRevision": "2025-08-13T17:00:13.273Z",
-  "registryIdentity": "ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271",
+  "registryIdentity": "8214f234225e5f555663290e0fb7b7b607bf0778221e6da97248bf020306831b",
   "identities": {
-    "ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271": {
+    "8214f234225e5f555663290e0fb7b7b607bf0778221e6da97248bf020306831b": {
       "2025-08-13T17:00:13.273Z": {
         "name": "CHIP Points",
         "uris": {
@@ -17,7 +17,7 @@
         },
         "token": {
           "symbol": "tBPTS",
-          "category": "ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271",
+          "category": "8214f234225e5f555663290e0fb7b7b607bf0778221e6da97248bf020306831b",
           "decimals": 0
         },
         "description": "A reward token for aged unspent outputs.",
