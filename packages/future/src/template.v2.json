@@ -583,6 +583,21 @@
       "script": "<key.schnorr_signature.all_outputs>\n<key.public_key>",
       "unlocks": "wallet_lock"
     },
+    "future_wallet_unlock": {
+      "name": "Unlock Future Wallet",
+      "script": "",
+      "unlocks": "future_wallet_lock"
+    },
+    "gantry_unlock": {
+      "name": "Gantry Unlock",
+      "script": "",
+      "unlocks": "gantry_lock"
+    },
+    "future_wallet_lock": {
+      "lockingType": "standard",
+      "name": "Future Wallet Lock",
+      "script": "// contract FutureLock(\n   // LockingBytecode of the beneficiary, \n   // the address receiving payouts\n // bytes recipientLockingBytecode\n <recipient>\n//) {\n//  function execute() {\n\n    // Check that each output sends to the recipient\n    OP_INPUTINDEX OP_OUTPUTBYTECODE OP_EQUALVERIFY \n    //require(tx.outputs[this.activeInputIndex].lockingBytecode \n    //== recipientLockingBytecode);\n\n    // Check that each output value is greater than input sats \n    // plus the token value, \n    // minus a flat transaction fee\n    OP_INPUTINDEX OP_OUTPUTVALUE \n    OP_INPUTINDEX OP_UTXOVALUE \n    OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_ADD \n    <150> OP_SUB OP_GREATERTHANOREQUAL\n//     require(\n//         tx.outputs[this.activeInputIndex].value >= \n//         tx.inputs[this.activeInputIndex].value \n//         + tx.inputs[this.activeInputIndex].tokenAmount \n//         - 150);\n//   }\n// }"
+    },
     "channel_lock": {
       "lockingType": "p2sh32",
       "name": "Channel Message Lock",

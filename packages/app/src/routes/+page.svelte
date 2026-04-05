@@ -112,7 +112,7 @@
 				<a href={item.link}>
 					<button class:disabled={item.disabled}>
 						<img width="80px" src={item.image} alt={item.description} /><br />
-						<!-- {item.name} -->
+						{item.name}
 					</button>
 				</a>
 			</div>

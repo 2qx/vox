@@ -76,12 +76,13 @@ export default class Subscription {
         if (utxo.token_data?.nft?.commitment) {
             let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment))
             if (binToUtf8(byteData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error("Non-subscription record NFT passed as subscription")
-            return {
+            return  {
                 "installment": byteData[1]!,
                 "recipient": byteData[2]!,
                 "period": byteData[3]!,
                 "auth": hexToBin(utxo.token_data.category)
             }
+            
         } else {
             throw Error("Could not parse subscription NFT")
         }

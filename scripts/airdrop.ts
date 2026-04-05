@@ -17,7 +17,7 @@ let requestList = Array(127).fill({
   cashaddr: destination,
   value: 800,
   tokenId: tokenIdFungible as string,
-  amount: 72624976668147841n
+  amount: 72624976668144699n
 } as TokenSendRequest) as TokenSendRequest[]
 
 // console.log(requestList)

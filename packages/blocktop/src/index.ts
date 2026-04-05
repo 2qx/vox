@@ -235,17 +235,18 @@ export default class BlockTop {
         const transaction = result.transaction
         //console.log("transaction result:", stringify(transaction))
 
-        let unexpectedFailingIndexDebugTrace = this.vm.debug({
-            inputIndex: Number(0),
+        let state = this.vm.debug({
+            inputIndex: 0,
             sourceOutputs,
             transaction,
         })
 
+        
         //console.log("debug: ",unexpectedFailingIndexDebugTrace)
 
         console.log(binToHex(transaction.inputs[0]?.unlockingBytecode!))
         let trace = stringifyDebugTraceSummary(
-            summarizeDebugTrace(unexpectedFailingIndexDebugTrace.slice(-9)),
+            summarizeDebugTrace(state.slice(-9)),
         )
 
         encodeTransactionBch(transaction)

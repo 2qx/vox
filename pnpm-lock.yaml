@@ -25,6 +25,12 @@ importers:
       '@bitauth/libauth':
         specifier: 3.1.0-next.8
         version: 3.1.0-next.8
+      '@mem-cash/core':
+        specifier: 0.0.2
+        version: 0.0.2(@mem-cash/validation@0.0.2)
+      '@mem-cash/validation':
+        specifier: 0.0.2
+        version: 0.0.2
       '@types/node':
         specifier: 20.14.10
         version: 20.14.10
@@ -684,6 +690,27 @@ packages:
     resolution: {integrity: sha512-llMXd39jtP0HpQLVI37Bf1m2ADlEb35GYSh1SDSLsBhR+5iCxiNGlT31yqbNtVHygHAtMy6dWFERpU2JgufhPg==}
     engines: {node: '>=18'}
     hasBin: true
+
+  '@mem-cash/core@0.0.2':
+    resolution: {integrity: sha512-5tWGqk0wvS1rqAu1X16zoDMnuHVGWCpVATK41GsmgDa+uNl0p95i6otomi03UHAYafwTI99dROUKyZUPSmmsNQ==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@mem-cash/validation': 0.0.2
+    peerDependenciesMeta:
+      '@mem-cash/validation':
+        optional: true
+
+  '@mem-cash/storage@0.0.2':
+    resolution: {integrity: sha512-qpZR6on3QuGFuOsfw+bQ75Hy0qzHQQ65wbHRKM8fWYr3ypucVcCuwcoxEIX4BbWwrMy5e+hnWbBlPrCiwMhvrA==}
+    engines: {node: '>=20'}
+
+  '@mem-cash/types@0.0.2':
+    resolution: {integrity: sha512-MWhx+GG94+iMtWXT6suQj4mBi3IsvooMqJwRpz2wjZU2XS/8Pc6BUK+W6E8phtSOqmlXuqhZw50JGiMP6ufLCw==}
+    engines: {node: '>=20'}
+
+  '@mem-cash/validation@0.0.2':
+    resolution: {integrity: sha512-0Jq9K2B79Mt4RCbNJ83Y/bXc4BG7NJenWqxBrx4jy3Y6leZqDdj1Ho0wru2tvgnYShTtPPQHYSNu2mgYUo2a+Q==}
+    engines: {node: '>=20'}
 
   '@monsterbitar/isomorphic-ws@5.3.1':
     resolution: {integrity: sha512-BWfWUffbg3uO4K6Cyokg9ff43lPaXAOZcCnNe1lcjCjUMDVrRAb5qEHG5qeJp3ud2SPYbORaNsls5as6SR3oig==}
@@ -2616,6 +2643,27 @@ snapshots:
     transitivePeerDependencies:
       - encoding
       - supports-color
+
+  '@mem-cash/core@0.0.2(@mem-cash/validation@0.0.2)':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.8
+      '@mem-cash/storage': 0.0.2
+      '@mem-cash/types': 0.0.2
+    optionalDependencies:
+      '@mem-cash/validation': 0.0.2
+
+  '@mem-cash/storage@0.0.2':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.8
+      '@mem-cash/types': 0.0.2
+
+  '@mem-cash/types@0.0.2':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.8
+
+  '@mem-cash/validation@0.0.2':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.8
 
   '@monsterbitar/isomorphic-ws@5.3.1(ws@8.18.2)':
     dependencies:

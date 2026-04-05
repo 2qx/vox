@@ -1,0 +1,153 @@
+Vox.cash is a collection of mini-apps that all do one thing.
+
+Some apps are live at https://vox.cash. 
+
+There is also a chipnet (testnet) version at https://unspent.dev.
+
+The project is open source at https://github.com/2qx/vox
+
+## Contact
+
+My email for this is fundme.2qx@small.neomailbox.ch , I'm on reddit as u/2q_x, and telegram as @a2qx_username
+
+## Major Platform Achievements
+
+- Bitcoin Cash has the first flash-reward token based on coin age (Block Points). 
+- The BadgerStake contract now has redundant independent implementations.
+- There are now three competing mechanisms for users to collect a yield without impairment risk to coin principal.
+- Bitcoin Cash now has an on-chain chat protocol, instead of being reliant on centralized third party services. 
+- The Vox chat app now generates coupons to support the primary futures markets.
+- Initial manual coupon writing activities to support FBCH markets have ended. 
+- Pioneered a dozen reference defi implementations using libauth templates and the HdKeys wallet template. 
+- The first (and only) weekly futures market with real coin delivery (in all finance) is now on much better technical footing.
+- The main vox channel was used to publish & archive a draft of a short book forever in perpetuity.
+- We heard noise from some very flattering competition and saw a significant amount of investment come online within the ecosystem.
+  
+## Live mini apps (Alpha stage):
+
+- Vox Chat: A high signal to noise ratio chat app.
+- CatDex: a commission free bi-directional partial limit order UTXO exchange.
+- Block Points: A NEW 'coindays' based commodity token offering rewards without staking. 
+- Smalldb: A simple key-value database for storing temporary records on CashToken commitments.
+- Future BCH with a fresh library and new UI
+- A fresh Badgers app an library
+- A fresh Wrapped BCH library and new UI
+- A new Drip (pure-MEV) library and UI
+
+## Still to do: 
+
+- Subscription lib & interface
+- Dutch Auction library & app interface
+- Locktime (hodl) lib & interface
+- Timeout lib & interface
+- Trust (annuity) lib & interface
+  
+- Block Tops (BTOP) minable token lib & interface
+- BCMR token metadata service and caching
+- Wallet importing/exporting.
+- Implement Flash Loans. 
+- Add cauldron AMM threads to CatDex.
+- Publish all 17+ app libraries.
+- Add support for v0-v2 unspent/phi contracts.
+- Publish a new common `unspent` command line interface
+- Ship a bare-bones automated auto-optimal yield taking app
+
+## Funding to date
+
+Financial support for this work came in the form of two donations from private individuals to my CashAccount. I'm very very grateful for the timely support of those individuals.
+
+Additional support came from continued monthly payment streams from earlier incarnations of the project.
+
+Two attempts to fund raise for parts of the above work via FundMe FAILED in Dec 2024 and June '25. 
+
+## Remaining Timeline, Budget & Future funding model.
+
+The goal was to finish all Vox dapps by December '25. Six of the remaining apps are much more straight-forward and simpler than what has been completed already. 
+
+All vox code is being done manually without any help from any kind of AI or coding agent. Although the market might say coding by hand has no value, the same marketeers might also say our coin and the dozen or so protocols on top of it have no value. 
+
+The funding goal is 90 BCH total. 
+
+30 BCH via FundmMe.Cash, 30 BCH in cash, and 30 BCH towards a long-term irrevocable trust. 
+
+Cash donations may be made here: 
+
+bitcoincash:qz7xjt4xcpdu2gl75vrvkpwzfpjhy9hnm55gwzyvj4
+
+
+Donations to in perpetuity can be made here:
+
+bitcoincash:pdmv95esl9sjzyp9h5rkqz24zr0kp4xxmttc037yc7wn84gtulx7x086f66qx
+
+Toward a long term funding model, a subscription will be available for 50k per year Badgers/Bpts or 1M WBCH per year. The subscription won't do or unlock anything (because I don't want to maintain service tiers), active subscriptions will just indicate the user supports vox. 
+
+## What is Vox.cash?
+
+In plain terms, vox is a set of mini-apps that each do one thing: annuity, auction, drip, hodl, mine, subscribe, speak, store, timeout, trade, wrap, etc. The vox app is also a testbed for a common library of wallet functions that anyone might one day be able to use from any wallet. 
+
+The collection takes it's name from the flagship app: vox (meaning voice) because ultimately all freedoms stem from the freedom of speech.
+
+It is the continuation of the aging unspent.app, but with the integrated wallet and CashToken support that were not in the scope of that early project. 
+
+Vox is following a bit of a different approach to defi. While some bitcoin dapps are based on large monolithic scripts, the bitcoin scripting language lends itself to small versatile scripts that do one thing very well and can be used many times, or even composed together in a more complex transaction. 
+
+Vox is a bunch of super simple dapps striving to use the shortest spending scripts possible to do one thing.
+
+Very small scripts, in addition to being cheap on the blockchain, also tend to carry lower risk, because if every byte of code is risk, designing for the fewest bytes tends to be safer code. 
+
+Composing these small scripts together in one transaction, or as a sequence of transactions, allows users to accomplish a range of more complex outcomes without the cost of developing a large bespoke contract. 
+
+Smaller scripts are easier to debug, faster to develop and will end up seeing more usage on the network in practice.
+
+Bitcoin Script is often referred to as a "Forth-like" language, and vox/unspent is exploring the benefits and versatility of the forth-like philosophy that was left embedded in our currency project. 
+
+## Open libraries; open platform
+
+Any javascript developer with a wallet is free to take and implement any of the app protocols as a first-party app in their own wallet, with the libraries provided or with the base libauth template and their own approach. 
+
+Conversely, any developer with an emergent idea for a new protocol, that doesn't want to maintain it as an app in perpetuity, is welcome to build it as a mini-app on vox.   
+
+One day, there may be a common template language all wallets use, and the vox templates can be a suite in that newer format. 
+
+## CatDex cAn HaZ ComMODiTIEs!!
+
+On vox.cash, CatDex was created to trade narrowly priced commodity tokens. CatDex will eventually handle aggregated trades across protocols like Cauldron's AMM, TapSwap's open ask markets, and Vox's Dutch Auctions
+
+At present, the commodities deployed/planned for CatDex are Badgers, Block Points, Futures and Block Tops (33 markets in total). But BCH is permissionless and anyone is free to use the CatDex library on their own site to setup a market for any fungible tokens they'd like.
+
+There is no plan to list securities or meme tokens, which are much better suited for robustly priced automated maker markets (AMMs).  But anyone that has an idea for a commodity token can pitch it for listing on CatDex. 
+
+The Dutch auction app will support liquidating any kind of CashToken, fungible or non-fungible, including tokenized swap positions (i.e. "stablecoins").
+
+
+## Goodbye CashScript SDK, et al.
+
+As part of a major overhaul with a view toward portability and long term maintainability, each library supporting each mini app was written (or rewritten) from the ground up with Jason's @bitauth/libauth as the sole dependency. 
+
+Compiled bytecode from `cashc` is now used to write libauth authentication templates, which are used to construct more complex transactions. 
+
+This change greatly stabilized the debugging workflow in the omni-debugger BitAuth IDE. The change removed unnecessary middleware to get at the transaction builder and any previous limitations introduced by the CashScript SDK. 
+
+Each miniapp is backed with an independent mini-library written in a state-less functional programming style. Removing dependencies makes the mini-app libraries available to javascript wallet developers as static functions with the same dependency their wallet likely already relies on. So any javascript wallet should be able to fairly easily deploy any vox miniapp without much fuss, just by adding a UI to their wallet. 
+
+The new architecture took about two months to get right, writing and debugging the various apps in BitAuth IDE and implementing a new HD defi libauth template workflow from scratch. There were no real complete open source examples to do this, but there are lots now.
+
+Any developer in Bitcoin Cash that wants to create a leaner dapp implementation can reference the vox repository as a template.
+
+Each BitAuth template can be inspected with the BitAuth button in each miniapp. CashScript source code has been included in the comments of the template for folks coming from solidity style contracts.
+
+## Still no WalletConnect
+
+Although vox.cash may eventually support transaction building and signing through a single external centralized point of failure, that is not a priority at this time, i.e. the ETH-style WalletConnect flow is not a near-term goal. 
+
+## What Vox is not. 
+
+Vox has no oracle-tied swap contracts nor mechanism to create or redeem tokenized swap positions. 
+
+We don't ever want to knock users out of the ecosystem by handing them a contract with a liquidation risk they couldn't quantify. We want to keep all the users.
+
+What is a *swap*? A swap is a contract to exchange assets at a later time according to agreed upon rules. In practice this ends up being a bitcoin "cash-settled" contract tied to some oracle that is effectively perfectly controlled by a single party with an infinite supply of tether. These apps usually entail a very unfavorable pathway where average users lose all their money to the well capitalized actor on a long enough time scale. The key test these cash-settled swaps fail is that, ultimately, the underlying thing being "traded" is never delivered. There are several very pretty well-finance apps to do that in Bitcoin Cash, but those apps aren't coming to vox.cash. 
+
+On vox, assets are traded and trades have delivery. 
+
+If parties, or groups of parties, express a sustained and belligerent interest in exclusively advocating for instruments that have no delivery, time will show that they preferred benefiting from user liquidations over free trade and a free currency. 
