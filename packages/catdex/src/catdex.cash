@@ -43,9 +43,9 @@ contract CatDex(bytes32 authCat, bytes32 assetCat){
             int assetIndex = orderIndex + 1; 
 
             // Require the asset thread be sent at the current contract
-            // OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_OUTPUTBYTECODE OP_EQUALVERIFY 
+            // OP_DUP OP_OUTPUTBYTECODE OP_OVER OP_UTXOBYTECODE OP_EQUALVERIFY 
             require(tx.outputs[assetIndex].lockingBytecode == 
-                    tx.outputs[assetIndex].lockingBytecode);                 
+                    tx.inputs[assetIndex].lockingBytecode);                 
                         
             // if the amount of tokens is greater than zero,
             // OP_DUP OP_OUTPUTTOKENAMOUNT OP_0 OP_GREATERTHAN OP_IF 
