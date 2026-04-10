@@ -92,7 +92,8 @@
 	const isMainnet = page.url.hostname == 'vox.cash';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
-	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	//const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.imaginary.cash';
 	const metadata = isMainnet ? BCMR : tBCMR;
 	const bchIcon = isMainnet ? BCH : tBCH;
 
