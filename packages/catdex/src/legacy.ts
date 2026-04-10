@@ -1,4 +1,4 @@
-import template from './template.v3.1.json' with { type: "json" };
+import template from './template.v3.0.json' with { type: "json" };
 import packageInfo from '../package.json' with { type: "json" };
 
 import {
@@ -36,7 +36,6 @@ import {
     sumOutputTokenAmounts,
     UtxoI
 } from '@unspent/tau';
-import OldCatDex from './legacy.js';
 
 const PRICE_MULTIPLIER = 100_000_000
 
@@ -76,7 +75,7 @@ export interface CatDexOrder {
 
 
 
-export default class CatDex {
+export default class OldCatDex {
 
     static USER_AGENT = packageInfo.name;
 
@@ -302,7 +301,7 @@ export default class CatDex {
                     amount: 0n,
                     category: hexToBin(order.orderUtxo.token_data!.category!),
                     nft: {
-                        commitment: CatDex.encodeNFT(
+                        commitment: OldCatDex.encodeNFT(
                             {
                                 quantity: order.quantity + amount,
                                 price: order.price
@@ -940,5 +939,3 @@ export async function getAllMarketOrders(electrumClient: any, scriptHashes: stri
     allUnspent.map((obj: UtxoI) => map.set(obj.tx_hash + ":" + obj.tx_pos, obj));
     return map as Map<string, any>
 }
-
-export   *  from "./legacy.js";
