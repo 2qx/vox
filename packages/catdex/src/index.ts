@@ -1,4 +1,4 @@
-import template from './template.v3.json' with { type: "json" };
+import template from './template.v3.1.json' with { type: "json" };
 import packageInfo from '../package.json' with { type: "json" };
 
 import {
