@@ -47,6 +47,11 @@ contract CatDex(bytes32 authCat, bytes32 assetCat){
             require(tx.outputs[assetIndex].lockingBytecode == 
                     tx.inputs[assetIndex].lockingBytecode);                 
                         
+            // Require the asset and order threads originate from the same contract
+            // OP_OVER OP_UTXOBYTECODE OP_OVER OP_UTXOBYTECODE OP_EQUALVERIFY 
+            require(tx.inputs[orderIndex].lockingBytecode == 
+                    tx.inputs[assetIndex].lockingBytecode);  
+
             // if the amount of tokens is greater than zero,
             // OP_DUP OP_OUTPUTTOKENAMOUNT OP_0 OP_GREATERTHAN OP_IF 
             if(tx.outputs[assetIndex].tokenAmount > 0){
