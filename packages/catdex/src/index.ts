@@ -941,4 +941,4 @@ export async function getAllMarketOrders(electrumClient: any, scriptHashes: stri
     return map as Map<string, any>
 }
 
-export   *  from "./legacy.js";
+export  { default as OldCatDex } from "./legacy.js";

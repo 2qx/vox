@@ -14,8 +14,7 @@
 
 	import Readme from './README.md';
 
-	import { default as CatDex, getAllMarketOrders } from '@unspent/catdex';
-	import OldCatDex from '@unspent/catdex';
+	import { default as CatDex, getAllMarketOrders, OldCatDex } from '@unspent/catdex';
 
 	import SmallIndex from '@unspent/small';
 
