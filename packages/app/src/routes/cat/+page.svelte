@@ -14,7 +14,7 @@
 
 	import Readme from './README.md';
 
-	import { default as CatDex, getAllMarketOrders } from '@unspent/catdex';
+	import { default as CatDex, getAllMarketOrders, OldCatDex } from '@unspent/catdex';
 
 	import SmallIndex from '@unspent/small';
 
@@ -74,6 +74,7 @@
 	let myMembership: any = $state(0);
 	let myAuthBatons: any[] = $state([]);
 	let myDexUtxos: any[] = $state([]);
+	let myOldDexUtxos: any[] = $state([]);
 	let authBatons: any[] = $state([]);
 	let showSettings = $state(false);
 	let showChat = $state(false);
@@ -87,7 +88,7 @@
 	let balance = $state(0);
 	let assetBalance = $state(0n);
 
-	const isMainnet = page.url.hostname == 'vox.cash';
+	const isMainnet =  page.url.hostname == 'vox.cash';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
@@ -97,7 +98,7 @@
 	if (typeof selectedAsset !== 'string') {
 		selectedAsset = isMainnet
 			? '7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c'
-			: 'ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271';
+			: '8214f234225e5f555663290e0fb7b7b607bf0778221e6da97248bf020306831b';
 	}
 
 	const protocol_prefix = cashAssemblyToHex(`OP_RETURN <"${CatDex.PROTOCOL_IDENTIFIER}">`);
@@ -155,6 +156,12 @@
 				myMarketTokens = sumTokenAmounts(myDexUtxos, selectedAsset);
 				myMarketSatoshis = sumUtxoValue(myDexUtxos);
 				myOrders = CatDex.getCatDexOrdersFromUtxos(selectedAsset, myDexUtxos);
+
+				let myOldRawOrders = await getAllMarketOrders(electrumClient, [
+					OldCatDex.getScriptHash(myAuthBatons[0].token_data.category, selectedAsset)
+				]);
+				myOldDexUtxos = Array.from(myOldRawOrders.values());
+				
 			}
 		}
 	}
@@ -240,6 +247,22 @@
 		myOrderBook.splice(i, 1);
 	};
 
+	const clearOldOrders = async function (replace = true) {
+		let oldOrders = replace ? myOldDexUtxos : [];
+
+		let tx = OldCatDex.administer(
+			myAuthBatons[0],
+			selectedAsset!,
+			oldOrders,
+			[],
+			walletUnspent,
+			key
+		);
+		let transaction_hex = binToHex(encodeTransactionBch(tx.transaction));
+		let response = await broadcast(transaction_hex);
+		if (response.length == 64) myOrderBook = [];
+	};
+
 	const postOrders = async function (replace = false) {
 		let oldOrders = replace ? myDexUtxos : [];
 
@@ -267,7 +290,7 @@
 				console.log(transaction_hex.length)
 				transactionValid = result.verify === true ? true : false;
 				if (result.verify === true) {
-					transactionError = "";
+					transactionError = '';
 				} else {
 					transactionError = result.verify;
 				}
@@ -452,7 +475,7 @@
 		{#if balance > 0}
 			<div class="swap">
 				<label>Swap amount: </label>
-				<input type="number" bind:value={amount}  onchange={() => updateSwap()} />
+				<input type="number" bind:value={amount} onchange={() => updateSwap()} />
 			</div>
 		{:else}
 			<div class="swap">
@@ -572,6 +595,9 @@
 						<button onclick={() => addMyOrder(0)}>New Orders</button><br />
 					{/if}
 
+					{#if myOldDexUtxos.length > 0}
+						<button onclick={() => clearOldOrders()}> Clear Old Orders </button>
+					{/if}
 					{#if myOrderBook.length > 0}
 						<div class="orders">
 							<div class="in">

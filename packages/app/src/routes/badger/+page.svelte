@@ -105,8 +105,9 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		walletUnspent = response;
-		balance = sumUtxoValue(walletUnspent, true);
+		
+		walletUnspent = [response.sort((a, b) => a.value - b.value).pop()];
+		balance = walletUnspent[0].value;
 	};
 
 	const broadcast = async function (raw_tx: string) {
@@ -156,15 +157,12 @@
 	};
 
 	const lock = async function () {
+		console.log('stake value:', stakeValue);
+		console.log('balance:', balance);
+		console.log('unspent:', walletUnspent);
 		if (stakeBlock < 32767) {
-			if (stakeValue && stakeValue > 0.0005) {
-				let lockResponse = BadgerStake.lock(
-					authUtxo,
-					Math.floor(stakeValue * 100_000_000),
-					stakeBlock,
-					walletUnspent,
-					key
-				);
+			if (stakeValue && stakeValue > 50_000) {
+				let lockResponse = BadgerStake.lock(authUtxo, Math.floor(stakeValue), stakeBlock, $state.snapshot(walletUnspent), key);
 				let raw_tx = binToHex(encodeTransactionBch(lockResponse.transaction));
 				console.log(raw_tx);
 				await broadcast(raw_tx);
@@ -203,8 +201,6 @@
 	});
 </script>
 
-
-
 <svelte:head>
 	<title>🦡 Badgers</title>
 	<meta name="description" content="Stake coins for Badgers." />
@@ -233,7 +229,6 @@
 		</div>
 	</div>
 
-
 	{#if balance > 0}
 		<div class="stakeForm">
 			<div>
@@ -241,7 +236,7 @@
 					<span style="font-size:large; color: red;">Min stake is 0.00005 BCH!</span>
 				{:else if stakeValue > 0 && stakeBlock > 0}
 					<h3>
-						Earn {Math.floor(stakeValue * stakeBlock).toLocaleString()}
+						Earn {Math.floor(stakeValue/100_000_000 * stakeBlock).toLocaleString()}
 						{ticker}
 						<TokenIcon {category} size={16} {isMainnet}></TokenIcon>
 					</h3>
@@ -257,9 +252,9 @@
 					float={true}
 					min={0}
 					step={0.01}
-					max={balance / 100000000}
+					max={balance-3_000}
 				/>
-				{stakeValue}
+				{stakeValue! / 100_000_000}
 				{baseTicker}
 			</div>
 			<div class="purple-theme">
@@ -277,7 +272,7 @@
 				{/if}
 			</div>
 			<div class="stake">
-				{#if stakeValue * stakeBlock >= 1}
+				{#if (stakeValue! / 100_000_000) * stakeBlock >= 1}
 					<button
 						onclick={() => {
 							lock();
@@ -294,7 +289,7 @@
 		</div>
 	{:else}
 		<div class="stakeForm">
-			<p><a href="/wallet" >Deposit funds</a> to stake coins.</p>
+			<p><a href="/wallet">Deposit funds</a> to stake coins.</p>
 		</div>
 	{/if}
 	{#if unspent.length}
@@ -347,14 +342,12 @@
 		text-align: center;
 	}
 
-	
 	.grid {
 		display: flex;
 		flex-direction: row;
 		flex-wrap: wrap;
 		align-items: flex-end;
 	}
-
 
 	.grid .row {
 		flex: 1 1 160px;
@@ -384,8 +377,6 @@
 	button:hover {
 		background-color: #9933b3;
 	}
-
-	
 
 	label {
 		margin: 8px;

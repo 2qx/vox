@@ -1,4 +1,4 @@
-import template from './template.v3.1.json' with { type: "json" };
+import template from './template.v3.0.json' with { type: "json" };
 import packageInfo from '../package.json' with { type: "json" };
 
 import {
@@ -7,6 +7,7 @@ import {
     CompilerBch,
     createVirtualMachineBch,
     deriveHdPublicKey,
+    encodeTransactionBch,
     generateTransaction,
     hdPrivateKeyToP2pkhLockingBytecode,
     hexToBin,
@@ -16,19 +17,17 @@ import {
     padMinimallyEncodedVmNumber,
     Transaction,
     verifyTransactionTokens,
-    vmNumberToBigInt
+    vmNumberToBigInt,
+    stringify,
+    assertNonNull
 } from '@bitauth/libauth';
 
 import {
     getAddress,
-    getAuthLayers,
     type CashAddressNetworkPrefix,
-    getChangeOutput,
     getLibauthCompiler,
     getScriptHash,
     getTransactionFees,
-    getWalletInput,
-    getWalletSourceOutput,
     listUnspentTokensWrap,
     promiseAllInBatches,
     sumSourceOutputTokenAmounts,
@@ -37,7 +36,6 @@ import {
     sumOutputTokenAmounts,
     UtxoI
 } from '@unspent/tau';
-import OldCatDex from './legacy.js';
 
 const PRICE_MULTIPLIER = 100_000_000
 
@@ -77,7 +75,7 @@ export interface CatDexOrder {
 
 
 
-export default class CatDex {
+export default class OldCatDex {
 
     static USER_AGENT = packageInfo.name;
 
@@ -303,7 +301,7 @@ export default class CatDex {
                     amount: 0n,
                     category: hexToBin(order.orderUtxo.token_data!.category!),
                     nft: {
-                        commitment: CatDex.encodeNFT(
+                        commitment: OldCatDex.encodeNFT(
                             {
                                 quantity: order.quantity + amount,
                                 price: order.price
@@ -315,10 +313,10 @@ export default class CatDex {
             },
             {
                 lockingBytecode: lockingBytecode,
-                valueSatoshis: 800n,
+                valueSatoshis: BigInt(800n),
                 token: tokensOut != 0n ? {
                     category: order.assetCategory,
-                    amount: tokensOut
+                    amount: BigInt(tokensOut)
                 } : undefined
             }
         ]
@@ -379,7 +377,147 @@ export default class CatDex {
     }
 
 
-    
+    static getWalletSourceOutput(utxo: UtxoI, key?: string, addressIndex = 0): Output {
+
+        const lockingBytecode = key ? hdPrivateKeyToP2pkhLockingBytecode({
+            addressIndex: addressIndex,
+            hdPrivateKey: key,
+            throwErrors: true
+        }) : Uint8Array.from(Array(33))
+
+
+        return {
+            lockingBytecode: lockingBytecode,
+            valueSatoshis: BigInt(utxo.value),
+            token: utxo.token_data ? {
+                category: hexToBin(utxo.token_data!.category!),
+                amount: BigInt(utxo.token_data!.amount!),
+                nft: utxo.token_data.nft ? {
+                    commitment: hexToBin(utxo.token_data.nft.commitment!),
+                    capability: utxo.token_data.nft.capability,
+                } : undefined
+            } : undefined
+        }
+
+    }
+
+
+    static getWalletInput(utxo: UtxoI, privateKey?: string, addressIndex = 0): InputTemplate<CompilerBch> {
+
+        let unlockingData = privateKey ? {
+            compiler: this.compiler,
+            data: {
+                hdKeys: {
+                    addressIndex: addressIndex,
+                    hdPrivateKeys: {
+                        'wallet': privateKey
+                    },
+                }
+            },
+            script: 'wallet_unlock',
+            valueSatoshis: BigInt(utxo.value),
+            token: utxo.token_data ? {
+                category: hexToBin(utxo.token_data.category!),
+                amount: BigInt(utxo.token_data.amount),
+                nft: utxo.token_data.nft ? {
+                    commitment: hexToBin(utxo.token_data.nft.commitment!),
+                    capability: utxo.token_data.nft.capability,
+                } : undefined
+            } : undefined
+        } : Uint8Array.from(Array())
+
+        return {
+            outpointIndex: utxo.tx_pos,
+            outpointTransactionHash: hexToBin(utxo.tx_hash),
+            sequenceNumber: 0,
+            unlockingBytecode: unlockingData,
+        } as InputTemplate<CompilerBch>
+    }
+
+    static getAuthWalletOutput(
+        utxo: UtxoI,
+        privateKey?: any,
+        addressIndex = 0,
+    ): OutputTemplate<CompilerBch> {
+
+        const lockingBytecode = privateKey ? {
+            compiler: this.compiler,
+            data: {
+                hdKeys: {
+                    addressIndex: addressIndex,
+                    hdPublicKeys: {
+                        'wallet': deriveHdPublicKey(privateKey).hdPublicKey
+                    },
+                },
+            },
+            script: 'wallet_lock'
+        } : Uint8Array.from(Array(33))
+
+        return {
+            lockingBytecode: lockingBytecode,
+            valueSatoshis: BigInt(utxo.value),
+            token: utxo.token_data ? {
+                category: hexToBin(utxo.token_data!.category!),
+                amount: BigInt(utxo.token_data.amount),
+                nft: utxo.token_data.nft ? {
+                    commitment: hexToBin(utxo.token_data.nft.commitment!),
+                    capability: utxo.token_data.nft.capability,
+                } : undefined
+            } : undefined
+        }
+    }
+
+    static getChangeOutput(
+        value: bigint,
+        amount: bigint,
+        category?: Uint8Array | string,
+        privateKey?: any,
+        addressIndex = 0
+    ): OutputTemplate<CompilerBch> {
+        if (category && typeof category !== "string") category = binToHex(category);
+        const lockingBytecode = privateKey ? {
+            compiler: this.compiler,
+            data: {
+                hdKeys: {
+                    addressIndex: addressIndex,
+                    hdPublicKeys: {
+                        'wallet': deriveHdPublicKey(privateKey).hdPublicKey
+                    },
+                },
+            },
+            script: 'wallet_lock'
+        } : Uint8Array.from(Array(33))
+
+        return {
+            lockingBytecode: lockingBytecode,
+            valueSatoshis: value,
+            token: amount > 0 && category ? {
+                category: hexToBin(category),
+                amount: amount,
+            } : undefined
+        }
+    }
+
+
+    static getAuthLayers(
+        authUtxo: UtxoI,
+        privateKey?: any,
+        addressIndex = 0,
+    ): {
+        inputs: InputTemplate<CompilerBch>[],
+        outputs: OutputTemplate<CompilerBch>[],
+        sourceOutputs: Output[]
+    } {
+        let inputs: InputTemplate<CompilerBch>[] = [];
+        let outputs: OutputTemplate<CompilerBch>[] = [];
+        let sourceOutputs: Output[] = []
+
+        sourceOutputs.push(this.getWalletSourceOutput(authUtxo, privateKey, addressIndex));
+        inputs.push(this.getWalletInput(authUtxo, privateKey, addressIndex))
+        outputs.push(this.getAuthWalletOutput(authUtxo, privateKey, addressIndex))
+        return { inputs, outputs, sourceOutputs }
+    }
+
     static setBlackBoardLayers(
         authCat: Uint8Array | string,
         assetCat: Uint8Array | string,
@@ -410,6 +548,7 @@ export default class CatDex {
         sourceOutputs: Output[]
     } {
 
+
         let inputs: InputTemplate<CompilerBch>[] = [];
         let outputs: OutputTemplate<CompilerBch>[] = [];
 
@@ -426,7 +565,7 @@ export default class CatDex {
         } else {
             best = orders.pop()
         }
-
+        
         if (!best) throw Error("No matching best order found.")
         if (!best.assetUtxo) throw Error("Order missing asset utxo")
 
@@ -483,10 +622,13 @@ export default class CatDex {
         if (!category) {
             utxos = utxos.filter(u => !u.token_data)
         } else {
+            console.log(utxos)
             utxos = utxos
                 .filter(u => u.token_data && u.token_data?.category == category)
+
                 // Must not contain NFTs
                 .filter(u => u.token_data && !u.token_data.nft)
+            console.log(utxos)
         }
 
         // TODO: sort by highest value first
@@ -500,8 +642,8 @@ export default class CatDex {
         utxos.splice(randomIdx, 1);
 
         // spend the utxo
-        inputs.push(getWalletInput(randomUtxo, privateKey))
-        sourceOutputs.push(getWalletSourceOutput(randomUtxo, privateKey));
+        inputs.push(this.getWalletInput(randomUtxo, privateKey))
+        sourceOutputs.push(this.getWalletSourceOutput(randomUtxo, privateKey));
         let sumSats = sumSourceOutputValue(sourceOutputs)
         let sumTokenAmounts = sumSourceOutputTokenAmounts(sourceOutputs, category)
         if (
@@ -536,6 +678,7 @@ export default class CatDex {
         sourceOutputs: Output[],
         walletUtxos: UtxoI[],
         privateKey?: string,
+
     ) {
         // Calculate excess cash and tokens required to fund the exchange
         let sumSatsOut = sumOutputValue(config.outputs)
@@ -567,10 +710,10 @@ export default class CatDex {
         let tokenChange = sumTokenAmountsIn - sumTokenAmountsOut
 
         if (tokenChange > 0) {
-            config.outputs.push(getChangeOutput(800n, tokenChange, assetCat, privateKey))
+            config.outputs.push(this.getChangeOutput(800n, tokenChange, assetCat, privateKey))
             cashChange -= 800n
         }
-        config.outputs.push(getChangeOutput(cashChange, 0n, undefined, privateKey))
+        config.outputs.push(this.getChangeOutput(cashChange, 0n, undefined, privateKey))
 
         return config
     }
@@ -626,7 +769,7 @@ export default class CatDex {
         let authCat = authUtxo.token_data!.category
 
         // Build authentication baton layer
-        const authLayers = getAuthLayers(authUtxo, privateKey, addressIndex)
+        const authLayers = this.getAuthLayers(authUtxo, privateKey, addressIndex)
         config.inputs.push(...authLayers.inputs);
         config.outputs.push(...authLayers.outputs);
         let sourceOutputs = authLayers.sourceOutputs;
@@ -662,9 +805,8 @@ export default class CatDex {
             sourceOutputs: sourceOutputs,
             transaction: transaction,
         })
-        if (typeof verify == "string") throw Error(verify)
-        
-
+        if(typeof verify =="string") throw Error(verify)
+            
         let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
         if (feeEstimate > estimatedFee + 10n) verify = `Excessive fees: ${feeEstimate} for ${estimatedFee} byte tx`
         if (sumSourceOutputTokenAmounts(sourceOutputs, assetCat) == 0n) verify = `Error checking token input`
@@ -797,5 +939,3 @@ export async function getAllMarketOrders(electrumClient: any, scriptHashes: stri
     allUnspent.map((obj: UtxoI) => map.set(obj.tx_hash + ":" + obj.tx_pos, obj));
     return map as Map<string, any>
 }
-
-export  { default as OldCatDex } from "./legacy.js";
