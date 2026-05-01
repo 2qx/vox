@@ -88,7 +88,7 @@
 	let balance = $state(0);
 	let assetBalance = $state(0n);
 
-	const isMainnet =  page.url.hostname == 'vox.cash';
+	const isMainnet = page.url.hostname == 'vox.cash';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
@@ -161,7 +161,6 @@
 					OldCatDex.getScriptHash(myAuthBatons[0].token_data.category, selectedAsset)
 				]);
 				myOldDexUtxos = Array.from(myOldRawOrders.values());
-				
 			}
 		}
 	}
@@ -280,14 +279,13 @@
 	};
 
 	const updateSwap = function () {
-		
 		if (amount) {
 			try {
 				let result = CatDex.swap(BigInt(amount), orders, walletUnspent, key);
 				transaction = result.transaction;
 				sourceOutputs = result.sourceOutputs;
 				transaction_hex = binToHex(encodeTransactionBch(transaction));
-				console.log(transaction_hex.length)
+				console.log(transaction_hex.length);
 				transactionValid = result.verify === true ? true : false;
 				if (result.verify === true) {
 					transactionError = '';
@@ -493,11 +491,13 @@
 
 		<div class="orderBooks">
 			<div>
+				<p>bids</p>
 				{#each orders.filter((o) => o.quantity > 0) as o}
 					<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
 				{/each}
 			</div>
 			<div class="askBook">
+				<p>asks</p>
 				{#each orders.filter((o) => o.quantity < 0).toReversed() as o}
 					<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
 				{/each}
@@ -574,11 +574,13 @@
 
 					<div class="orderBooks">
 						<div>
+							<p>bids</p>
 							{#each myOrders.filter((o) => o.quantity > 0) as o}
 								<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
 							{/each}
 						</div>
 						<div class="askBook">
+							<p>asks</p>
 							{#each myOrders.filter((o) => o.quantity < 0).toReversed() as o}
 								<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
 							{/each}
@@ -722,6 +724,12 @@
 
 	.orderBooks div {
 		align-items: center;
+	}
+
+	.orderBooks div p {
+		text-align: center;
+		margin-block-end: 0px;
+		min-width: 40px;
 	}
 
 	.orders {

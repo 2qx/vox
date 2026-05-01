@@ -251,7 +251,8 @@
 					id="stakeValue"
 					float={true}
 					min={0}
-					step={0.01}
+					step={100_000}
+					formatter={ (v)=>`${v/100_000_000} BCH`}
 					max={balance-3_000}
 				/>
 				{stakeValue! / 100_000_000}
