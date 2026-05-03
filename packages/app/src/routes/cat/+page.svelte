@@ -48,6 +48,7 @@
 	} from '@unspent/tau';
 	import TokenIcon from '$lib/TokenIcon.svelte';
 	import Ticker from '$lib/Ticker.svelte';
+	import CatDexOrderHeader from '$lib/CatDexOrderHeader.svelte';
 
 	let { data }: PageProps = $props();
 	let selectedAsset = $state(data.asset);
@@ -491,13 +492,15 @@
 
 		<div class="orderBooks">
 			<div>
-				<p>bids</p>
+				<p><b>BID</b></p>
+				<CatDexOrderHeader />
 				{#each orders.filter((o) => o.quantity > 0) as o}
 					<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
 				{/each}
 			</div>
 			<div class="askBook">
-				<p>asks</p>
+				<p><b>ASK</b></p>
+				<CatDexOrderHeader />
 				{#each orders.filter((o) => o.quantity < 0).toReversed() as o}
 					<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
 				{/each}
@@ -574,13 +577,13 @@
 
 					<div class="orderBooks">
 						<div>
-							<p>bids</p>
+							<p><b>BID</b></p>
 							{#each myOrders.filter((o) => o.quantity > 0) as o}
 								<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
 							{/each}
 						</div>
 						<div class="askBook">
-							<p>asks</p>
+							<p><b>ASK</b></p>
 							{#each myOrders.filter((o) => o.quantity < 0).toReversed() as o}
 								<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
 							{/each}
