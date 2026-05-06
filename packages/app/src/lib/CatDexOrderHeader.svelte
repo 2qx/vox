@@ -6,18 +6,18 @@
 	<div class="post">
 		<div class="balance">
 			<div class="order">
-				<div class="auth"></div>
+				<div class="space"></div>
 				<div class="price">price</div>
 				<div class="price">qty</div>
-				<div class="auth"></div>
+				<div class="space"></div>
 			</div>
 		</div>
 		<div class="balance">
 			<div class="order">
-				<div class="auth"></div>
+				<div class="space"></div>
 				<div class="quantity">(sats/token)</div>
 				<div class="quantity">(tokens)</div>
-				<div class="auth"></div>
+				<div class="space"></div>
 			</div>
 		</div>
 	</div>
@@ -72,10 +72,10 @@
 		padding: 2px;
 	}
 
-	.auth {
+	.space {
 		display: flex;
 		opacity: 0.9;
 		align-content: center;
-		width: 20px;
+		width: 15px;
 	}
 </style>

@@ -1,10 +1,38 @@
 <script>
+	import SvelteMarkdown, {
+		allowRenderersOnly,
+		buildUnsupportedHTML
+	} from '@humanspeak/svelte-markdown';
+
+	// Only allow basic text formatting
+	const renderers = {
+		...allowRenderersOnly([
+			'heading',
+			'paragraph',
+			'blockquote',
+			'code',
+			'text',
+			'strong',
+			'em',
+			'list',
+			'listitem',
+			'hr',
+			'br',
+			'table',
+			'tablehead',
+			'tablebody',
+			'tablerow',
+			'tablecell'
+		]),
+		html: buildUnsupportedHTML()
+	};
+
 	import { blo } from 'blo';
 	import likesIcon from '$lib/images/likes.svg';
 
 	let showMore = $state(false);
-	
-    const TRUNCATE = 400;
+
+	const TRUNCATE = 400;
 	let {
 		likePost = $bindable(),
 		thisAuth,
@@ -34,9 +62,20 @@
 			<div class="action"></div>
 		</div>
 		{#if !error}
-			{#if body.length > TRUNCATE+20  && showMore}
+			{#if body.length > TRUNCATE + 20 && showMore}
 				<div>
-					{body}
+					<SvelteMarkdown source={body} {renderers} />
+					<button
+						onclick={() => {
+							showMore = !showMore;
+						}}
+					>
+						{showMore ? 'show less' : 'show more'}
+					</button>
+				</div>
+			{:else if body.length > TRUNCATE + 20}
+				<div>
+					<SvelteMarkdown source={body.substring(0, TRUNCATE) + ' ...'} {renderers} />
 
 					<button
 						onclick={() => {
@@ -46,19 +85,8 @@
 						{showMore ? 'show less' : 'show more'}
 					</button>
 				</div>
-			{:else if body.length > TRUNCATE+20 }
-				<div>
-					{body.substring(0,TRUNCATE) + ' ...'}
-					<button
-						onclick={() => {
-							showMore = !showMore;
-						}}
-					>
-						{showMore ? 'show less' : 'show more'}
-					</button>
-				</div>
 			{:else}
-				{body}
+				<SvelteMarkdown source={body} {renderers} />
 			{/if}
 		{:else}
 			<div class="error">
@@ -113,7 +141,7 @@
 		color: #ad67c2;
 		font-size: small;
 	}
-	
+
 	.actions {
 		margin: auto;
 		font-size: x-small;

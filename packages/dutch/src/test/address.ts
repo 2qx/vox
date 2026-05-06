@@ -4,7 +4,7 @@ import Dutch from "../index.js";
 
 
 // Async arrow function
-test('test dutch action address', async t => {
+test('test dutch auction address', async t => {
 
     const data = {
         open: 10_000_000_000,
