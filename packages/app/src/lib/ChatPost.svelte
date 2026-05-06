@@ -1,34 +1,7 @@
 <script>
-	import SvelteMarkdown, {
-		allowRenderersOnly,
-		buildUnsupportedHTML
-	} from '@humanspeak/svelte-markdown';
-
-	// Only allow basic text formatting
-	const renderers = {
-		...allowRenderersOnly([
-			'heading',
-			'paragraph',
-			'blockquote',
-			'code',
-			'text',
-			'strong',
-			'em',
-			'list',
-			'listitem',
-			'hr',
-			'br',
-			'table',
-			'tablehead',
-			'tablebody',
-			'tablerow',
-			'tablecell'
-		]),
-		html: buildUnsupportedHTML()
-	};
-
 	import { blo } from 'blo';
 	import likesIcon from '$lib/images/likes.svg';
+	import ChatPostBody from './ChatPostBody.svelte';
 
 	let showMore = $state(false);
 
@@ -64,7 +37,7 @@
 		{#if !error}
 			{#if body.length > TRUNCATE + 20 && showMore}
 				<div>
-					<SvelteMarkdown source={body} {renderers} />
+					<ChatPostBody {body} />
 					<button
 						onclick={() => {
 							showMore = !showMore;
@@ -75,8 +48,7 @@
 				</div>
 			{:else if body.length > TRUNCATE + 20}
 				<div>
-					<SvelteMarkdown source={body.substring(0, TRUNCATE) + ' ...'} {renderers} />
-
+					<ChatPostBody body={body.substring(0, TRUNCATE) + ' ...'} />
 					<button
 						onclick={() => {
 							showMore = !showMore;
@@ -86,7 +58,7 @@
 					</button>
 				</div>
 			{:else}
-				<SvelteMarkdown source={body} {renderers} />
+				<ChatPostBody {body} />
 			{/if}
 		{:else}
 			<div class="error">
