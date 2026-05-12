@@ -15,16 +15,18 @@ test('test executing some locktime contracts', async t => {
     let provider = alice.provider!
 
 
-    
-    let alice_lockingBytecode = publicKeyToP2pkhLockingBytecode( {publicKey: alice.publicKey, throwErrors:false}) as Uint8Array
+
+    let alice_lockingBytecode = publicKeyToP2pkhLockingBytecode({ publicKey: alice.publicKey!, throwErrors: false }) as Uint8Array
     // Make a "main" badger token.
 
     const aliceAuthResponse = await alice.tokenGenesis({
-        capability: NFTCapability.minting,
-        commitment: "anything goes",
-        value: 800,                    // Satoshi value
+        nft: {
+            capability: NFTCapability.minting,
+            commitment: "anything goes",
+        },
+        value: 800n,                    // Satoshi value
     });
-    const tokenId = aliceAuthResponse.tokenIds![0]!;
+    const tokenId = aliceAuthResponse.categories![0]!;
 
     let data = {
         locktime: 10,
@@ -58,20 +60,19 @@ test('test executing some locktime contracts', async t => {
     const ftToken1 = await alice.tokenGenesis({
         cashaddr: contract_address,
         amount: 100_000_000n,
-        value: 500_000,                    // Satoshi value
+        value: 500_000n,                    // Satoshi value
     });
 
     await alice.sendMax(alice.getDepositAddress())
     const ftToken2 = await alice.tokenGenesis({
         cashaddr: contract_address,
         amount: 100_000_000n,
-        value: 500_000,                    // Satoshi value
+        value: 500_000n,                    // Satoshi value
     });
 
     await alice.send({
         cashaddr: contract_address,
-        value: 10000,
-        unit: 'sats'
+        value: 10000n
     })
 
     await sleep(1000)
@@ -145,8 +146,8 @@ test('test executing some locktime contracts', async t => {
 
     await sleep(1000);
 
-    let bobBalance = await bob.getBalance("sats") as number
-    t.assert(bobBalance > 0)
+    let bobBalance = await bob.getBalance()
+    t.assert(bobBalance > 0n)
 
 
 });

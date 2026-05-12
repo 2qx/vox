@@ -3,16 +3,16 @@ import { createTxVerifier } from "@mem-cash/validation";
 
 import test from 'ava';
 
-import { 
-    binToHex, 
-    encodeTransactionBch, 
-    hexToBin, 
+import {
+    binToHex,
+    encodeTransactionBch,
     swapEndianness,
-    publicKeyToP2pkhLockingBytecode } from "@bitauth/libauth";
+    publicKeyToP2pkhLockingBytecode
+} from "@bitauth/libauth";
 
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
-import { Wallet, RegTestWallet, mine, NFTCapability, TokenMintRequest, TokenSendRequest } from "mainnet-js";
+import { Wallet, RegTestWallet, mine, NFTCapability } from "mainnet-js";
 import { sleep, UtxoI, getHdPrivateKey } from "@unspent/tau";
 import Subscription from "../index.js";
 
@@ -23,16 +23,18 @@ test('test executing some subscriptions mem ', async t => {
     let provider = alice.provider!
 
     const charlie = await RegTestWallet.newRandom()
-    
-    let charlie_lockingBytecode = publicKeyToP2pkhLockingBytecode({publicKey: charlie.publicKey, throwErrors:false}) as Uint8Array
+
+    let charlie_lockingBytecode = publicKeyToP2pkhLockingBytecode({ publicKey: charlie.publicKey!, throwErrors: false }) as Uint8Array
 
     const aliceAuthResponse = await alice.tokenGenesis({
-        capability: NFTCapability.minting,
-        commitment: "anything goes",
-        value: 800,                    // Satoshi value
+        nft: {
+            capability: NFTCapability.minting,
+            commitment: "anything goes",
+        },
+        value: 800n,                    // Satoshi value
     });
 
-    const tokenId = aliceAuthResponse.tokenIds![0]!;
+    const tokenId = aliceAuthResponse.categories![0]!;
 
 
     let data = {
@@ -40,7 +42,7 @@ test('test executing some subscriptions mem ', async t => {
         recipient: charlie_lockingBytecode,
         installment: 100000n,
         auth: Uint8Array.from([])
-    }  
+    }
 
     let recordCommitment = Subscription.encodeCommitment(data)
 
@@ -63,7 +65,7 @@ test('test executing some subscriptions mem ', async t => {
 
     let bytecodeData = Subscription.dataToBytecode(data)
     let contract_lockingBytecode = Subscription.getLockingBytecode(bytecodeData)
-    
+
     console.log(binToHex(contract_lockingBytecode))
 
     await alice.sendMax(alice.getDepositAddress())
@@ -71,9 +73,9 @@ test('test executing some subscriptions mem ', async t => {
     const ftToken1 = await alice.tokenGenesis({
         cashaddr: contract_address,
         amount: 100_000_000n,
-        value: 500_000,                    // Satoshi value
+        value: 500_000n,                    // Satoshi value
     });
-    
+
     await sleep(1000)
 
     await mine({
@@ -83,14 +85,14 @@ test('test executing some subscriptions mem ', async t => {
     });
 
     await sleep(3000)
-    
+
     // @ts-ignore
     let subscriptionUtxos = await provider.performRequest(
         "blockchain.address.listunspent",
         contract_address,
         "include_tokens"
     )
-    let jobs = subscriptionUtxos.map((u: UtxoI) => {  return { record: record, utxo: u } })
+    let jobs = subscriptionUtxos.map((u: UtxoI) => { return { record: record, utxo: u } })
 
 
     // @ts-ignore
@@ -113,12 +115,12 @@ test('test executing some subscriptions mem ', async t => {
     let input0 = tx.sourceOutputs[0]
     let output0 = tx.transaction.outputs[0]
     let output1 = tx.transaction.outputs[1]
-    
+
     t.assert(tx.transaction.version == 2, "transaction version is two");
 
     t.assert(tx.transaction.inputs[0]!.sequenceNumber > data.period, "min input age")
     // t.assert(tx.transaction.inputs[1]!.sequenceNumber > data.period, "min input age")
-    
+
     console.log(swapEndianness(binToHex(output0?.token?.category!)))
     console.log(swapEndianness(binToHex(input0?.token?.category!)))
     // Check installment output
@@ -133,7 +135,7 @@ test('test executing some subscriptions mem ', async t => {
 
     t.assert(output0?.token?.amount == data.installment, "output0 auth cat matches")
     // t.assert(output1?.token?.amount == data.installment, "output1 auth cat matches")
-    
+
     // Check return output
     t.assert(output1?.valueSatoshis! == input0!.valueSatoshis - 5000n, "min sats out")
     // t.assert(output3?.valueSatoshis! >= input1!.valueSatoshis - 5000n, "min sats out")
@@ -149,8 +151,8 @@ test('test executing some subscriptions mem ', async t => {
 
 
     await sleep(100)
-    
-    console.log("verified: ",tx.verify)
+
+    console.log("verified: ", tx.verify)
     await sleep(1000);
 
     const verifier = await createTxVerifier({ vmVersion: "BCH_2025_05", standard: false });
@@ -161,19 +163,19 @@ test('test executing some subscriptions mem ', async t => {
     // Add UTXOs, submit transactions, mine blocks
     let txid = subscriptionUtxos[0]!.tx_hash
     let tokenData = {
-            category: binToHex(input0?.token?.category!),
-            amount: input0?.token?.amount
-        }
-    node.addUtxo({ 
-        txid, 
-        vout: 0, 
-        satoshis:  tx.sourceOutputs[0]?.valueSatoshis!, 
-        address: contract_address, 
-        height:0 ,
+        category: binToHex(input0?.token?.category!),
+        amount: input0?.token?.amount
+    }
+    node.addUtxo({
+        txid,
+        vout: 0,
+        satoshis: tx.sourceOutputs[0]?.valueSatoshis!,
+        address: contract_address,
+        height: 0,
     });
     const result = node.submitTransaction(rawHex);
     const debug = node.debugTransaction(rawHex); // per-input VM traces without mempool acceptance
-    
+
     console.log(debug)
 
 
@@ -190,7 +192,7 @@ test('test executing some subscriptions mem ', async t => {
 
     await sleep(1000);
 
-    let bobBalance = await bob.getBalance("sats") as number
+    let bobBalance = await bob.getBalance()
     t.assert(bobBalance > 0)
 
 

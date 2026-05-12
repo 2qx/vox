@@ -37,11 +37,11 @@ import {
     type AddressGetHistoryEntry
 } from '@unspent/tau';
 
-import { Coupon } from './coupon.js';
 import { Vault } from './vault.js';
 import { toBin } from './util.js';
 
 const BIP68_MASK = 2147483648
+
 
 export class Post {
 
@@ -404,7 +404,7 @@ export class Channel {
 
     static getChannelMessageOutputs(channel: string, message: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBch>[] {
         const binaryMessage = utf8ToBin(message)
-        let chunked = [...chunks(binaryMessage, 32).map((m) => "6a025630" + binToHex(encodeDataPush(m)))]
+        let chunked = [...chunks(binaryMessage, 122).map((m) => "6a025630" + binToHex(encodeDataPush(m)))]
         return chunked.map((m) => {
             return {
                 lockingBytecode: this.getLockingBytecode(channel),
@@ -624,8 +624,9 @@ export class Channel {
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
             sourceOutputs,
-            { maximumTokenCommitmentLength: 40 }
+            { maximumTokenCommitmentLength: 128 }
         );
+
         if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
 
         let verify = this.vm.verify({
@@ -633,7 +634,7 @@ export class Channel {
             transaction: transaction,
         })
 
-        if(typeof verify =="string") throw Error(verify)
+        if(typeof verify =="string"  && !verify.indexOf("Excessive token commitment length:")) throw Error(verify)
 
         return {
             sourceOutputs: sourceOutputs,

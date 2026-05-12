@@ -28,21 +28,26 @@ test('test staking and unstaking badgers', async t => {
     })
 
     const genesisResponse = await alice.tokenGenesis({
-        capability: NFTCapability.minting,
-        commitment: binToHex(masterCommitment),
+        nft: {
+            capability: NFTCapability.minting,
+            commitment: binToHex(masterCommitment),
+        },
         amount: 1000000000n,
-        value: 10000,                    // Satoshi value
+        value: 10000n,                    // Satoshi value
     });
-    const tokenId = genesisResponse.tokenIds![0]!;
+    const tokenId = genesisResponse.categories![0]!;
 
     let contract_address = BadgerStake.getAddress(tokenId, "bchreg");
 
     await alice.send(new TokenSendRequest({
         cashaddr: contract_address,
-        tokenId: tokenId,
+        category: tokenId,
         amount: 1000000000n,
-        commitment: binToHex(masterCommitment),
-        capability: NFTCapability.minting
+        nft: {
+            commitment: binToHex(masterCommitment),
+            capability: NFTCapability.minting
+        }
+
     }))
 
     sleep(1000)

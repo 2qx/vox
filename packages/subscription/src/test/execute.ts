@@ -16,16 +16,18 @@ test('test executing some subscriptions', async t => {
 
 
     const charlie = await RegTestWallet.newRandom()
-    
-    let charlie_lockingBytecode = publicKeyToP2pkhLockingBytecode( {publicKey: charlie.publicKey, throwErrors:false}) as Uint8Array
+
+    let charlie_lockingBytecode = publicKeyToP2pkhLockingBytecode({ publicKey: charlie.publicKey!, throwErrors: false }) as Uint8Array
 
     const aliceAuthResponse = await alice.tokenGenesis({
-        capability: NFTCapability.minting,
-        commitment: "anything goes",
-        value: 800,                    // Satoshi value
+        nft: {
+            capability: NFTCapability.minting,
+            commitment: "anything goes",
+        },
+        value: 800n,                    // Satoshi value
     });
 
-    const tokenId = aliceAuthResponse.tokenIds![0]!;
+    const tokenId = aliceAuthResponse.categories![0]!;
 
     let data = {
         period: 0,
@@ -59,7 +61,7 @@ test('test executing some subscriptions', async t => {
     const ftToken1 = await alice.tokenGenesis({
         cashaddr: contract_address,
         amount: 100_000_000n,
-        value: 500_000,                    // Satoshi value
+        value: 500_000n,                    // Satoshi value
     });
 
     // await alice.sendMax(alice.getDepositAddress())
@@ -68,7 +70,7 @@ test('test executing some subscriptions', async t => {
     //     amount: 100_000_000n,
     //     value: 500_000,                    // Satoshi value
     // });
-    
+
     await sleep(1000)
 
     await mine({
@@ -78,7 +80,7 @@ test('test executing some subscriptions', async t => {
     });
 
     await sleep(3000)
-    
+
     // @ts-ignore
     let subscriptionUtxos = await provider.performRequest(
         "blockchain.address.listunspent",
@@ -109,12 +111,12 @@ test('test executing some subscriptions', async t => {
     let input0 = tx.sourceOutputs[0]
     let output0 = tx.transaction.outputs[0]
     let output1 = tx.transaction.outputs[1]
-    
+
     t.assert(tx.transaction.version == 2, "transaction version is two");
 
     t.assert(tx.transaction.inputs[0]!.sequenceNumber > data.period, "min input age")
     // t.assert(tx.transaction.inputs[1]!.sequenceNumber > data.period, "min input age")
-    
+
     // Check installment output
     t.deepEqual(input0?.token?.category, output0?.token?.category, "input0 auth cat matches")
     // t.deepEqual(input1?.token?.category, output1?.token?.category, "input1 auth cat matches")
@@ -127,7 +129,7 @@ test('test executing some subscriptions', async t => {
 
     t.assert(output0?.token?.amount == data.installment, "output0 auth cat matches")
     // t.assert(output1?.token?.amount == data.installment, "output1 auth cat matches")
-    
+
     // Check return output
     t.assert(output1?.valueSatoshis! == input0!.valueSatoshis - 5000n, "min sats out")
     // t.assert(output3?.valueSatoshis! >= input1!.valueSatoshis - 5000n, "min sats out")
@@ -143,7 +145,7 @@ test('test executing some subscriptions', async t => {
 
     console.log("here")
     await sleep(100)
-    
+
     console.log(tx.verify)
     await sleep(1000);
 
@@ -161,8 +163,8 @@ test('test executing some subscriptions', async t => {
 
     await sleep(1000);
 
-    let bobBalance = await bob.getBalance("sats") as number
-    t.assert(bobBalance > 0)
+    let bobBalance = await bob.getBalance() 
+    t.assert(bobBalance > 0n)
 
 
 });

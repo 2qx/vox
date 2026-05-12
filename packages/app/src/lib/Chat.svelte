@@ -194,11 +194,11 @@
 		let historyResponse = await electrumClient.request(
 			'blockchain.scripthash.get_history',
 			scripthash,
-			now - 20000,
+			now - 10000,
 			-1
 		);
 
-		if (showAll) tx_hashes = historyResponse.map(r => r.tx_hash)
+		//if (showAll) tx_hashes = historyResponse.map(r => r.tx_hash)
 		transactions = await getAllTransactions(electrumClient, tx_hashes);
 
 		posts = buildChannel(historyResponse, transactions, topic);

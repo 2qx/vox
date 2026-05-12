@@ -16,7 +16,7 @@ test('test executing some trusts', async t => {
 
 
     let alice_pkh = alice.getPublicKeyHash(false) as Uint8Array
-    let alice_lockingBytecode = publicKeyToP2pkhLockingBytecode( {publicKey: alice.publicKey, throwErrors:false}) as Uint8Array
+    let alice_lockingBytecode = publicKeyToP2pkhLockingBytecode( {publicKey: alice.publicKey!, throwErrors:false}) as Uint8Array
 
     // Make a "main" badger token.
 
@@ -47,33 +47,27 @@ test('test executing some trusts', async t => {
         [
             {
                 cashaddr: contract_address,
-                value: 10_000_000,
-                unit: 'sat'
+                value: 10_000_000n
             },
             {
                 cashaddr: contract_address,
-                value: 10_000_001,
-                unit: 'sat'
+                value: 10_000_001n
             },
             {
                 cashaddr: contract_address,
-                value: 10_000_005,
-                unit: 'sat'
+                value: 10_000_005n
             },
             {
                 cashaddr: contract_address,
-                value: 10_000_060,
-                unit: 'sat'
+                value: 10_000_060n
             },
             {
                 cashaddr: contract_address,
-                value: 10_000_900,
-                unit: 'sat'
+                value: 10_000_900n
             },
             {
                 cashaddr: contract_address,
-                value: 10_000_500,
-                unit: 'sat'
+                value: 10_000_500n
             }
         ]
     );
@@ -122,7 +116,7 @@ test('test executing some trusts', async t => {
 
     await sleep(1000);
     await sleep(1000);
-    let bobBalance = await bob.getBalance("sats") as number
+    let bobBalance = await bob.getBalance()
     console.log(bobBalance)
     t.assert(bobBalance > 0)
 

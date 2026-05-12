@@ -21,11 +21,14 @@ test('test mine function', async t => {
   const genesisResponse = await alice.tokenGenesis({
     cashaddr: contract,      // token UTXO recipient, if not specified will default to sender's address
     amount: BigInt(21e14),   // fungible token amount
-    value: 1000,             // Satoshi value
-    capability: "mutable",
-    commitment: "beefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef"
+    value: 1000n,             // Satoshi value
+    nft: {
+      capability: "mutable",
+      commitment: "beefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef"
+
+    }
   });
-  const tokenId = genesisResponse.tokenIds![0]!;
+  const tokenId = genesisResponse.categories![0]!;
 
   const bob = await RegTestWallet.newRandom();
   await alice.sendMax(bob.getDepositAddress())
@@ -33,7 +36,7 @@ test('test mine function', async t => {
   await sleep(200);
   let key = getHdPrivateKey(bob.mnemonic!, bob.derivationPath.slice(0, -2), bob.isTestnet)
 
-  const bobBalance = await bob.getBalance('sats') as number
+  const bobBalance = await bob.getBalance()
   t.assert(bobBalance >= 100_000_000);
 
   let provider = bob.provider!

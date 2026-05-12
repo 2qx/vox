@@ -19,7 +19,7 @@ test('test buying an NFT at auction', async t => {
 
 
 
-    let alice_lockingBytecode = publicKeyToP2pkhLockingBytecode( {publicKey: alice.publicKey, throwErrors:false}) as Uint8Array
+    let alice_lockingBytecode = publicKeyToP2pkhLockingBytecode({ publicKey: alice.publicKey!, throwErrors: false }) as Uint8Array
     // Make a "main" badger token.
 
     let data = {
@@ -46,13 +46,15 @@ test('test buying an NFT at auction', async t => {
 
     let contract_address = Dutch.getAddress(data, "bchreg");
     const genesisResponse = await alice.tokenGenesis({
-        capability: NFTCapability.none,
-        commitment: "anything goes",
+        nft: {
+            capability: NFTCapability.none,
+            commitment: "anything goes",
+        },
         amount: 1000000000n,
         cashaddr: contract_address,
-        value: 800,                    // Satoshi value
+        value: 800n,                    // Satoshi value
     });
-    const tokenId = genesisResponse.tokenIds![0]!;
+    const tokenId = genesisResponse.categories![0]!;
 
 
     await mine({
@@ -94,13 +96,13 @@ test('test buying an NFT at auction', async t => {
         binToHex(encodeTransactionBch(bidTx.transaction))
     )
 
-    t.assert(response.length>=32)
+    t.assert(response.length >= 32)
     t.truthy(bidTx.verify)
 
     await sleep(1000);
 
     let aliceNfts = await alice.getAllNftTokenBalances()
-    t.assert(aliceNfts[tokenId]==1)
+    t.assert(aliceNfts[tokenId] == 1)
 
 
 });
