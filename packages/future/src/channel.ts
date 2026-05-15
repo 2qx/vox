@@ -6,7 +6,7 @@ import {
     binToHex,
     binToUtf8,
     CompilerBch,
-    createVirtualMachineBch,
+    createVirtualMachineBch2026,
     deriveHdPublicKey,
     disassembleBytecodeBch,
     generateTransaction,
@@ -20,8 +20,7 @@ import {
     hash256,
     decodeTransactionBch,
     utf8ToBin,
-    encodeDataPush,
-    lockingBytecodeToCashAddress
+    encodeDataPush
 } from "@bitauth/libauth"
 
 import {
@@ -220,7 +219,7 @@ export class Channel {
 
     static compiler: CompilerBch = getLibauthCompiler(this.template);
 
-    static vm = createVirtualMachineBch();
+    static vm = createVirtualMachineBch2026();
 
     static getLockingBytecode(channel?: string): Uint8Array {
         const lockingBytecodeResult = this.compiler.generateBytecode({
@@ -404,7 +403,7 @@ export class Channel {
 
     static getChannelMessageOutputs(channel: string, message: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBch>[] {
         const binaryMessage = utf8ToBin(message)
-        let chunked = [...chunks(binaryMessage, 32).map((m) => "6a025630" + binToHex(encodeDataPush(m)))]
+        let chunked = [...chunks(binaryMessage, 122).map((m) => "6a025630" + binToHex(encodeDataPush(m)))]
         return chunked.map((m) => {
             return {
                 lockingBytecode: this.getLockingBytecode(channel),
@@ -624,7 +623,7 @@ export class Channel {
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
             sourceOutputs,
-            { maximumTokenCommitmentLength: 40 }
+            { maximumTokenCommitmentLength: 128 }
         );
         if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
 
