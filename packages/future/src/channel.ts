@@ -24,6 +24,7 @@ import {
 } from "@bitauth/libauth"
 
 import {
+    decodePushBytes,
     getTransactionFees,
     getAddress,
     type CashAddressNetworkPrefix,
@@ -113,23 +114,36 @@ function parsePostTransaction(
         })
     if (!code) return
     if (!code[0]) return
-    // V0
-    if (code[0].slice(0, 8) == "6a025630") body = code.map(c => c.slice(10)).join("")
-    // V+
-    if (code[0].slice(0, 8) == "6a0256b2") {
-        ref = code[0].slice(10)
-        like = 1
+    if (code[0].slice(0, 2) == "6a") {
+        const payload = decodePushBytes(code[0].slice(2)).map(data => binToUtf8(data))
+        if (payload[0] == "V0") {
+            console.log(payload)
+            body = code.map(
+                commitment => decodePushBytes(commitment.slice(2))[1]
+            ).map(bin => binToUtf8(bin!)).join("")
+        } else if (payload[0] == "V+") {
+            ref = code[0].slice(10)
+            like = 1
+        }
     }
-    // V-
-    if (code[0].slice(0, 8) == "6a02562d") {
-        ref = code[0].slice(10)
-        dislike = 1
-    }
+    // // V0
+    // if (code[0].slice(0, 2) == "6a025630") body = binToUtf8(decodePushBytes(code[0].slice(0, 2))[1]!)
+    // console.log(body)
+    // // V+
+    // if (code[0].slice(0, 8) == "6a0256b2") {
+    //     ref = code[0].slice(10)
+    //     like = 1
+    // }
+    // // V-
+    // if (code[0].slice(0, 8) == "6a02562d") {
+    //     ref = code[0].slice(10)
+    //     dislike = 1
+    // }
 
     return new Post({
         hash: hash,
         auth: binToHex(tx.outputs[0]?.token?.category!),
-        body: binToUtf8(hexToBin(body)),
+        body: body,
         height: height,
         sequence: tx.inputs[0]?.sequenceNumber!,
         ref: ref,
@@ -632,7 +646,7 @@ export class Channel {
             transaction: transaction,
         })
 
-        if(typeof verify =="string") throw Error(verify)
+        if (typeof verify == "string") throw Error(verify)
 
         return {
             sourceOutputs: sourceOutputs,
