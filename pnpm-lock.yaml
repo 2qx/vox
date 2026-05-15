@@ -71,8 +71,11 @@ importers:
         specifier: 1.4.3
         version: 1.4.3(svelte@5.55.5(@typescript-eslint/types@8.59.3))
       '@mainnet-cash/indexeddb-storage':
-        specifier: 3.1.7
-        version: 3.1.7
+        specifier: 4.0.0-next.10
+        version: 4.0.0-next.10(ws@8.18.2)
+      '@mem-cash/electrum':
+        specifier: 0.0.4
+        version: 0.0.4(@mem-cash/validation@0.0.2)
       '@unspent/badgers':
         specifier: workspace:*
         version: link:../badgers
@@ -113,8 +116,8 @@ importers:
         specifier: 2.0.0
         version: 2.0.0
       mainnet-js:
-        specifier: 3.1.7
-        version: 3.1.7(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)
+        specifier: 4.0.0-next.10
+        version: 4.0.0-next.10(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)(ws@8.18.2)
       pako:
         specifier: 2.1.0
         version: 2.1.0
@@ -663,8 +666,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.25':
     resolution: {integrity: sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ==}
 
-  '@mainnet-cash/indexeddb-storage@3.1.7':
-    resolution: {integrity: sha512-VUKtH9N1uUndNJOT+vA86K9B4j5OFvqv82s36lZSLHP2UpGh+sAAbQYw7YHiFNDuWb4arJAzX9N1sCZwOySQ2w==}
+  '@mainnet-cash/indexeddb-storage@4.0.0-next.10':
+    resolution: {integrity: sha512-4VrUOD1OHcifQj21VzHG+sfmLO5GY5V3pDTZtaqQH0uHztZjVccMx5HrsAYIiBEW4NeluIC4yvMPU6b1Pg1UoQ==}
 
   '@mapbox/node-pre-gyp@2.0.0':
     resolution: {integrity: sha512-llMXd39jtP0HpQLVI37Bf1m2ADlEb35GYSh1SDSLsBhR+5iCxiNGlT31yqbNtVHygHAtMy6dWFERpU2JgufhPg==}
@@ -680,12 +683,38 @@ packages:
       '@mem-cash/validation':
         optional: true
 
+  '@mem-cash/core@0.0.4':
+    resolution: {integrity: sha512-R0B1z57eE1OJIfa5szvKrhYVp3v009o2HHxAcTQsVBpfZ3AB4Y0UQ3VFeuREYC1SHx4soXiP+G3pzBd19wMYew==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@mem-cash/validation': 0.0.4
+    peerDependenciesMeta:
+      '@mem-cash/validation':
+        optional: true
+
+  '@mem-cash/electrum@0.0.4':
+    resolution: {integrity: sha512-C7V2GoH63bWTgq2To+GsqtV0b2NMJTFpj/loqK7Z2H7+V/YlrgKDgG+XAeE3DY9s7dvLGm1S4fsnyly4Of0UxA==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@mem-cash/validation': 0.0.4
+    peerDependenciesMeta:
+      '@mem-cash/validation':
+        optional: true
+
   '@mem-cash/storage@0.0.2':
     resolution: {integrity: sha512-qpZR6on3QuGFuOsfw+bQ75Hy0qzHQQ65wbHRKM8fWYr3ypucVcCuwcoxEIX4BbWwrMy5e+hnWbBlPrCiwMhvrA==}
     engines: {node: '>=20'}
 
+  '@mem-cash/storage@0.0.4':
+    resolution: {integrity: sha512-MUdpk5U21jPjZEBCh+T7DN1DcYv43Y0+k6aBJcd2AhIiBmZRh7gpYCKzABdzd7duT9BA+xkMma71h1275bH5rw==}
+    engines: {node: '>=20'}
+
   '@mem-cash/types@0.0.2':
     resolution: {integrity: sha512-MWhx+GG94+iMtWXT6suQj4mBi3IsvooMqJwRpz2wjZU2XS/8Pc6BUK+W6E8phtSOqmlXuqhZw50JGiMP6ufLCw==}
+    engines: {node: '>=20'}
+
+  '@mem-cash/types@0.0.4':
+    resolution: {integrity: sha512-xg2bDh6pdz+UNGhy9CkhmTSrvV8aYLoVYnmPetjgq/GIVtfF+PzI0ewmZ+xPUc0ST0htoJSErYAl7/isCx8w9Q==}
     engines: {node: '>=20'}
 
   '@mem-cash/validation@0.0.2':
@@ -829,6 +858,15 @@ packages:
     resolution: {integrity: sha512-h1J+Yzjo/X+0EAvR2kIXJDuTuyT7drc+t2ALY0nIcGPbTatNOf0VWdhEA2Z4AAjv6X1NJV7SYo5oCTYRJhSlVA==}
     cpu: [x64]
     os: [win32]
+
+  '@rpckit/core@2.0.0':
+    resolution: {integrity: sha512-Hpcw9tsT6DvFJYXjeXE0bXYUo0I2xlYDRD8krqqLiNsvdfbdlJiMiXON1i9MsUA0FQcWbl2qMmSFxTyGr6yJ9A==}
+
+  '@rpckit/fallback@2.0.0':
+    resolution: {integrity: sha512-xTDwomA0DP63AKAJ+v4DLplDuUq/0Wf1j9adqW7kC8wZZIlGkgwouJOemq7BHbdQW6ioj+7oM1z8WKw5mZBxTQ==}
+
+  '@rpckit/websocket@2.0.0':
+    resolution: {integrity: sha512-ih6SON+RBTLGiZUZPXlVIIu/ZrILVramflxFYUQQN1EWzRLZWfMprqGUohFJ1R+I/0XVDg7S79q4juIkxi6rPw==}
 
   '@shikijs/engine-oniguruma@3.13.0':
     resolution: {integrity: sha512-O42rBGr4UDSlhT2ZFMxqM7QzIU+IcpoTMzb3W7AlziI1ZF7R8eS2M0yt5Ry35nnnTX/LTLXFPUjRFCIW+Operg==}
@@ -1647,6 +1685,11 @@ packages:
     peerDependencies:
       ws: '*'
 
+  isows@1.0.7:
+    resolution: {integrity: sha512-I1fSfDCZL5P0v33sVqeTDSpcstAg/N+wF5HS033mogOVIp4B+oHC7oOCsA3axAbBSGTJ8QubbNmnIRN/h8U7hg==}
+    peerDependencies:
+      ws: '*'
+
   istanbul-lib-coverage@3.2.2:
     resolution: {integrity: sha512-O8dpsF+r0WV/8MNRKfnmrtCWhuKjxrq2w+jpzBL5UZKTi2LeVWnWOmWRxFlesJONmc+wLAGvKQZEOanko0LFTg==}
     engines: {node: '>=8'}
@@ -1735,6 +1778,9 @@ packages:
 
   mainnet-js@3.1.7:
     resolution: {integrity: sha512-rOBN+qVON7Lhh2jrMwIA26xv23dAFULMR+DT+g9al9GnmNSdsUL2RuN50eWwkUxE2T4YFdTWT30FUKZczl8hRw==}
+
+  mainnet-js@4.0.0-next.10:
+    resolution: {integrity: sha512-P3ah37bfcpUkxx0wNeGOOkKI3U9FFUTDmf0WPrX4qnltBeBtDBN9So3Qwo5n4nm+cwc2g+2KehvhcLIPa+wmoQ==}
 
   make-dir@4.0.0:
     resolution: {integrity: sha512-hXdUTZYIVOt1Ex//jAQi+wTZZpUpwBj/0QsOzqegb3rGMMeJiSEu5xLHnYfBrRV4RH2+OCSOO95Is/7x1WJ4bw==}
@@ -2665,13 +2711,11 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  '@mainnet-cash/indexeddb-storage@3.1.7':
+  '@mainnet-cash/indexeddb-storage@4.0.0-next.10(ws@8.18.2)':
     dependencies:
-      mainnet-js: 3.1.7(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)
+      mainnet-js: 4.0.0-next.10(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)(ws@8.18.2)
     transitivePeerDependencies:
-      - bufferutil
-      - supports-color
-      - utf-8-validate
+      - ws
 
   '@mapbox/node-pre-gyp@2.0.0':
     dependencies:
@@ -2694,12 +2738,38 @@ snapshots:
     optionalDependencies:
       '@mem-cash/validation': 0.0.2
 
+  '@mem-cash/core@0.0.4(@mem-cash/validation@0.0.2)':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.8
+      '@mem-cash/storage': 0.0.4
+      '@mem-cash/types': 0.0.4
+    optionalDependencies:
+      '@mem-cash/validation': 0.0.2
+
+  '@mem-cash/electrum@0.0.4(@mem-cash/validation@0.0.2)':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.8
+      '@mem-cash/core': 0.0.4(@mem-cash/validation@0.0.2)
+      '@mem-cash/storage': 0.0.4
+      '@mem-cash/types': 0.0.4
+    optionalDependencies:
+      '@mem-cash/validation': 0.0.2
+
   '@mem-cash/storage@0.0.2':
     dependencies:
       '@bitauth/libauth': 3.1.0-next.8
       '@mem-cash/types': 0.0.2
 
+  '@mem-cash/storage@0.0.4':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.8
+      '@mem-cash/types': 0.0.4
+
   '@mem-cash/types@0.0.2':
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.8
+
+  '@mem-cash/types@0.0.4':
     dependencies:
       '@bitauth/libauth': 3.1.0-next.8
 
@@ -2799,6 +2869,19 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.41.0':
     optional: true
+
+  '@rpckit/core@2.0.0': {}
+
+  '@rpckit/fallback@2.0.0':
+    dependencies:
+      '@rpckit/core': 2.0.0
+
+  '@rpckit/websocket@2.0.0(ws@8.18.2)':
+    dependencies:
+      '@rpckit/core': 2.0.0
+      isows: 1.0.7(ws@8.18.2)
+    transitivePeerDependencies:
+      - ws
 
   '@shikijs/engine-oniguruma@3.13.0':
     dependencies:
@@ -3675,6 +3758,10 @@ snapshots:
     dependencies:
       ws: 7.5.10
 
+  isows@1.0.7(ws@8.18.2):
+    dependencies:
+      ws: 8.18.2
+
   istanbul-lib-coverage@3.2.2: {}
 
   istanbul-lib-report@3.0.1:
@@ -3762,6 +3849,15 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
+
+  mainnet-js@4.0.0-next.10(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)(ws@8.18.2):
+    dependencies:
+      '@bitauth/libauth': 3.1.0-next.8
+      '@rpckit/core': 2.0.0
+      '@rpckit/fallback': 2.0.0
+      '@rpckit/websocket': 2.0.0(ws@8.18.2)
+    transitivePeerDependencies:
+      - ws
 
   make-dir@4.0.0:
     dependencies:

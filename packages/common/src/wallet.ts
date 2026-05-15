@@ -3,11 +3,7 @@ import {
     deriveSeedFromBip39Mnemonic,
     deriveHdPrivateNodeFromSeed,
     deriveHdPath,
-    encodeHdPrivateKey,
-    //encodeHdPublicKey,
-    // deriveHdPublicNode,
-    // hash160,
-    // deriveHdPrivateNodeChild
+    encodeHdPrivateKey
 } from "@bitauth/libauth";
 import { checkForEmptySeed } from "./util.js";
 

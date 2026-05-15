@@ -36,7 +36,4 @@
 
 <SvelteMarkdown source={body} {renderers} />
 <style>
-	.js {
-		background-color: grey;
-	}
 </style>

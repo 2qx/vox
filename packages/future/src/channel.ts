@@ -6,7 +6,7 @@ import {
     binToHex,
     binToUtf8,
     CompilerBch,
-    createVirtualMachineBch,
+    createVirtualMachineBch2026,
     deriveHdPublicKey,
     disassembleBytecodeBch,
     generateTransaction,
@@ -220,7 +220,7 @@ export class Channel {
 
     static compiler: CompilerBch = getLibauthCompiler(this.template);
 
-    static vm = createVirtualMachineBch();
+    static vm = createVirtualMachineBch2026();
 
     static getLockingBytecode(channel?: string): Uint8Array {
         const lockingBytecodeResult = this.compiler.generateBytecode({

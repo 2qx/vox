@@ -5,9 +5,9 @@
 
 <div class="capability">
 	{#if capability}
-		{capability} <img height=16px src={`./${capability}.svg`} /> 
+		{capability} <img  alt={`${capability}`} height=16px src={`./${capability}.svg`} /> 
 	{:else}
-		immutable <img  height=16px  src={`./immutable.svg`} /> 
+		immutable <img alt="immutable" height=16px  src={`./immutable.svg`} /> 
 	{/if}
 </div>
 

@@ -9,7 +9,7 @@
 	let { tx_pos, tx_hash, height, value, token_data, isMainnet, redeemFutures, locktime, now } =
 		$props();
 
-	let bchIcon = isMainnet ? BCH : tBCH;
+	const bchIcon = isMainnet ? BCH : tBCH;
 </script>
 
 <div class="container">

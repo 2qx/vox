@@ -39,9 +39,6 @@
 		border-width: 1px;
 	}
 
-	.bid {
-		background-color: #9ef79e;
-	}
 
 	.quantity {
 		white-space: pre-wrap;
