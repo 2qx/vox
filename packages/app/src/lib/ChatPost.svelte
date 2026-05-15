@@ -1,10 +1,11 @@
 <script>
 	import { blo } from 'blo';
 	import likesIcon from '$lib/images/likes.svg';
+	import ChatPostBody from './ChatPostBody.svelte';
 
 	let showMore = $state(false);
-	
-    const TRUNCATE = 400;
+
+	const TRUNCATE = 400;
 	let {
 		likePost = $bindable(),
 		thisAuth,
@@ -34,10 +35,9 @@
 			<div class="action"></div>
 		</div>
 		{#if !error}
-			{#if body.length > TRUNCATE+20  && showMore}
+			{#if body.length > TRUNCATE + 20 && showMore}
 				<div>
-					{body}
-
+					<ChatPostBody {body} />
 					<button
 						onclick={() => {
 							showMore = !showMore;
@@ -46,9 +46,9 @@
 						{showMore ? 'show less' : 'show more'}
 					</button>
 				</div>
-			{:else if body.length > TRUNCATE+20 }
+			{:else if body.length > TRUNCATE + 20}
 				<div>
-					{body.substring(0,TRUNCATE) + ' ...'}
+					<ChatPostBody body={body.substring(0, TRUNCATE) + ' ...'} />
 					<button
 						onclick={() => {
 							showMore = !showMore;
@@ -58,7 +58,7 @@
 					</button>
 				</div>
 			{:else}
-				{body}
+				<ChatPostBody {body} />
 			{/if}
 		{:else}
 			<div class="error">
@@ -113,7 +113,7 @@
 		color: #ad67c2;
 		font-size: small;
 	}
-	
+
 	.actions {
 		margin: auto;
 		font-size: x-small;
