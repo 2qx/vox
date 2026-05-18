@@ -192,7 +192,6 @@ export function cashAssemblyToHex(str: string): string {
   return binToHex(result)
 }
 
-
 export function catUint8(uint8arrays:Uint8Array[]) {
   // Determine the length of the result.
   const totalLength = uint8arrays.reduce(

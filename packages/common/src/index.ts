@@ -7,3 +7,4 @@ export * from './types.js';
 export * from './constant.js';
 export * from './util.js';
 export * from './wallet.js';
+export * from './encode.js';
