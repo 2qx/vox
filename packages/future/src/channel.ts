@@ -117,7 +117,6 @@ function parsePostTransaction(
     if (code[0].slice(0, 2) == "6a") {
         const payload = decodePushBytes(code[0].slice(2)).map(data => binToUtf8(data))
         if (payload[0] == "V0") {
-            console.log(payload)
             body = code.map(
                 commitment => decodePushBytes(commitment.slice(2))[1]
             ).map(bin => binToUtf8(bin!)).join("")
@@ -530,7 +529,6 @@ export class Channel {
         let valueIn = sumSourceOutputValue(sourceOutputs)
         let valueOut = sumOutputValue(config.outputs)
         let change = valueIn - valueOut;
-        console.log(change)
         config.outputs.push(this.getChangeOutput(auth, change, key))
 
         return this.buildAndValidateTransaction(config, sourceOutputs, fee)

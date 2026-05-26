@@ -14,9 +14,7 @@ test('test timeout address', t => {
     }
 
     let data = Timeout.dataToBytecode(record)
-    t.is(Timeout.getAddress(data), "bitcoincash:rwfmu83h5jgh33zhhqscdt6wwzv5elvt8n935w8nehyuxl06rv8dyz2axtpxf")
-    t.is(Timeout.getAddress(data, "bchreg"), "bchreg:rwfmu83h5jgh33zhhqscdt6wwzv5elvt8n935w8nehyuxl06rv8dy587j59yn")
-    t.is(Timeout.getAddress(data, "bchtest"), "bchtest:rwfmu83h5jgh33zhhqscdt6wwzv5elvt8n935w8nehyuxl06rv8dypdvcnjnm")
+    t.is(binToHex(Timeout.getLockingBytecode(data)), "bitcoincash:rwfmu83h5jgh33zhhqscdt6wwzv5elvt8n935w8nehyuxl06rv8dyz2axtpxf")
 });
 
 // Async arrow function

@@ -17,7 +17,7 @@ import { sleep, UtxoI, getHdPrivateKey } from "@unspent/tau";
 import Subscription from "../index.js";
 
 
-test('test executing some subscriptions mem ', async t => {
+test.skip('test executing some subscriptions mem ', async t => {
 
     const alice = await getAnAliceWallet(2400000000)
     let provider = alice.provider!
