@@ -54,16 +54,17 @@ test('test executing some subscriptions', async t => {
         value: 800
     } as UtxoI
 
-    let contract_address = Subscription.getAddress(data, "bchreg");
+    let contract_scripthash = Subscription.getScriptHash(data);
 
     await alice.sendMax(alice.getDepositAddress())
 
     const ftToken1 = await alice.tokenGenesis({
-        cashaddr: contract_address,
         amount: 100_000_000n,
         value: 500_000n,                    // Satoshi value
     });
 
+
+    //Subscription.administer(data, installments)
     // await alice.sendMax(alice.getDepositAddress())
     // const ftToken2 = await alice.tokenGenesis({
     //     cashaddr: contract_address,
@@ -83,8 +84,8 @@ test('test executing some subscriptions', async t => {
 
     // @ts-ignore
     let subscriptionUtxos = await provider.performRequest(
-        "blockchain.address.listunspent",
-        contract_address,
+        "blockchain.scripthash.listunspent",
+        contract_scripthash,
         "include_tokens"
     )
     let jobs = subscriptionUtxos.map((u: UtxoI) => { return { record: record, utxo: u } })

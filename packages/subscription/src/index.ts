@@ -26,10 +26,19 @@ import {
     getTransactionFees,
     type CashAddressNetworkPrefix,
     decodePushBytes,
+    getAuthLayers,
+    getChangeOutput,
     getLibauthCompiler,
     getScriptHash,
+    getWalletInput,
+    getWalletSourceOutput,
     numToVm,
+    sumSourceOutputTokenAmounts,
+    sumSourceOutputValue,
+    sumOutputValue,
+    sumOutputTokenAmounts,
     UtxoI,
+    UnspentError
 } from '@unspent/tau';
 
 
@@ -45,6 +54,9 @@ export type SubscriptionJob = {
     utxo: UtxoI
 }
 
+export interface SubscriptionRequest {
+    asset: Uint8Array;
+}
 
 export default class Subscription {
 
@@ -76,13 +88,13 @@ export default class Subscription {
         if (utxo.token_data?.nft?.commitment) {
             let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment))
             if (binToUtf8(byteData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error("Non-subscription record NFT passed as subscription")
-            return  {
+            return {
                 "installment": byteData[1]!,
                 "recipient": byteData[2]!,
                 "period": byteData[3]!,
                 "auth": hexToBin(utxo.token_data.category)
             }
-            
+
         } else {
             throw Error("Could not parse subscription NFT")
         }
@@ -156,15 +168,8 @@ export default class Subscription {
      * @returns a cashaddress.
      */
     static getAddress(
-        data: SubscriptionData,
-        prefix = "bitcoincash" as CashAddressNetworkPrefix
     ): string {
-        let bytecodeData = this.dataToBytecode(data)
-        return getAddress(
-            this.getLockingBytecode(bytecodeData),
-            prefix,
-            this.tokenAware
-        )
+        throw Error(UnspentError.NoCashAddrForp2s)
     }
 
     static getSourceOutput(
@@ -281,6 +286,138 @@ export default class Subscription {
 
     }
 
+    static getWalletInputs(
+        utxos: UtxoI[],
+        amount: bigint,
+        privateKey?: string,
+        category?: Uint8Array | string,
+        sourceOutputs: Output[] = []
+    ): {
+        inputs: InputTemplate<CompilerBch>[],
+        outputs: OutputTemplate<CompilerBch>[],
+        sourceOutputs: Output[]
+    } {
+
+        let inputs: InputTemplate<CompilerBch>[] = [];
+        let outputs: OutputTemplate<CompilerBch>[] = [];
+
+        if (category && typeof category !== "string") category = binToHex(category)
+        // Only use straight sat utxos if placing Bch
+        if (!category) {
+            utxos = utxos.filter(u => !u.token_data)
+        } else {
+            utxos = utxos
+                .filter(u => u.token_data && u.token_data?.category == category)
+                // Must not contain NFTs
+                .filter(u => u.token_data && !u.token_data.nft)
+        }
+
+        // TODO: sort by highest value first
+        if (utxos.length == 0) throw Error("no wallet utxos left, maximum recursion depth reached.");
+
+        // get a random utxo.
+        const randomIdx = Math.floor(Math.random() * utxos.length)
+        const randomUtxo = utxos[randomIdx]!
+
+        // remove the random utxo in place
+        utxos.splice(randomIdx, 1);
+
+        // spend the utxo
+        inputs.push(getWalletInput(randomUtxo, privateKey))
+        sourceOutputs.push(getWalletSourceOutput(randomUtxo, privateKey));
+        let sumSats = sumSourceOutputValue(sourceOutputs)
+        let sumTokenAmounts = sumSourceOutputTokenAmounts(sourceOutputs, category)
+        if (
+            // collecting tokens, but the amount is not sufficient
+            (category && sumTokenAmounts < amount) ||
+            // or collecting sats and not enough sats inputs 
+            (!category && sumSats < amount)
+        ) {
+            // to it again
+            let nextTry = this.getWalletInputs(
+                [...utxos],
+                amount,
+                privateKey,
+                category,
+                [...sourceOutputs]
+            )
+            inputs.push(...nextTry.inputs)
+            outputs.push(...nextTry.outputs)
+            sourceOutputs = nextTry.sourceOutputs
+        }
+        return { inputs, outputs, sourceOutputs }
+    }
+
+    static getWalletLayers(
+        assetCat: Uint8Array | string,
+        config: {
+            locktime: number;
+            version: number;
+            inputs: InputTemplate<CompilerBch>[];
+            outputs: OutputTemplate<CompilerBch>[];
+        },
+        sourceOutputs: Output[],
+        walletUtxos: UtxoI[],
+        privateKey?: string,
+    ) {
+        // Calculate excess cash and tokens required to fund the exchange
+        let sumSatsOut = sumOutputValue(config.outputs)
+        let sumSatsIn = sumSourceOutputValue(sourceOutputs)
+        let satsRequired = sumSatsOut - sumSatsIn
+
+        const satsIn = this.getWalletInputs(walletUtxos, satsRequired, privateKey)
+        config.inputs.push(...satsIn.inputs);
+        sourceOutputs.push(...satsIn.sourceOutputs);
+
+
+        let sumTokenAmountsOut = sumOutputTokenAmounts(config.outputs, assetCat)
+        let sumTokenAmountsIn = sumSourceOutputTokenAmounts(sourceOutputs, assetCat)
+        let tokensRequired = sumTokenAmountsOut - sumTokenAmountsIn
+
+        if (tokensRequired > 0n) {
+            const tokensIn = this.getWalletInputs(walletUtxos, tokensRequired, privateKey, assetCat)
+            config.inputs.push(...tokensIn.inputs);
+            sourceOutputs.push(...tokensIn.sourceOutputs);
+        }
+
+
+        // Calculate excess cash and tokens to be returned as change
+        sumSatsOut = sumOutputValue(config.outputs)
+        sumSatsIn = sumSourceOutputValue(sourceOutputs)
+        let cashChange = sumSatsIn - sumSatsOut
+        sumTokenAmountsOut = sumOutputTokenAmounts(config.outputs, assetCat)
+        sumTokenAmountsIn = sumSourceOutputTokenAmounts(sourceOutputs, assetCat)
+        let tokenChange = sumTokenAmountsIn - sumTokenAmountsOut
+
+        if (tokenChange > 0) {
+            config.outputs.push(getChangeOutput(800n, tokenChange, assetCat, privateKey))
+            cashChange -= 800n
+        }
+        config.outputs.push(getChangeOutput(cashChange, 0n, undefined, privateKey))
+
+        return config
+    }
+
+
+    // static setBlackBoardLayers(
+    //     authCat: Uint8Array | string,
+    //     assetCat: Uint8Array | string,
+    //     utxos: UtxoI[],
+    //     orders: SubscriptionRequest[],
+    //     sourceOutputs: Output[] = []
+    // ): {
+    //     inputs: InputTemplate<CompilerBch>[],
+    //     outputs: OutputTemplate<CompilerBch>[],
+    //     sourceOutputs: Output[]
+    // } {
+    //     let inputs: InputTemplate<CompilerBch>[] = [];
+    //     let outputs: OutputTemplate<CompilerBch>[] = [];
+
+    //     inputs.push(...utxos.map(u => this.getInput(authCat, assetCat, u)))
+    //     sourceOutputs.push(...utxos.map(u => this.getSourceOutput(authCat, assetCat, u)))
+    //     outputs.push(...orders.map(o => this.orderRequestToOutputs(authCat, assetCat, o)).flat())
+    //     return { inputs, outputs, sourceOutputs }
+    // }
 
     /**
      * Pay a monthly subscription installment.
@@ -411,4 +548,111 @@ export default class Subscription {
         }
     }
 
+
+
+    /**
+     * Administer Subscription
+     * 
+     * Create, renew, or withdraw assets from a contract.
+     * 
+     * To create an exchange, specify a list of new subscription against an empty contract utxo state.
+     * 
+     * To renew the orders on an existing exchange, provide the complete list of 
+     * current contract utxos and the desired new order state.
+     * 
+     * To withdraw, specify the current utxos without new orders.
+     *
+     * @param assetCat - Category of the asset traded
+     * @param authUtxo - Exchange authentication (minting) baton
+     * @param contractUtxos - Current utxo state.  
+     * @param walletUtxos - wallet outputs to use as input.
+     * @param privateKey - private key to sign transaction wallet inputs.
+     * @param fee - transaction fee to pay (per byte).
+     *
+     * @throws {Error} if transaction generation fails.
+     * @returns a transaction template.
+     */
+
+    static administer(
+        authUtxo: UtxoI,
+        assetCat: Uint8Array | string,
+        //@ts-ignore
+        contractUtxos: UtxoI[],
+        walletUtxos: UtxoI[],
+        privateKey?: string,
+        addressIndex = 0,
+        fee = 1
+    ): {
+        transaction: Transaction,
+        sourceOutputs: Output[],
+        verify: string | boolean
+    } {
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
+
+        let config = {
+            locktime: 0,
+            version: 2,
+            inputs,
+            outputs
+        }
+
+        let authCat = authUtxo.token_data!.category
+
+        // Build authentication baton layer
+        const authLayers = getAuthLayers(authUtxo, privateKey, addressIndex)
+        config.inputs.push(...authLayers.inputs);
+        config.outputs.push(...authLayers.outputs);
+        let sourceOutputs = authLayers.sourceOutputs;
+
+        // const threadLayers = this.setThreadLayers(authCat, assetCat, contractUtxos)
+        // config.inputs.push(...threadLayers.inputs);
+        // config.outputs.push(...threadLayers.outputs);
+        // sourceOutputs.push(...threadLayers.sourceOutputs);
+
+        config = this.getWalletLayers(assetCat, config, sourceOutputs, walletUtxos, privateKey)
+
+        let result = generateTransaction(config);
+        if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+
+        const estimatedFee = getTransactionFees(result.transaction, fee)
+
+        const lastIdx = config.outputs.length - 1
+        config.outputs[lastIdx]!.valueSatoshis = config.outputs[lastIdx]!.valueSatoshis - estimatedFee
+
+        result = generateTransaction(config);
+        if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+
+        const transaction = result.transaction
+
+        const tokenValidationResult = verifyTransactionTokens(
+            transaction,
+            sourceOutputs,
+            { maximumTokenCommitmentLength: 40 }
+        );
+        if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
+
+        let verify = this.vm.verify({
+            sourceOutputs: sourceOutputs,
+            transaction: transaction,
+        })
+        if (typeof verify == "string") throw Error(verify)
+
+
+        let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
+        if (feeEstimate > estimatedFee + 10n) verify = `Excessive fees: ${feeEstimate} for ${estimatedFee} byte tx`
+        if (sumSourceOutputTokenAmounts(sourceOutputs, assetCat) == 0n) verify = `Error checking token input`
+        let tokenDiff = sumSourceOutputTokenAmounts(sourceOutputs, assetCat) -
+            sumSourceOutputTokenAmounts(
+                transaction.outputs,
+                assetCat
+            )
+        if (tokenDiff !== 0n) verify = `Swapping should not create destroy tokens, token difference: ${tokenDiff}`
+
+        return {
+            sourceOutputs: sourceOutputs,
+            transaction: transaction,
+            verify: verify
+        }
+    }
 }

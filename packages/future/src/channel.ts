@@ -120,7 +120,7 @@ function parsePostTransaction(
             body = code.map(
                 commitment => decodePushBytes(commitment.slice(2))[1]
             ).map(bin => binToUtf8(bin!)).join("")
-        } else if (payload[0] == "V+") {
+        } else if (code[0].slice(0, 8) == "6a0256b2") {
             ref = code[0].slice(10)
             like = 1
         }
