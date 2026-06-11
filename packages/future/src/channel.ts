@@ -120,7 +120,7 @@ function parsePostTransaction(
             body = code.map(
                 commitment => decodePushBytes(commitment.slice(2))[1]
             ).map(bin => binToUtf8(bin!)).join("")
-        } else if (code[0].slice(0, 8) == "6a0256b2") {
+        } else if (payload[0] == "V+") {
             ref = code[0].slice(10)
             like = 1
         }
@@ -129,7 +129,7 @@ function parsePostTransaction(
     // if (code[0].slice(0, 2) == "6a025630") body = binToUtf8(decodePushBytes(code[0].slice(0, 2))[1]!)
     // console.log(body)
     // // V+
-    // if (code[0].slice(0, 8) == "6a0256b2") {
+    // if (code[0].slice(0, 8) == "6a02562b") {
     //     ref = code[0].slice(10)
     //     like = 1
     // }
@@ -435,7 +435,7 @@ export class Channel {
     }
 
     static getLikeOutput(channel: string, postId: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBch> {
-        let m = "6a0256B2" + binToHex(encodeDataPush(hexToBin(postId)))
+        let m = "6a02562b" + binToHex(encodeDataPush(hexToBin(postId)))
         return {
             lockingBytecode: this.getLockingBytecode(channel),
             valueSatoshis: BigInt(couponValue),
