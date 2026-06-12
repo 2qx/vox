@@ -35,7 +35,7 @@
 			description: 'Token auction',
 			image: '/dutch.svg',
 			link: '/dutch',
-			disabled: false
+			disabled: true
 		},
 		{
 			name: 'FBCH',
@@ -50,7 +50,7 @@
 			description: 'Timed vault.',
 			image: '/locktime.svg',
 			link: '/locktime',
-			disabled: false
+			disabled: true
 		},
 		{
 			name: 'SmallDB',
@@ -64,7 +64,7 @@
 			description: 'Token auto-payments.',
 			image: '/subscription.svg',
 			link: '/subscription',
-			disabled: false
+			disabled: true
 		},
 		{
 			name: 'Timeout',
@@ -85,7 +85,7 @@
 			description: 'Get one percent of a fund monthly in perpetuity.',
 			image: '/unspent.svg',
 			link: '/trust',
-			disabled: false
+			disabled: true
 		},
 		{
 			name: 'Vox',

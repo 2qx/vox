@@ -107,6 +107,20 @@
 		await broadcast(raw_tx);
 	};
 
+	const reply = async function (postId: string, message:string) {
+		let replyPostTx = Channel.reply(
+			topic,
+			postId,
+			message,
+			walletUnspent[0],
+			(Math.round(now / 1000) + 10) * 10,
+			key
+		);
+
+		let raw_tx = binToHex(encodeTransactionBch(replyPostTx.transaction));
+		await broadcast(raw_tx);
+	};
+
 	const setHeight = async function () {
 		let response = await electrumClient.request('blockchain.headers.get_tip');
 		if (response instanceof Error) throw response;
