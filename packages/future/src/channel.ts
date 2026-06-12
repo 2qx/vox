@@ -429,7 +429,6 @@ export class Channel {
 
     static getLikeOutput(channel: string, postId: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBch> {
         let m = "6a02562b" + binToHex(encodeDataPush(hexToBin(postId)))
-
         return {
             lockingBytecode: this.getLockingBytecode(channel),
             valueSatoshis: BigInt(couponValue),
