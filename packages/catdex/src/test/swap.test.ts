@@ -21,19 +21,21 @@ test('Should swap assets on a blackboard (buy)', async t => {
     const genesisResponse = await alice.tokenGenesis({
         cashaddr: alice.getTokenDepositAddress(),      // token UTXO recipient, if not specified will default to sender's address
         amount: BigInt(21e14),                         // fungible token amount
-        value: 1000,                                   // Satoshi value
+        value: 1000n,                                   // Satoshi value
     });
-    let assetCat = genesisResponse.tokenIds![0]!
+    let assetCat = genesisResponse.categories![0]!
 
     await alice.sendMax(alice.getDepositAddress())
 
     const mintingResponse = await alice.tokenGenesis({
         cashaddr: alice.tokenaddr!,        // token UTXO recipient, if not specified will default to sender's address
-        commitment: "regtest baton",       // NFT Commitment message
-        capability: NFTCapability.minting, // NFT capability
-        value: 1000,                       // Satoshi value
+        nft: {
+            commitment: "regtest baton",       // NFT Commitment message
+            capability: NFTCapability.minting, // NFT capability
+        },
+        value: 1000n,                       // Satoshi value
     });
-    let authCat = mintingResponse.tokenIds![0]!
+    let authCat = mintingResponse.categories![0]!
     //@ts-ignore
     let privateKey = getHdPrivateKey(alice.mnemonic!, alice.derivationPath.slice(0, -2), alice.isTestnet)
 
@@ -84,10 +86,6 @@ test('Should swap assets on a blackboard (buy)', async t => {
     // Fund the exchange
     let tx2 = CatDex.swap(10000n, orders, walletUtxos, privateKey);
 
-    // console.log(stringify(tx2.verify))
-    // console.log(stringify(tx2.sourceOutputs))
-    // console.log(stringify(tx2.transaction))
-    // console.log(binToHex(encodeTransactionBch(tx2.transaction)))
 
     let input0 = tx2.sourceOutputs[0]
     let output0 = tx2.transaction.outputs[0]
@@ -142,19 +140,21 @@ test('Should swap assets on a blackboard (sell)', async t => {
     const genesisResponse = await alice.tokenGenesis({
         cashaddr: alice.getTokenDepositAddress(),      // token UTXO recipient, if not specified will default to sender's address
         amount: BigInt(21e14),                         // fungible token amount
-        value: 1000,                                   // Satoshi value
+        value: 1000n,                                   // Satoshi value
     });
-    let assetCat = genesisResponse.tokenIds![0]!
+    let assetCat = genesisResponse.categories![0]!
 
     await alice.sendMax(alice.getDepositAddress())
 
     const mintingResponse = await alice.tokenGenesis({
         cashaddr: alice.tokenaddr!,        // token UTXO recipient, if not specified will default to sender's address
-        commitment: "regtest baton",       // NFT Commitment message
-        capability: NFTCapability.minting, // NFT capability
-        value: 1000,                       // Satoshi value
+        nft: {
+            commitment: "regtest baton",       // NFT Commitment message
+            capability: NFTCapability.minting, // NFT capability
+        },
+        value: 1000n,                       // Satoshi value
     });
-    let authCat = mintingResponse.tokenIds![0]!
+    let authCat = mintingResponse.categories![0]!
     //@ts-ignore
     let privateKey = getHdPrivateKey(alice.mnemonic!, alice.derivationPath.slice(0, -2), alice.isTestnet)
 
@@ -206,13 +206,9 @@ test('Should swap assets on a blackboard (sell)', async t => {
 
     let orders = CatDex.getCatDexOrdersFromUtxos(assetCat, utxos)
 
-    //console.log(stringify(orders))
     // Use the exchange
     let tx2 = CatDex.swap(-900n, orders, walletUtxos, privateKey);
-    // console.log(stringify(tx2.verify))
-    //  console.log(stringify(tx2.sourceOutputs))
-    //  console.log(stringify(tx2.transaction))
-    // console.log(binToHex(encodeTransactionBch(tx2.transaction)))
+
 
     t.is(tx2.verify, true, "transaction is valid")
     let response2 = await alice.provider.sendRawTransaction(binToHex(encodeTransactionBch(tx2.transaction)))
@@ -229,19 +225,21 @@ test('Should buy swap assets on a blackboard (multi order sell)', async t => {
     const genesisResponse = await alice.tokenGenesis({
         cashaddr: alice.getTokenDepositAddress(),      // token UTXO recipient, if not specified will default to sender's address
         amount: BigInt(21e14),                         // fungible token amount
-        value: 1000,                                   // Satoshi value
+        value: 1000n,                                   // Satoshi value
     });
-    let assetCat = genesisResponse.tokenIds![0]!
+    let assetCat = genesisResponse.categories![0]!
 
     await alice.sendMax(alice.getDepositAddress())
 
     const mintingResponse = await alice.tokenGenesis({
         cashaddr: alice.tokenaddr!,        // token UTXO recipient, if not specified will default to sender's address
-        commitment: "regtest baton",       // NFT Commitment message
-        capability: NFTCapability.minting, // NFT capability
-        value: 1000,                       // Satoshi value
+        nft: {
+            commitment: "regtest baton",       // NFT Commitment message
+            capability: NFTCapability.minting, // NFT capability
+        },
+        value: 1000n,                       // Satoshi value
     });
-    let authCat = mintingResponse.tokenIds![0]!
+    let authCat = mintingResponse.categories![0]!
     //@ts-ignore
     let privateKey = getHdPrivateKey(alice.mnemonic!, alice.derivationPath.slice(0, -2), alice.isTestnet)
 
@@ -301,7 +299,6 @@ test('Should buy swap assets on a blackboard (multi order sell)', async t => {
 
     let orders = CatDex.getCatDexOrdersFromUtxos(assetCat, utxos)
 
-    //console.log(stringify(orders))
     // Use the exchange
     let tx2 = CatDex.swap(19000n, orders, walletUtxos, privateKey);
 
@@ -319,19 +316,21 @@ test('Should sell swap assets on a blackboard (from multi order buy)', async t =
     const genesisResponse = await alice.tokenGenesis({
         cashaddr: alice.getTokenDepositAddress(),      // token UTXO recipient, if not specified will default to sender's address
         amount: BigInt(21e14),                         // fungible token amount
-        value: 1000,                                   // Satoshi value
+        value: 1000n,                                   // Satoshi value
     });
-    let assetCat = genesisResponse.tokenIds![0]!
+    let assetCat = genesisResponse.categories![0]!
 
     await alice.sendMax(alice.getDepositAddress())
 
     const mintingResponse = await alice.tokenGenesis({
         cashaddr: alice.tokenaddr!,        // token UTXO recipient, if not specified will default to sender's address
-        commitment: "regtest baton",       // NFT Commitment message
-        capability: NFTCapability.minting, // NFT capability
-        value: 1000,                       // Satoshi value
+        nft: {
+            commitment: "regtest baton",       // NFT Commitment message
+            capability: NFTCapability.minting, // NFT capability
+        },
+        value: 1000n,                       // Satoshi value
     });
-    let authCat = mintingResponse.tokenIds![0]!
+    let authCat = mintingResponse.categories![0]!
     //@ts-ignore
     let privateKey = getHdPrivateKey(alice.mnemonic!, alice.derivationPath.slice(0, -2), alice.isTestnet)
 
@@ -395,13 +394,8 @@ test('Should sell swap assets on a blackboard (from multi order buy)', async t =
 
     let orders = CatDex.getCatDexOrdersFromUtxos(assetCat, utxos)
 
-    //console.log(stringify(orders))
     // Use the exchange
     let tx2 = CatDex.swap(-1500n, orders, walletUtxos, privateKey);
-    //  console.log(stringify(tx2.verify))
-    //  console.log(stringify(tx2.sourceOutputs))
-    //  console.log(stringify(tx2.transaction))
-    // console.log(binToHex(encodeTransactionBch(tx2.transaction)))
 
     await sleep(3000)
     t.is(tx2.verify, true, "transaction is valid")

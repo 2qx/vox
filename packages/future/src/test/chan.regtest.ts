@@ -21,8 +21,8 @@ test('Should post a messages', async (t) => {
 
     let key = getHdPrivateKey(bob.mnemonic!, bob.derivationPath.slice(0, -2), bob.isTestnet)
 
-    const bobBalance = await bob.getBalance('sats') as number
-    t.assert(bobBalance >= 100_000_000);
+    const bobBalance = await bob.getBalance()
+    t.assert(bobBalance >= 100_000_000n);
 
     let height = await provider.getBlockHeight()
 
@@ -37,10 +37,12 @@ test('Should post a messages', async (t) => {
 
     let uname = "6a03553356" + "0474657374"
     let sendResponse = await bob.tokenGenesis({
-      cashaddr: bob.getTokenDepositAddress()!,      // token UTXO recipient, if not specified will default to sender's address
-      commitment: uname,             // NFT Commitment message
-      capability: NFTCapability.minting, // NFT capability
-      value: 1_000_000,                    // Satoshi value
+        cashaddr: bob.getTokenDepositAddress()!,      // token UTXO recipient, if not specified will default to sender's address
+        nft: {
+            commitment: uname,             // NFT Commitment message
+            capability: NFTCapability.minting, // NFT capability
+        },
+        value: 1_000_000n,                    // Satoshi value
     });
 
 
@@ -50,11 +52,11 @@ test('Should post a messages', async (t) => {
         bob.getDepositAddress(),
         "include_tokens"
     )
-    let auth = walletUtxos.filter((u:UtxoI) => u.token_data?.nft?.commitment == uname)[0]
+    let auth = walletUtxos.filter((u: UtxoI) => u.token_data?.nft?.commitment == uname)[0]
     t.assert(auth.token_data?.nft?.commitment == uname)
 
     const post = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer dapibus lacus a enim volutpat consectetur. Aenean eget ornare urna. Suspendisse laoreet posuere luctus. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Integer sit amet erat."
-    let response = Channel.post("test", post, auth, (height * 10)+1000, key)
+    let response = Channel.post("test", post, auth, (height * 10) + 1000, key)
     t.assert(response.verify == true)
 
 });

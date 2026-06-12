@@ -34,14 +34,15 @@ import {
     sumOutputValue,
     type UtxoI,
     type TransactionHex,
-    type AddressGetHistoryEntry
+    type AddressGetHistoryEntry,
+    cashAssemblyToHex
 } from '@unspent/tau';
 
-import { Coupon } from './coupon.js';
 import { Vault } from './vault.js';
 import { toBin } from './util.js';
 
 const BIP68_MASK = 2147483648
+
 
 export class Post {
 
@@ -120,24 +121,16 @@ function parsePostTransaction(
             body = code.map(
                 commitment => decodePushBytes(commitment.slice(2))[1]
             ).map(bin => binToUtf8(bin!)).join("")
-        } else if (payload[0] == "V+") {
+        } else if (code[0].slice(0, 8) == "6a0256b2") {
             ref = code[0].slice(10)
             like = 1
+        } else if (payload[0] == "V,") {
+            ref = code[0].slice(10)
+            body = code.slice(1).map(
+                commitment => decodePushBytes(commitment.slice(2))[1]
+            ).map(bin => binToUtf8(bin!)).join("")
         }
     }
-    // // V0
-    // if (code[0].slice(0, 2) == "6a025630") body = binToUtf8(decodePushBytes(code[0].slice(0, 2))[1]!)
-    // console.log(body)
-    // // V+
-    // if (code[0].slice(0, 8) == "6a02562b") {
-    //     ref = code[0].slice(10)
-    //     like = 1
-    // }
-    // // V-
-    // if (code[0].slice(0, 8) == "6a02562d") {
-    //     ref = code[0].slice(10)
-    //     dislike = 1
-    // }
 
     return new Post({
         hash: hash,
@@ -451,6 +444,44 @@ export class Channel {
     }
 
 
+    static getReplyOutput(channel: string, postId: string, message: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBch>[] {
+        let m = cashAssemblyToHex('OP_RETURN <"V,">') + binToHex(encodeDataPush(hexToBin(postId)))
+
+        let ref = {
+            lockingBytecode: this.getLockingBytecode(channel),
+            valueSatoshis: BigInt(couponValue),
+            token: {
+                amount: 0n,
+                category: hexToBin(auth.token_data!.category),
+                nft: {
+                    capability: 'none',
+                    commitment: hexToBin(m)
+                }
+            }
+        }
+        const binaryMessage = utf8ToBin(message)
+        let chunked = [...chunks(binaryMessage, 122).map((m) => cashAssemblyToHex('OP_RETURN <"V0">') + binToHex(encodeDataPush(m)))]
+        return [
+            ref,
+            ...chunked.map((m) => {
+                return {
+                    lockingBytecode: this.getLockingBytecode(channel),
+                    valueSatoshis: BigInt(couponValue),
+                    token: {
+                        amount: 0n,
+                        category: hexToBin(auth.token_data!.category),
+                        nft: {
+                            capability: 'mutable',
+                            commitment: hexToBin(m)
+                        }
+                    }
+                }
+            })
+        ] as OutputTemplate<CompilerBch>[]
+
+    }
+
+
     static getChangeOutput(auth: UtxoI, changeAmount: bigint, privateKey?: any, addressIndex = 0): OutputTemplate<CompilerBch> {
 
         const lockingBytecode = privateKey ? {
@@ -529,7 +560,6 @@ export class Channel {
         let valueIn = sumSourceOutputValue(sourceOutputs)
         let valueOut = sumOutputValue(config.outputs)
         let change = valueIn - valueOut;
-        console.log(change)
         config.outputs.push(this.getChangeOutput(auth, change, key))
 
         return this.buildAndValidateTransaction(config, sourceOutputs, fee)
@@ -618,6 +648,48 @@ export class Channel {
 
     }
 
+    /**
+    * Reply to a post.
+    *
+    * @param channel - channel identifier.
+    * @param postId - transaction id of the post being liked.
+    * @param message - reply message.
+    * @param auth - utxo paying transaction fees.
+    * @param couponAmount - amount to pay message (per commitment).
+    * @param key - private key to sign transaction wallet inputs.
+    * @param fee - network fee to pay, default 1 sat per byte.
+    *
+    * @throws {Error} if transaction generation fails.
+    * @returns a transaction template.
+    */
+
+    static reply(channel: string, postId: string, message: string, auth: UtxoI, couponAmount: number, key?: string, fee = 1) {
+
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
+        const sourceOutputs: Output[] = [];
+
+        let config = {
+            locktime: 0,
+            version: 2,
+            inputs,
+            outputs
+        }
+
+        let walletUtxos = [auth]
+
+        config.inputs.push(... this.getWalletInputs(walletUtxos, key));
+        config.outputs.push(... this.getReplyOutput(channel, postId, message, auth, couponAmount));
+
+        sourceOutputs.push(this.getWalletSourceOutput(auth, key));
+        let valueIn = sumSourceOutputValue(sourceOutputs)
+        let change = valueIn - BigInt(config.outputs.length * couponAmount);
+        config.outputs.push(this.getChangeOutput(auth, change, key));
+        return this.buildAndValidateTransaction(config, sourceOutputs, fee);
+
+    }
+
+
     static buildAndValidateTransaction(config: any, sourceOutputs: Output[], fee = 1) {
 
         let result = generateTransaction(config);
@@ -638,6 +710,7 @@ export class Channel {
             sourceOutputs,
             { maximumTokenCommitmentLength: 128 }
         );
+
         if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
 
         let verify = this.vm.verify({

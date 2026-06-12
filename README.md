@@ -5,30 +5,37 @@
 A collection of small decentralized financial applications.
 
 
+
+## Unspent v3 Protocol Records
+
+Instances of vox contracts are can be stored on NFTs. The commitments (and token category) can be used to construct an instance of the contract.
+
+| Protocol     | NFT Record Commitment                                 | Ct  | Description      |
+| ------------ | ----------------------------------------------------- | --- | ---------------- |
+| CatDex       | <"U3X">                                               | 🔵   | Limit-order DEX  |
+| Drip         |                                                       |     | MEV faucet       |
+| Dutch        | <"U3A"><0x\${recipient}>                              | 🔵   | Dutch Auction    |
+| Flash        | <"U3F">                                               |     | Flash Loans      |
+| Locktime     | <"U3L"><0x\${recipient}><\${locktime}>                | 🔵   | Timelocked Vault |
+| SmallIndex   | <"U3R"><0x\${key}>                                    | 🔵   | Key-Value DB     |
+| Subscription | <"U3S"><\${installment}><0x\${recipient}><\${period}> | 🔵   | Subscriptions    |
+| Timeout      | <"U3T"><0x\${recipient}><\${timeout}>                 | 🔵   | Timeout Vault    |
+| Trust        | <"U3P"><0x\${recipient}>                              |     | Annuity          |
+| Vox          | <"U3V"><0x\${channel}>                                | 🔵   | Chat             |
+
+
+
 ## First-class Assets
 
-| Protocol    | Identifier | Ticker(s)         |
-| ----------- | ---------- | ----------------- |
-| Badgers     | -          | BADGER            |
-| BlockPoints | -          | BPTS              |
-| Future BCH  | <"FBCH">   | FBCH-`<locktime>` |
-| Wrapped BCH | -          | WBCH              |
+Vox.cash will support a number 
 
-## Unspent v3 Protocols
-
-| Protocol     | Identifier | Ct  | Description                               |
-| ------------ | ---------- | --- | ----------------------------------------- |
-| CatDex       | <"U3X">    | 🔵   | Limit-order DEX                           |
-| Drip         |            |     | Miner extractable value fidget spinner    |
-| Dutch        | <"U3A">    | 🔵   | Dutch Auction                             |
-| Flash        | <"U3F">    |     | Flash Loans                               |
-| Locktime     | <"U3L">    | 🔵   | Hodl-style lock                           |
-| SmallIndex   | <"U3R">    | 🔵   | Key-Value Database                        |
-| Subscription | <"U3S">    | 🔵   | Token-denominated revocable subscriptions |
-| Timeout      | <"U3T">    | 🔵   | A last-will style timeout                 |
-| Trust        | <"U3P">    |     | Irrevocable perpetuity                    |
-| Vox          | <"U3V">    | 🔵   | Chat Channel                              |
-
+| Protocol     | Identifier             | Ticker(s)         |
+| ------------ | ---------------------- | ----------------- |
+| Badgers      | -                      | BADGER            |
+| Block Points | -                      | BPTS              |
+| Bloc Tops    | -                      | BTOP              |
+| Future BCH   | <"FBCH"><\${locktime}> | FBCH-`<locktime>` |
+| Wrapped BCH  | -                      | WBCH              |
 
 
 ## Sub protocols
@@ -47,6 +54,8 @@ All records must pay miners a rate of 1 sat/block. It is up to user software to 
 
 ### Market Identifiers
 
+CatDex is a market aggregator that may support many DEX protocols. 
+
 Markets may be denoted on a small index or vox contract like so:
 
 | Protocol      | Identifier                                             |
@@ -58,7 +67,7 @@ Markets may be denoted on a small index or vox contract like so:
 
 If not otherwise provided, all fees and missing parameters are assumed to match the defaults for the related exchange. 
 
-### Vox 
+### Vox Chat
 
 A Vox channel may be announced on a small index or in another vox channel with a vox record:
 

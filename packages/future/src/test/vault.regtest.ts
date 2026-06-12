@@ -7,7 +7,7 @@ import { RegTestWallet } from "mainnet-js";
 import { Vault } from "../index.js";
 import {
   binToHex,
-  encodeTransactionBCH,
+  encodeTransactionBch,
   CashAddressNetworkPrefix,
   stringify
 } from '@bitauth/libauth';
@@ -21,17 +21,17 @@ test('test future placement', async t => {
   const genesisResponse = await alice.tokenGenesis({
     cashaddr: tFBCH_contract,      // token UTXO recipient, if not specified will default to sender's address
     amount: BigInt(21e14),   // fungible token amount
-    value: 1000,                    // Satoshi value
+    value: 1000n,                    // Satoshi value
   });
-  const tFBCH = genesisResponse.tokenIds![0]!;
+  const tFBCH = genesisResponse.categories![0]!;
 
   const bob = await RegTestWallet.newRandom();
   await alice.sendMax(bob.getDepositAddress())
 
   let key = getHdPrivateKey(bob.mnemonic!, bob.derivationPath.slice(0, -2), bob.isTestnet)
 
-  const bobBalance = await bob.getBalance('sats') as number
-  t.assert(bobBalance >= 498000);
+  const bobBalance = await bob.getBalance()
+  t.assert(bobBalance >= 498000n);
 
   let provider = bob.provider!
 
@@ -58,7 +58,7 @@ test('test future placement', async t => {
     0,
     key
   )
-  await provider.sendRawTransaction(binToHex(encodeTransactionBCH(tx.transaction)))
+  await provider.sendRawTransaction(binToHex(encodeTransactionBch(tx.transaction)))
 });
 
 
@@ -73,15 +73,14 @@ test('test future placement with coupon', async t => {
   const genesisResponse = await alice.tokenGenesis({
     cashaddr: tFBCH_contract,      // token UTXO recipient, if not specified will default to sender's address
     amount: BigInt(21e14),   // fungible token amount
-    value: 1000,                    // Satoshi value
+    value: 1000n,                    // Satoshi value
   });
-  const tFBCH = genesisResponse.tokenIds![0]!;
+  const tFBCH = genesisResponse.categories![0]!;
 
    let couponAddr = Vault.getCouponAddress(10_000_000, 0, prefix)
   await alice.send({
     cashaddr: couponAddr,
-    value: 10000,
-    unit: 'satoshi'
+    value: 10000n
   }); 
 
 
@@ -93,8 +92,8 @@ test('test future placement with coupon', async t => {
 
   let key = getHdPrivateKey(bob.mnemonic!, bob.derivationPath.slice(0, -2), bob.isTestnet)
 
-  const bobBalance = await bob.getBalance('sats') as number
-  t.assert(bobBalance >= 458000);
+  const bobBalance = await bob.getBalance() 
+  t.assert(bobBalance >= 458000n);
 
   let provider = bob.provider!
 
@@ -130,5 +129,5 @@ test('test future placement with coupon', async t => {
     couponUtxos[0]
   )
   //console.log(stringify(tx))
-  await provider.sendRawTransaction(binToHex(encodeTransactionBCH(tx.transaction)))
+  await provider.sendRawTransaction(binToHex(encodeTransactionBch(tx.transaction)))
 });

@@ -49,6 +49,7 @@
 	let sequence = $state(0);
 	let estimate = $state(0);
 	let showSettings = $state(false);
+	let showAll = $state(true);
 
 	const scripthash = $derived(Channel.getScriptHash(topic));
 	const contractAddress = $derived(Channel.getAddress(topic, prefix));
@@ -103,6 +104,20 @@
 		);
 
 		let raw_tx = binToHex(encodeTransactionBch(likePostTx.transaction));
+		await broadcast(raw_tx);
+	};
+
+	const reply = async function (postId: string, message:string) {
+		let replyPostTx = Channel.reply(
+			topic,
+			postId,
+			message,
+			walletUnspent[0],
+			(Math.round(now / 1000) + 10) * 10,
+			key
+		);
+
+		let raw_tx = binToHex(encodeTransactionBch(replyPostTx.transaction));
 		await broadcast(raw_tx);
 	};
 
@@ -179,16 +194,16 @@
 	};
 
 	const updateContract = async function () {
-		let response = await electrumClient.request(
+		let unspentResponse = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
 			scripthash,
 			'include_tokens'
 		);
 
-		if (response instanceof Error) throw response;
-		contractBalance = sumUtxoValue(response);
+		if (unspentResponse instanceof Error) throw unspentResponse;
+		contractBalance = sumUtxoValue(unspentResponse);
 
-		let tx_hashes = Array.from(new Set(response.map((utxo: any) => utxo.tx_hash))) as string[];
+		let tx_hashes = Array.from(new Set(unspentResponse.map((utxo: any) => utxo.tx_hash))) as string[];
 
 		let historyResponse = await electrumClient.request(
 			'blockchain.scripthash.get_history',
@@ -197,6 +212,7 @@
 			-1
 		);
 
+		//if (showAll) tx_hashes = historyResponse.map(r => r.tx_hash)
 		transactions = await getAllTransactions(electrumClient, tx_hashes);
 
 		posts = buildChannel(historyResponse, transactions, topic);
@@ -226,7 +242,6 @@
 		let utxos = response.filter((u: UtxoI) => u.tx_hash == post.hash).slice(0, 200);
 		let clearPostTx = Channel.clear(topic, utxos, walletUnspent[0], key, now);
 		let raw_tx = binToHex(encodeTransactionBch(clearPostTx.transaction));
-		console.log(raw_tx)
 		await broadcast(raw_tx);
 	};
 

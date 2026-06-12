@@ -505,7 +505,6 @@ export class Vault {
         let inputs: InputTemplate<CompilerBch>[] = [];
         let outputs: OutputTemplate<CompilerBch>[] = [];
 
-        console.log(utxos)
         utxos = utxos.filter(u => u.token_data?.category == binToHex(category))
         if (amount < 0) utxos = utxos.filter(u => u.value > 1000)
         if (utxos.length == 0) throw Error("no vault utxos left, maximum recursion depth reached.");
