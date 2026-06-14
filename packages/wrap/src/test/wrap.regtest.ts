@@ -16,8 +16,8 @@ import {
 test('test wrap covenant address', async t => {
   const alice = await getAnAliceWallet(500_000)
   //alice.provider = regTest
-  const aliceBalance = await alice.getBalance('sats') as number
-  t.is(aliceBalance, 500000);
+  const aliceBalance = await alice.getBalance()
+  t.is(aliceBalance, 500000n);
 
   /* cspell:disable-next-line */
   t.is(Wrap.getAddress(), "bitcoincash:r0ujgnc9jnyurzv99678fgac3fdrq8x3py9rlrg6dlnz96qxrdl02t6jek3sw")
@@ -38,17 +38,17 @@ test('test wrap function with key', async t => {
   const genesisResponse = await alice.tokenGenesis({
     cashaddr: wrap_contract,      // token UTXO recipient, if not specified will default to sender's address
     amount: BigInt(21e14),   // fungible token amount
-    value: 1000,                    // Satoshi value
+    value: 1000n,                    // Satoshi value
   });
-  const tWBCH = genesisResponse.tokenIds![0]!;
+  const tWBCH = genesisResponse.categories![0]!;
 
   const bob = await RegTestWallet.newRandom();
   await alice.sendMax(bob.getDepositAddress())
 
   let key = getHdPrivateKey(bob.mnemonic!, bob.derivationPath.slice(0, -2), bob.isTestnet)
 
-  const bobBalance = await bob.getBalance('sats') as number
-  t.assert(bobBalance >= 498000);
+  const bobBalance = await bob.getBalance()
+  t.assert(bobBalance >= 498000n);
 
   let provider = bob.provider!
 

@@ -21,19 +21,21 @@ test('Should create a new blackboard with sell', async t => {
     const genesisResponse = await alice.tokenGenesis({
         cashaddr: alice.getTokenDepositAddress(),      // token UTXO recipient, if not specified will default to sender's address
         amount: BigInt(21e14),   // fungible token amount
-        value: 1000,                    // Satoshi value
+        value: 1000n,                    // Satoshi value
     });
-    let assetCat = genesisResponse.tokenIds![0]!
+    let assetCat = genesisResponse.categories![0]!
 
     await alice.sendMax(alice.getDepositAddress())
 
     const mintingResponse = await alice.tokenGenesis({
         cashaddr: alice.tokenaddr!,        // token UTXO recipient, if not specified will default to sender's address
-        commitment: "regtest baton",                // NFT Commitment message
-        capability: NFTCapability.minting, // NFT capability
-        value: 1000,                       // Satoshi value
+        nft: {
+            commitment: "regtest baton",                // NFT Commitment message
+            capability: NFTCapability.minting, // NFT capability
+        },
+        value: 1000n,                       // Satoshi value
     });
-    let authCat = mintingResponse.tokenIds![0]!
+    let authCat = mintingResponse.categories![0]!
     //@ts-ignore
     let privateKey = getHdPrivateKey(alice.mnemonic!, alice.derivationPath.slice(0, -2), alice.isTestnet)
 
@@ -71,19 +73,21 @@ test('Should create a new blackboard with buy', async t => {
     const genesisResponse = await alice.tokenGenesis({
         cashaddr: alice.getTokenDepositAddress(),      // token UTXO recipient, if not specified will default to sender's address
         amount: BigInt(21e14),   // fungible token amount
-        value: 1000,                    // Satoshi value
+        value: 1000n,                    // Satoshi value
     });
-    let assetCat = genesisResponse.tokenIds![0]!
+    let assetCat = genesisResponse.categories![0]!
 
     await alice.sendMax(alice.getDepositAddress())
 
     const mintingResponse = await alice.tokenGenesis({
         cashaddr: alice.tokenaddr!,        // token UTXO recipient, if not specified will default to sender's address
-        commitment: "",                // NFT Commitment message
-        capability: NFTCapability.minting, // NFT capability
-        value: 1000,                       // Satoshi value
+        nft: {
+            commitment: "",                // NFT Commitment message
+            capability: NFTCapability.minting, // NFT capability
+        },
+        value: 1000n,                       // Satoshi value
     });
-    let authCat = mintingResponse.tokenIds![0]!
+    let authCat = mintingResponse.categories![0]!
     //@ts-ignore
     let privateKey = getHdPrivateKey(alice.mnemonic!, alice.derivationPath.slice(0, -2), alice.isTestnet)
 
@@ -135,19 +139,21 @@ test('Should clear a new blackboard with buy & sell', async t => {
     const genesisResponse = await alice.tokenGenesis({
         cashaddr: alice.getTokenDepositAddress(),      // token UTXO recipient, if not specified will default to sender's address
         amount: BigInt(21e14),   // fungible token amount
-        value: 1000,                    // Satoshi value
+        value: 1000n,                    // Satoshi value
     });
-    let assetCat = genesisResponse.tokenIds![0]!
+    let assetCat = genesisResponse.categories![0]!
 
     await alice.sendMax(alice.getDepositAddress())
 
     const mintingResponse = await alice.tokenGenesis({
         cashaddr: alice.tokenaddr!,        // token UTXO recipient, if not specified will default to sender's address
-        commitment: "1234",                // NFT Commitment message
-        capability: NFTCapability.minting, // NFT capability
-        value: 1000,                       // Satoshi value
+        nft: {
+            commitment: "1234",                // NFT Commitment message
+            capability: NFTCapability.minting, // NFT capability
+        },
+        value: 1000n,                       // Satoshi value
     });
-    let authCat = mintingResponse.tokenIds![0]!
+    let authCat = mintingResponse.categories![0]!
 
     //@ts-ignore
     //let privateKey = process.env["PRIVATE_KEY"]!

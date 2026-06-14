@@ -1,5 +1,5 @@
 import test from 'ava';
-import { encodeTransactionBCH, binToHex } from '@bitauth/libauth';
+import { encodeTransactionBch, binToHex } from '@bitauth/libauth';
 import { getHdPrivateKey, TransactionRequest } from "@unspent/tau";
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
@@ -16,16 +16,16 @@ test('test claim function with key', async t => {
   const genesisResponse = await alice.tokenGenesis({
     cashaddr: contract,      // token UTXO recipient, if not specified will default to sender's address
     amount: BigInt(21e14),   // fungible token amount
-    value: 1000,                    // Satoshi value
+    value: 1000n,                    // Satoshi value
   });
-  const tokenId = genesisResponse.tokenIds![0]!;
+  const tokenId = genesisResponse.categories![0]!;
 
   const bob = await RegTestWallet.newRandom();
   await alice.sendMax(bob.getDepositAddress())
 
   let key = getHdPrivateKey(bob.mnemonic!, bob.derivationPath.slice(0, -2), bob.isTestnet)
 
-  const bobBalance = await bob.getBalance('sats') as number
+  const bobBalance = await bob.getBalance() 
   t.assert(bobBalance >= 100_000_000);
 
   let provider = bob.provider!
@@ -64,7 +64,7 @@ test('test claim function with key', async t => {
     tokenId
   )
   
-  let tx_raw = binToHex(encodeTransactionBCH(tx.transaction))
+  let tx_raw = binToHex(encodeTransactionBch(tx.transaction))
   await provider.sendRawTransaction(tx_raw)
 });
 

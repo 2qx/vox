@@ -7,13 +7,10 @@ export default async function getAnAliceWallet(amount) {
     utxos = utxos.filter((u) => (height - u.height) > 100);
     let randomUtxo = utxos[Math.floor(Math.random() * utxos.length)];
     let newAlice = await RegTestWallet.newRandom();
-    await alice.send([
-        {
-            cashaddr: newAlice.getDepositAddress(),
-            value: amount,
-            unit: "satoshis",
-        },
-    ], {
+    await alice.send({
+        cashaddr: newAlice.getDepositAddress(),
+        value: BigInt(amount),
+    }, {
         utxoIds: [randomUtxo]
     });
     return newAlice;

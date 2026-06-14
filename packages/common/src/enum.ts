@@ -37,3 +37,7 @@ export const enum PushOperationConstants {
    */
   maximumPushData4Size = 4294967295,
 }
+
+export const enum UnspentError {
+  NoCashAddrForp2s = "No Cashaddr for p2s contract type"
+}

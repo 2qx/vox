@@ -2,7 +2,9 @@ import template from './template.v3.json' with { type: "json" };
 import packageInfo from '../package.json' with { type: "json" };
 
 import {
+
     binToHex,
+    binToBigIntUintLE,
     CompilerBch,
     createVirtualMachineBch,
     encodeTransactionBch,
@@ -11,11 +13,12 @@ import {
     InputTemplate,
     OutputTemplate,
     Output,
-    verifyTransactionTokens,
-    binToNumberInt16LE
+    verifyTransactionTokens
 } from '@bitauth/libauth';
 
 import {
+    BytecodeDataI,
+    decodePushBytes,
     getAddress,
     type CashAddressNetworkPrefix,
     getLibauthCompiler,
@@ -23,13 +26,10 @@ import {
     UtxoI,
 } from '@unspent/tau';
 
-export const BADGER = hexToBin('242f6ecedb404c743477e35b09733a56cacae34f3109d5cee1cbc1d5630affd7')
-export const tBADGER = hexToBin('0000000000000000000000000000000000000000000000000000000000000000')
-
-
-export default class FlashCash {
+export default class FlashLoan {
 
     static USER_AGENT = packageInfo.name;
+    static PROTOCOL_IDENTIFIER = "U3F";
 
     static tokenAware = true;
 
@@ -54,7 +54,6 @@ export default class FlashCash {
     /**
      * Get cashaddress
      *
-     * @param indexKey - the key for the record.
      * @param reversed - whether to reverse the hash.
      * @throws {Error} if transaction generation fails.
      * @returns a cashaddress.
@@ -74,26 +73,31 @@ export default class FlashCash {
         return getAddress(this.getLockingBytecode(), prefix, this.tokenAware)
     }
 
-    static parseNFT(utxo: UtxoI) {
+    static parseNFT(utxo: UtxoI): BytecodeDataI {
 
-        try {
+        if (utxo.token_data?.nft?.commitment) {
+            let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment))
             return {
-                fee: binToNumberInt16LE(hexToBin(utxo.token_data?.nft?.commitment!)),
+                "fee": byteData[0]!
             }
-        } catch (e) {
-            throw Error("Could not parse fee")
+        } else {
+            throw Error("Could not parse flash loan record")
         }
-
-
-
-
     }
 
     static getSourceOutput(utxo: UtxoI): Output {
 
         return {
             lockingBytecode: this.getLockingBytecode(),
-            valueSatoshis: BigInt(utxo.value)
+            valueSatoshis: BigInt(utxo.value),
+            token: utxo.token_data ? {
+                category: hexToBin(utxo.token_data!.category!),
+                amount: BigInt(utxo.token_data!.amount),
+                nft: utxo.token_data.nft ? {
+                    commitment: hexToBin(utxo.token_data.nft.commitment!),
+                    capability: utxo.token_data.nft.capability,
+                } : undefined
+            } : undefined
         }
 
     }
@@ -121,15 +125,25 @@ export default class FlashCash {
         } as InputTemplate<CompilerBch>
     }
 
-    static getOutput(): OutputTemplate<CompilerBch> {
+    static getOutput(utxo: UtxoI): OutputTemplate<CompilerBch> {
 
+        let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment!))
+        let fee = binToBigIntUintLE(byteData[0]!)
         return {
             lockingBytecode: {
                 data: {},
                 compiler: this.compiler,
                 script: 'flash_market_covenant'
             },
-            valueSatoshis: BigInt(0),
+            valueSatoshis: BigInt(utxo.value) + fee,
+            token: utxo.token_data ? {
+                category: hexToBin(utxo.token_data!.category!),
+                amount: BigInt(utxo.token_data!.amount),
+                nft: utxo.token_data.nft ? {
+                    commitment: hexToBin(utxo.token_data.nft.commitment!),
+                    capability: utxo.token_data.nft.capability,
+                } : undefined
+            } : undefined
 
         }
 
@@ -154,7 +168,7 @@ export default class FlashCash {
     }
 
     /**
-     * Unlock completed stake.
+     * Unlock mature output.
      *
      * @param utxo - unspent contract record to payout.
      *
@@ -177,7 +191,7 @@ export default class FlashCash {
         }
 
         config.inputs.push(this.getInput(utxo));
-        config.outputs.push(this.getOutput());
+        config.outputs.push(this.getOutput(utxo));
 
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));

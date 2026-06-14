@@ -3,21 +3,31 @@ import packageInfo from '../package.json' with { type: "json" };
 
 import {
     binToHex,
+    binToUtf8,
+    cashAssemblyToBin,
     CompilerBch,
     createVirtualMachineBch,
+    deriveHdPublicKey,
     encodeTransactionBch,
     generateTransaction,
     hexToBin,
     InputTemplate,
     OutputTemplate,
     Output,
+    Transaction,
     verifyTransactionTokens,
-    numberToBinUint16LE,
-    bigIntToVmNumber
+    binToNumberUintLE
 } from '@bitauth/libauth';
 
 import {
+    BytecodeDataI,
+    decodePushBytes,
     getAddress,
+    getTransactionFees,
+    getWalletInput,
+    getWalletSourceOutput,
+    sumOutputValue,
+    sumSourceOutputValue,
     type CashAddressNetworkPrefix,
     getLibauthCompiler,
     getScriptHash,
@@ -25,8 +35,8 @@ import {
     UtxoI,
 } from '@unspent/tau';
 
-export interface LocktimeData {
-    locktime: number,
+export interface DutchAuctionData {
+    open: number,
     recipient: string
 }
 
@@ -45,25 +55,44 @@ export default class Dutch {
 
     static vm = createVirtualMachineBch();
 
-    static dataToBytecode(data: LocktimeData) {
+    static dataToBytecode(data: DutchAuctionData) {
         return {
-            "open": numToVm(data.locktime),
+            "open": numToVm(data.open),
             "recipient": hexToBin(data.recipient)
         }
     }
 
+
+    static parseNFT(utxo: UtxoI): BytecodeDataI {
+
+        if (utxo.token_data?.nft?.commitment) {
+            let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment))
+            if (binToUtf8(byteData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error("Non-subscription record NFT passed as subscription")
+            return {
+                "open": byteData[1]!,
+                "recipient": byteData[2]!
+            }
+        } else {
+            throw Error("Could not parse subscription NFT")
+        }
+    }
+
+    static encodeCommitment(data: DutchAuctionData) {
+        let commitment = cashAssemblyToBin(
+            `<"${this.PROTOCOL_IDENTIFIER}"><${data.open}><0x${data.recipient}>
+        `)
+        if (typeof commitment === "string") throw commitment
+        return binToHex(commitment)
+    }
+
+
     static getLockingBytecode(
-        open: number,
-        recipient: Uint8Array | string,
+        data: BytecodeDataI
     ): Uint8Array {
-        if (typeof recipient == "string") recipient = hexToBin(recipient)
         const lockingBytecodeResult = this.compiler.generateBytecode(
             {
                 data: {
-                    "bytecode": {
-                        "open": bigIntToVmNumber(BigInt(open)),
-                        "recipient": recipient
-                    }
+                    "bytecode": data
                 },
                 scriptId: 'lock'
             })
@@ -83,100 +112,234 @@ export default class Dutch {
      * @returns a cashaddress.
      */
     static getScriptHash(
-        open: number,
-        recipient: Uint8Array | string,
+        record: UtxoI,
         reversed = true): string {
-        return getScriptHash(this.getLockingBytecode(open, recipient), reversed)
+        let data = this.parseNFT(record)
+        return getScriptHash(this.getLockingBytecode(data), reversed)
     }
 
     /**
      * Get cashaddress
      *
-     * @param open - opening ask.
-     * @param recipient - locking bytecode receiving funds.
+     * @param data - The auction open and recipient.
      * @param prefix - cashaddress prefix.
      * @throws {Error} if transaction generation fails.
      * @returns a cashaddress.
      */
     static getAddress(
-        open: number,
-        recipient: Uint8Array | string,
+        data: DutchAuctionData,
         prefix = "bitcoincash" as CashAddressNetworkPrefix): string {
-        return getAddress(this.getLockingBytecode(open, recipient), prefix, this.tokenAware)
+        let bytecode = this.dataToBytecode(data)
+        return getAddress(this.getLockingBytecode(bytecode), prefix, this.tokenAware)
     }
 
     static getSourceOutput(
-        open: number,
-        recipient: Uint8Array | string,
-        utxo: UtxoI): Output {
+        data: BytecodeDataI,
+        utxo: UtxoI
+    ): Output {
 
         return {
-            lockingBytecode: this.getLockingBytecode(open, recipient),
-            valueSatoshis: BigInt(utxo.value)
+            lockingBytecode: this.getLockingBytecode(data),
+            valueSatoshis: BigInt(utxo.value),
+            token: utxo.token_data ? {
+                category: hexToBin(utxo.token_data!.category!),
+                amount: BigInt(utxo.token_data.amount),
+                nft: utxo.token_data.nft ? {
+                    commitment: hexToBin(utxo.token_data.nft.commitment!),
+                    capability: utxo.token_data.nft.capability,
+                } : undefined
+            } : undefined
         }
 
     }
 
     static getInput(
-        open: number,
-        recipient: Uint8Array | string,
-        utxo: UtxoI): InputTemplate<CompilerBch> {
-        if (typeof recipient == "string") recipient = hexToBin(recipient)
+        data: BytecodeDataI,
+        utxo: UtxoI,
+        age: number,
+    ): InputTemplate<CompilerBch> {
+
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
-            sequenceNumber: utxo.value,
+            sequenceNumber: age,
             unlockingBytecode: {
                 data: {
-                    "bytecode": {
-                        "open": bigIntToVmNumber(BigInt(open)),
-                        "recipient": recipient
-                    }
+                    "bytecode": data
                 },
                 compiler: this.compiler,
                 script: 'unlock',
                 valueSatoshis: BigInt(utxo.value),
+                token: utxo.token_data ? {
+                    category: hexToBin(utxo.token_data.category!),
+                    amount: BigInt(utxo.token_data.amount),
+                    nft: utxo.token_data.nft ? {
+                        commitment: hexToBin(utxo.token_data.nft.commitment!),
+                        capability: utxo.token_data.nft.capability,
+                    } : undefined
+                } : undefined
             },
         } as InputTemplate<CompilerBch>
     }
 
 
+    static getOutput(data: BytecodeDataI, outputValue: number): OutputTemplate<CompilerBch> {
 
-    /**
-     * Get source outputs, transform contract & wallet outpoints for spending verification.
-     *
-     * @param contractUtxo - contract outputs to use as input.
-     * @param walletUtxo - wallet outputs to use as input.
-     * @param key - private key to sign transaction wallet inputs.
-     *
-     * @returns a transaction template.
-     */
+        return {
+            lockingBytecode: data["recipient"]!,
+            valueSatoshis: BigInt(outputValue),
+        }
 
-    static getSourceOutputs(
-        open: number,
-        recipient: Uint8Array | string,
-        valueUtxos: UtxoI[]
-    ): Output[] {
-        const sourceOutputs: Output[] = [];
-        sourceOutputs.push(...valueUtxos.map((u: UtxoI) => this.getSourceOutput(open, recipient, u)));
-        return sourceOutputs
+    }
+
+    static getChangeOutput(
+        value: bigint,
+        utxo: UtxoI,
+        privateKey?: any,
+        addressIndex = 0
+    ): OutputTemplate<CompilerBch> {
+
+        const lockingBytecode = privateKey ? {
+            compiler: this.compiler,
+            data: {
+                hdKeys: {
+                    addressIndex: addressIndex,
+                    hdPublicKeys: {
+                        'wallet': deriveHdPublicKey(privateKey).hdPublicKey
+                    },
+                },
+            },
+            script: 'wallet_lock'
+        } : Uint8Array.from(Array(33))
+
+        return {
+            lockingBytecode: lockingBytecode,
+            valueSatoshis: value,
+            token: utxo.token_data ? {
+                category: hexToBin(utxo.token_data.category!),
+                amount: BigInt(utxo.token_data.amount),
+                nft: utxo.token_data.nft ? {
+                    commitment: hexToBin(utxo.token_data.nft.commitment!),
+                    capability: utxo.token_data.nft.capability,
+                } : undefined
+            } : undefined
+        }
+    }
+
+
+
+    static getWalletInputs(
+        utxos: UtxoI[],
+        amount: bigint,
+        sourceOutputs: Output[] = [],
+        privateKey?: string,
+        addressIndex = 0,
+    ): {
+        inputs: InputTemplate<CompilerBch>[],
+        outputs: OutputTemplate<CompilerBch>[],
+        sourceOutputs: Output[]
+    } {
+
+        let inputs: InputTemplate<CompilerBch>[] = [];
+        let outputs: OutputTemplate<CompilerBch>[] = [];
+
+
+        // Only use straight sat utxos
+        utxos = utxos.filter(u => !u.token_data)
+
+        // TODO: sort by highest value first
+        if (utxos.length == 0) throw Error("no wallet utxos left, maximum recursion depth reached.");
+
+        // get a random utxo.
+        const randomIdx = Math.floor(Math.random() * utxos.length)
+        const randomUtxo = utxos[randomIdx]!
+
+        // remove the random utxo in place
+        utxos.splice(randomIdx, 1);
+
+        // spend the utxo
+        inputs.push(getWalletInput(randomUtxo, privateKey, addressIndex))
+        sourceOutputs.push(getWalletSourceOutput(randomUtxo, privateKey, addressIndex));
+        let sumSats = sumSourceOutputValue(sourceOutputs)
+        if (
+            // or collecting sats and not enough sats inputs 
+            (sumSats < amount)
+        ) {
+            // to it again
+            let nextTry = this.getWalletInputs(
+                [...utxos],
+                amount,
+                [...sourceOutputs],
+                privateKey,
+                addressIndex
+            )
+            inputs.push(...nextTry.inputs)
+            outputs.push(...nextTry.outputs)
+            sourceOutputs = nextTry.sourceOutputs
+        }
+        return { inputs, outputs, sourceOutputs }
+    }
+
+    static getWalletLayers(
+        utxo: UtxoI,
+        config: {
+            locktime: number;
+            version: number;
+            inputs: InputTemplate<CompilerBch>[];
+            outputs: OutputTemplate<CompilerBch>[];
+        },
+        sourceOutputs: Output[],
+        walletUtxos: UtxoI[],
+        privateKey?: string,
+        addressIndex = 0
+    ) {
+        // Calculate excess cash and tokens required to fund the exchange
+        let sumSatsOut = sumOutputValue(config.outputs)
+        let sumSatsIn = sumSourceOutputValue(sourceOutputs)
+        let satsRequired = sumSatsOut - sumSatsIn
+
+        const satsIn = this.getWalletInputs(walletUtxos, satsRequired, undefined, privateKey, addressIndex)
+        config.inputs.push(...satsIn.inputs);
+        sourceOutputs.push(...satsIn.sourceOutputs);
+
+
+        // Calculate excess cash and tokens to be returned as change
+        sumSatsOut = sumOutputValue(config.outputs)
+        sumSatsIn = sumSourceOutputValue(sourceOutputs)
+        let cashChange = sumSatsIn - sumSatsOut
+
+        config.outputs.push(this.getChangeOutput(cashChange, utxo, privateKey, addressIndex))
+
+        return config
     }
 
     /**
-     * Drop expired records.
+     * Bid on lot records.
      *
-     * @param data - The parameters of the locktime contract.
-     * @param valueUtxos[] - contract records to drop.
+     * @param record - The parameters of the auction.
+     * @param utxo - utxo being purchased.
+     * @param walletUtxos - utxos funding the bid
+     * @param privateKey - the wallet key
+     * @param addressIndex - index of the address
+     * @param free - the default fee
      *
      * @throws {Error} if transaction generation fails.
      * @returns a transaction template.
      */
 
-    static bid(
-        open: number,
-        recipient: Uint8Array | string,
-        utxo: UtxoI
-    ): string {
+    static execute(
+        record: UtxoI,
+        utxo: UtxoI,
+        walletUtxos: UtxoI[],
+        height: number,
+        privateKey?: string,
+        addressIndex = 0,
+        fee = 1
+    ): {
+        transaction: Transaction,
+        sourceOutputs: Output[],
+        verify: string | boolean
+    } {
 
         const inputs: InputTemplate<CompilerBch>[] = [];
         const outputs: OutputTemplate<CompilerBch>[] = [];
@@ -188,13 +351,31 @@ export default class Dutch {
             outputs
         }
 
-        config.inputs.push(this.getInput(open, recipient, utxo));
-        //config.outputs.push(this.getOutput(open, recipient));
+        const data = this.parseNFT(record)
+
+        let age = height - utxo.height
+        let outputValue = Math.round(binToNumberUintLE(data["open"]!) / age) + 1
+
+
+        const sourceOutputs = [this.getSourceOutput(data, utxo)];
+        config.inputs.push(this.getInput(data, utxo, age));
+
+        // Cash out the consignor
+        config.outputs.push(this.getOutput(data, outputValue));
+
+        config = this.getWalletLayers(utxo, config, sourceOutputs, walletUtxos, privateKey, addressIndex);
 
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
-        const sourceOutputs = [this.getSourceOutput(open, recipient, utxo)];
+        const estimatedFee = getTransactionFees(result.transaction, fee)
+
+        const lastIdx = config.outputs.length - 1
+        config.outputs[lastIdx]!.valueSatoshis = config.outputs[lastIdx]!.valueSatoshis - estimatedFee
+
+        result = generateTransaction(config);
+        if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+
 
         const transaction = result.transaction
         const tokenValidationResult = verifyTransactionTokens(
@@ -210,7 +391,12 @@ export default class Dutch {
         })
 
         if (typeof verify == "string") throw verify
-        return binToHex(encodeTransactionBch(transaction))
+
+        return {
+            sourceOutputs: sourceOutputs,
+            transaction: transaction,
+            verify: verify
+        }
     }
 
 }

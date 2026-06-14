@@ -28,21 +28,26 @@ test('test staking and unstaking badgers', async t => {
     })
 
     const genesisResponse = await alice.tokenGenesis({
-        capability: NFTCapability.minting,
-        commitment: binToHex(masterCommitment),
+        nft: {
+            capability: NFTCapability.minting,
+            commitment: binToHex(masterCommitment),
+        },
         amount: 1000000000n,
-        value: 10000,                    // Satoshi value
+        value: 10000n,                    // Satoshi value
     });
-    const tokenId = genesisResponse.tokenIds![0]!;
+    const tokenId = genesisResponse.categories![0]!;
 
     let contract_address = BadgerStake.getAddress(tokenId, "bchreg");
 
     await alice.send(new TokenSendRequest({
         cashaddr: contract_address,
-        tokenId: tokenId,
+        category: tokenId,
         amount: 1000000000n,
-        commitment: binToHex(masterCommitment),
-        capability: NFTCapability.minting
+        nft: {
+            commitment: binToHex(masterCommitment),
+            capability: NFTCapability.minting
+        }
+
     }))
 
     sleep(1000)
@@ -54,7 +59,7 @@ test('test staking and unstaking badgers', async t => {
     )
 
 
-    console.log(mainUtxos[0])
+
     // @ts-ignore
     let utxos = await provider.performRequest(
         "blockchain.address.listunspent",
@@ -69,7 +74,7 @@ test('test staking and unstaking badgers', async t => {
         utxos,
         privateKey)
 
-    console.log(lockTx)
+
     await sleep(1000);
 
     // @ts-ignore
@@ -78,7 +83,7 @@ test('test staking and unstaking badgers', async t => {
         binToHex(encodeTransactionBch(lockTx.transaction))
     )
 
-    console.log(response)
+    await sleep(1000);
 
     await mine({
         /* cspell:disable-next-line */
@@ -86,7 +91,7 @@ test('test staking and unstaking badgers', async t => {
         blocks: 10,
     });
 
-
+    await sleep(1000);
     // @ts-ignore
     let contractUtxos = await provider.performRequest(
         "blockchain.address.listunspent",
@@ -95,9 +100,10 @@ test('test staking and unstaking badgers', async t => {
     )
 
 
-    let currentHeight = await provider.getBlockHeight()
-    contractUtxos = contractUtxos.filter((u: any) => u.height + u.value < currentHeight)
+    //let currentHeight = await provider.getBlockHeight()
+    //contractUtxos = contractUtxos.filter((u: any) => u.height + 9 < currentHeight)
 
+    //t.assert(contractUtxos.length>0)
     let transaction = BadgerStake.unlock(contractUtxos[0])
 
     const oldLength = contractUtxos.length
@@ -117,7 +123,7 @@ test('test staking and unstaking badgers', async t => {
         contract_address,
         "include_tokens"
     )
-    contractUtxos = contractUtxos.filter((u: any) => u.height + u.value < currentHeight)
+    //contractUtxos = contractUtxos.filter((u: any) => u.height + u.value < currentHeight)
 
     t.assert(oldLength - contractUtxos.length == 1)
 

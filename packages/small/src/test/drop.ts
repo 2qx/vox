@@ -15,10 +15,13 @@ test('test dropping function with index key', async t => {
     let contract_address = SmallIndex.getAddress("test", "bchreg")
     const genesisResponse = await alice.tokenGenesis({
         cashaddr: alice.getDepositAddress(), // token UTXO recipient
-        capability: NFTCapability.minting,
-        value: 800,                    // Satoshi value
+        nft: {
+            capability: NFTCapability.minting,
+            commitment: ""
+        },
+        value: 800n,                    // Satoshi value
     });
-    const tokenId = genesisResponse.tokenIds![0]!;
+    const tokenId = genesisResponse.categories![0]!;
 
 
     await alice.tokenMint(
@@ -26,9 +29,11 @@ test('test dropping function with index key', async t => {
         [
             new TokenMintRequest({
                 cashaddr: contract_address,
-                commitment: "Hello World",
-                capability: NFTCapability.none,
-                value: 800,
+                nft: {
+                    commitment: "Hello World",
+                    capability: NFTCapability.none,
+                },
+                value: 800n,
             })
         ]
     );
@@ -50,17 +55,16 @@ test('test dropping function with index key', async t => {
 
     let currentHeight = await provider.getBlockHeight()
     contractUtxos = contractUtxos.filter((u: any) => u.height + u.value < currentHeight)
-    
+
     let response = SmallIndex.drop("test", contractUtxos)
 
-    const oldLength =  contractUtxos.length
+    const oldLength = contractUtxos.length
 
     // @ts-ignore
     await provider.performRequest(
         "blockchain.transaction.broadcast",
         binToHex(encodeTransactionBch(response.transaction))
     )
-
 
     await sleep(1000);
 
@@ -71,7 +75,7 @@ test('test dropping function with index key', async t => {
         "include_tokens"
     )
     contractUtxos = contractUtxos.filter((u: any) => u.height + u.value < currentHeight)
-    
+
     t.assert(oldLength - contractUtxos.length == 1)
 
 });

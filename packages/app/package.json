@@ -36,10 +36,10 @@
 	},
 	"dependencies": {
 		"@bitauth/libauth": "3.1.0-next.8",
-		"@electrum-cash/network": "^4.1.1",
+		"@electrum-cash/network": "4.2.2",
 		"@electrum-cash/web-socket": "1.0.3",
 		"@humanspeak/svelte-markdown":"1.5.0",
-		"@mainnet-cash/indexeddb-storage": "2.7.8",
+		"@mainnet-cash/indexeddb-storage": "3.1.7",
 		"@fbch/lib": "workspace:*",
 		"@unspent/badgers":"workspace:*",
 		"@unspent/blockpoint": "workspace:*",
@@ -53,7 +53,7 @@
 		"@unspent/trust": "workspace:*",
 		"@unspent/tau": "workspace:*",
 		"@unspent/wrap": "workspace:*",
-		"mainnet-js": "2.7.8",
+		"mainnet-js": "3.1.7",
 		"blo": "2.0.0",
 		"pako": "2.1.0"
 	}

@@ -12,7 +12,7 @@
 		['ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3', 8]
 	]);
 	
-	let FUTURE_MAP = isMainnet ? CATEGORY_MAP : CATEGORY_MAP_CHIPNET;
+	const FUTURE_MAP = isMainnet ? CATEGORY_MAP : CATEGORY_MAP_CHIPNET;
 
 </script>
 <b> &nbsp;<Ticker {category} {isMainnet} /></b>

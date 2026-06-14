@@ -11,8 +11,8 @@ import { binToHex, encodeTransactionBch } from '@bitauth/libauth';
 test.skip('test block top tx', async t => {
     const alice = await getAnAliceWallet(500_000)
     //alice.provider = regTest
-    const aliceBalance = await alice.getBalance('sats') as number
-    t.is(aliceBalance, 500000);
+    const aliceBalance = await alice.getBalance()
+    t.is(aliceBalance, 500000n);
 
     const utxo = {
         tx_pos: 0,
@@ -36,5 +36,5 @@ test.skip('test block top tx', async t => {
     console.log(tx)
     /* cspell:disable-next-line */
     t.is("", "")
-    
+
 });

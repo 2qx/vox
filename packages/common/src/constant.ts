@@ -6,6 +6,8 @@ const CHIPNET_NINJA = 'chipnet.bch.ninja'
 const CHIPNET_BITJSON = 'chipnet.chaingraph.cash'
 const CHIPNET_U_NAME = 'chipnet.imaginary.cash'
 
+const MAX_COMMITMENT_LENGTH = 128
+
 export function getDefaultElectrum(isMainnet = true): string {
     return isMainnet ? 'bch.imaginary.cash' : CHIPNET_NINJA
 } 

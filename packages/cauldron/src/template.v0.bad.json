@@ -1,0 +1,111 @@
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "Cauldron: An efficient Constant Product Market Maker (CPMM) contract on Bitcoin Cash through micro-pools.",
+  "name": "CatDex",
+  "entities": {
+    "covenant": {
+      "description": "A constant product market maker. Unspent Transaction Outputs (UTXO) threads hold tokens and Bitcoin Cash value, enabling anyone to swap tokens for bch provided the contract adheres to the constant product formula, K = x * y, where K is the constant value, and x and y represent the quantities of tokens and BCH, respectively.)",
+      "name": "CatDex Micro Pool",
+      "scripts": [
+        "catdex_amm",
+        "swap"
+      ]
+    },
+    "wallet": {
+      "description": "",
+      "name": "User Wallet",
+      "variables": {
+        "key": {
+          "description": "The private key that controls this wallet.",
+          "name": "Key",
+          "type": "HdKey"
+        }
+      }
+    }
+  },
+  "scenarios": {
+    "base": {
+      "data": {
+        "bytecode": {}
+      },
+      "description": "",
+      "name": "Base Scenario"
+    },
+    "use_thread": {
+      "data": {
+        "bytecode": {
+          "pool_pkh": "0x1431b2926e6c7953f3dc3f2c5c19fe2d2dc57cfc"
+        }
+      },
+      "description": "",
+      "extends": "base",
+      "name": "Use thread",
+      "transaction": {
+        "inputs": [
+          {
+            "unlockingBytecode": [
+              "slot"
+            ]
+          },
+          {}
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": [
+                "copy"
+              ]
+            },
+            "token": {
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
+              "amount": 9000
+            },
+            "valueSatoshis": 11115
+          },
+          {
+            "token": {
+              "category": "dead00000000000000000000000000000000000000000000000000000000beef",
+              "amount": 1000
+            },
+            "valueSatoshis": 10000
+          }
+        ]
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "token": {
+            "category": "dead00000000000000000000000000000000000000000000000000000000beef",
+            "amount": 10000
+          },
+          "valueSatoshis": 10000
+        },
+        {
+          "valueSatoshis": 11415,
+          "token": {}
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "swap": {
+      "passes": [
+        "use_thread"
+      ],
+      "name": "Swap",
+      "script": "",
+      "unlocks": "catdex_amm"
+    },
+    
+    "catdex_amm": {
+      "lockingType": "p2s",
+      "name": "CatDex Covenant",
+      "script": " // It's a trade\n// Verify it is the correct category ID.\nOP_INPUTINDEX\nOP_OUTPUTTOKENCATEGORY\nOP_INPUTINDEX\nOP_UTXOTOKENCATEGORY\nOP_EQUALVERIFY\n\n// Verify that this contract lives on on the output with\n// the same input as this contract.\nOP_INPUTINDEX\nOP_OUTPUTBYTECODE\nOP_INPUTINDEX\nOP_UTXOBYTECODE\nOP_EQUALVERIFY\n\n// Calculate target K\nOP_INPUTINDEX\nOP_UTXOVALUE\nOP_INPUTINDEX\nOP_UTXOTOKENAMOUNT\nOP_MUL\n//  On stack: K\n\n// Get effective output K when including the fee.\nOP_INPUTINDEX\nOP_OUTPUTVALUE\n\nOP_INPUTINDEX\nOP_OUTPUTTOKENAMOUNT\nOP_MUL\n// Verify that effective K > target K\nOP_SWAP\nOP_GREATERTHANOREQUAL"
+    }
+  },
+  "supported": [
+    "BCH_2026_05"
+  ]
+}
