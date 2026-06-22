@@ -559,8 +559,7 @@ export class Channel {
         sourceOutputs.push(this.getWalletSourceOutput(auth, key));
 
         let valueIn = sumSourceOutputValue(sourceOutputs)
-        let valueOut = sumOutputValue(config.outputs)
-        let change = valueIn - valueOut;
+        let change = valueIn - sumOutputValue(config.outputs);
         config.outputs.push(this.getChangeOutput(auth, change, key))
 
         return this.buildAndValidateTransaction(config, sourceOutputs, fee)
@@ -603,7 +602,7 @@ export class Channel {
 
         sourceOutputs.push(this.getWalletSourceOutput(auth, key));
         let valueIn = sumSourceOutputValue(sourceOutputs)
-        let change = valueIn - BigInt(config.outputs.length * couponAmount);
+        let change = valueIn - sumOutputValue(config.outputs)
         config.outputs.push(this.getChangeOutput(auth, change, key));
         return this.buildAndValidateTransaction(config, sourceOutputs, fee);
 
@@ -643,7 +642,7 @@ export class Channel {
 
         sourceOutputs.push(this.getWalletSourceOutput(auth, key));
         let valueIn = sumSourceOutputValue(sourceOutputs)
-        let change = valueIn - BigInt(config.outputs.length * couponAmount);
+        let change = valueIn - sumOutputValue(config.outputs)
         config.outputs.push(this.getChangeOutput(auth, change, key));
         return this.buildAndValidateTransaction(config, sourceOutputs, fee);
 
@@ -684,7 +683,7 @@ export class Channel {
 
         sourceOutputs.push(this.getWalletSourceOutput(auth, key));
         let valueIn = sumSourceOutputValue(sourceOutputs)
-        let change = valueIn - BigInt(config.outputs.length * couponAmount);
+        let change = valueIn - sumOutputValue(config.outputs)
         config.outputs.push(this.getChangeOutput(auth, change, key));
         return this.buildAndValidateTransaction(config, sourceOutputs, fee);
 
