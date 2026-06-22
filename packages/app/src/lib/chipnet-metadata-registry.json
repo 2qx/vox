@@ -41,6 +41,22 @@
         "extensions": {"exchanges":"catdex"}
       }
     },
+    "152e83d9c3226c042902bb958c1e6dc111a02b0c601d131ca0ab0282db617f12": {
+      "2024-05-09T19:45:12.865Z": {
+        "name": "Future tBCH 1,000,000",
+        "description": "A fungible token redeemable for Chipnet Bitcoin Cash after block 1,000,000",
+        "uris": {
+          "icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23966424; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
+          "web": "https://unspent.dev/future"
+        },
+        "token": {
+          "category": "152e83d9c3226c042902bb958c1e6dc111a02b0c601d131ca0ab0282db617f12",
+          "decimals": 8,
+          "symbol": "tFBCH-1000000"
+        },
+        "extensions": {"exchanges":"catdex"}
+      }
+    },
     "bb61cd7a6c8a3a3742d965dc7ac73c1117382a5c8930b68338deb881f75c0214": {
       "2023-11-26T19:32:59.744Z": {
         "name": "Wrapped Chipnet Bitcoin Cash",

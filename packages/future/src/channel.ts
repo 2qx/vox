@@ -413,7 +413,7 @@ export class Channel {
         return chunked.map((m) => {
             return {
                 lockingBytecode: this.getLockingBytecode(channel),
-                valueSatoshis: BigInt(couponValue),
+                valueSatoshis: BigInt(couponValue + Math.floor(Math.random() * 20)),
                 token: {
                     amount: 0n,
                     category: hexToBin(auth.token_data!.category),

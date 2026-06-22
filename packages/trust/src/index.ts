@@ -72,6 +72,31 @@ export default class Trust {
 
 
 
+  static asRecord(lockingBytecode: Uint8Array): UtxoI {
+    const commitment = Trust.encodeCommitment(
+      {
+        "recipient": binToHex(lockingBytecode)
+      }
+    )
+    return {
+      height: -1,
+      tx_hash: "00000000000000000000000000000000",
+      tx_pos: 0,
+      value: 0,
+      token_data:
+      {
+        category: "",
+        amount: "0",
+        nft: {
+          commitment: commitment,
+          capability: "none"
+        }
+
+      }
+    }
+
+  }
+
   static parseNFT(utxo: UtxoI): BytecodeDataI {
 
     if (utxo.token_data?.nft?.commitment) {
@@ -149,7 +174,7 @@ export default class Trust {
 
   static getInstallmentOutput(data: BytecodeDataI, utxo: UtxoI): OutputTemplate<CompilerBch> {
 
-    let outputValue = Math.round((utxo.value) / this.INSTALLMENT_DENOMINATOR) 
+    let outputValue = Math.round((utxo.value) / this.INSTALLMENT_DENOMINATOR)
 
     return {
       lockingBytecode: data["recipient"]!,
@@ -160,7 +185,7 @@ export default class Trust {
 
   static getReturnOutput(data: BytecodeDataI, utxo: UtxoI): OutputTemplate<CompilerBch> {
 
-    let outputValue = Math.round((utxo.value * this.RETURN_NUMERATOR) / this.RETURN_DENOMINATOR) 
+    let outputValue = Math.round((utxo.value * this.RETURN_NUMERATOR) / this.RETURN_DENOMINATOR)
 
     return {
       lockingBytecode: {
@@ -276,7 +301,7 @@ export default class Trust {
     if (executorCashaddress && config.inputs.length > 0) {
       let sumSatsOut = sumOutputValue(config.outputs)
       let sumSatsIn = sumSourceOutputValue(sourceOutputs)
-      let executorBonus = sumSatsIn - sumSatsOut 
+      let executorBonus = sumSatsIn - sumSatsOut
       if (executorBonus > 0) {
         config.outputs.push(
           this.getExecutorOutput(

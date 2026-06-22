@@ -14,7 +14,12 @@
 
 	import Readme from './README.md';
 
-	import { default as CatDex, getAllMarketOrders, OldCatDex } from '@unspent/catdex';
+	import {
+		default as CatDex,
+		getAllMarketOrders,
+		OldCatDex,
+		type OrderRequest
+	} from '@unspent/catdex';
 
 	import SmallIndex from '@unspent/small';
 
@@ -52,6 +57,7 @@
 
 	let { data }: PageProps = $props();
 	let selectedAsset = $state(data.asset);
+	let assetDecimals = $state(1);
 
 	let now: number = $state(0);
 
@@ -224,6 +230,7 @@
 		if (typeof selectedAsset == 'string') {
 			goto(`?asset=${selectedAsset}`, { keepFocus: true });
 			assetBalance = sumTokenAmounts(walletUnspent, selectedAsset);
+			assetDecimals = Math.pow(10, bcmr.get(selectedAsset).token.decimals);
 		} else {
 			assetBalance = 0n;
 		}
@@ -265,12 +272,17 @@
 
 	const postOrders = async function (replace = false) {
 		let oldOrders = replace ? myDexUtxos : [];
-
+		let satOrderBook = myOrderBook.map((o) => {
+			return {
+				price: o.price ,
+				quantity: BigInt(o.quantity * assetDecimals)
+			} as OrderRequest;
+		});
 		let tx = CatDex.administer(
 			myAuthBatons[0],
 			selectedAsset!,
 			oldOrders,
-			myOrderBook,
+			satOrderBook,
 			walletUnspent,
 			key
 		);
@@ -282,7 +294,13 @@
 	const updateSwap = function () {
 		if (amount) {
 			try {
-				let result = CatDex.swap(BigInt(amount), orders, walletUnspent, key);
+				console.log(BigInt(Math.round(Number(amount) * Number(assetDecimals))));
+				let result = CatDex.swap(
+					BigInt(Math.round(Number(amount) * Number(assetDecimals))),
+					orders,
+					walletUnspent,
+					key
+				);
 				transaction = result.transaction;
 				sourceOutputs = result.sourceOutputs;
 				transaction_hex = binToHex(encodeTransactionBch(transaction));
@@ -400,6 +418,7 @@
 			'blockchain.scripthash.subscribe',
 			SmallIndex.getScriptHash(CatDex.PROTOCOL_IDENTIFIER)
 		);
+		updateAsset();
 	});
 
 	onDestroy(async () => {
@@ -462,9 +481,7 @@
 						alt={bcmr.get(selectedAsset).token.symbol}
 					/>
 					<br />
-					{(
-						assetBalance / BigInt(Math.pow(10, bcmr.get(selectedAsset).token.decimals))
-					).toLocaleString()}
+					{(assetBalance / BigInt(assetDecimals)).toLocaleString()}
 					{bcmr.get(selectedAsset).token.symbol}
 				</div>
 			</div>
@@ -495,14 +512,24 @@
 				<p><b>BID</b></p>
 				<CatDexOrderHeader />
 				{#each orders.filter((o) => o.quantity > 0) as o}
-					<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+					<CatDexOrder
+						{...o}
+						{assetDecimals}
+						assetCategory={selectedAsset}
+						{...{ isMainnet: isMainnet }}
+					/>
 				{/each}
 			</div>
 			<div class="askBook">
 				<p><b>ASK</b></p>
 				<CatDexOrderHeader />
 				{#each orders.filter((o) => o.quantity < 0).toReversed() as o}
-					<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+					<CatDexOrder
+						{...o}
+						{assetDecimals}
+						assetCategory={selectedAsset}
+						{...{ isMainnet: isMainnet }}
+					/>
 				{/each}
 			</div>
 		</div>
@@ -556,7 +583,7 @@
 							<div>
 								<img width="24" src={bchIcon} alt={baseTicker} />
 								<br />
-								{myMarketSatoshis.toLocaleString()} sats {baseTicker}
+								{(BigInt(myMarketSatoshis) / BigInt(assetDecimals)).toLocaleString()} sats {baseTicker}
 							</div>
 						{/if}
 						{#if myMarketTokens}
@@ -567,9 +594,7 @@
 									alt={bcmr.get(selectedAsset).token.symbol}
 								/>
 								<br />
-								{(
-									myMarketTokens / BigInt(Math.pow(10, bcmr.get(selectedAsset).token.decimals))
-								).toLocaleString()}
+								{(BigInt(myMarketTokens) / BigInt(assetDecimals)).toLocaleString()}
 								{bcmr.get(selectedAsset).token.symbol}
 							</div>
 						{/if}
@@ -579,13 +604,23 @@
 						<div>
 							<p><b>BID</b></p>
 							{#each myOrders.filter((o) => o.quantity > 0) as o}
-								<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+								<CatDexOrder
+									{...o}
+									{assetDecimals}
+									assetCategory={selectedAsset}
+									{...{ isMainnet: isMainnet }}
+								/>
 							{/each}
 						</div>
 						<div class="askBook">
 							<p><b>ASK</b></p>
 							{#each myOrders.filter((o) => o.quantity < 0).toReversed() as o}
-								<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+								<CatDexOrder
+									{...o}
+									{assetDecimals}
+									assetCategory={selectedAsset}
+									{...{ isMainnet: isMainnet }}
+								/>
 							{/each}
 						</div>
 					</div>

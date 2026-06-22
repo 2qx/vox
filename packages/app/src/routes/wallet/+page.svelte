@@ -104,7 +104,7 @@
 			.filter((u: any) => u.token.amount > 0)
 			.filter((u: any) => !u.token.capability);
 
-		let categoryIds = utxos.map((u) => u.token!.tokenId);
+		let categoryIds = utxos.map((u) => u.token!.category);
 		// Get a list of
 		let duplicateCategories = categoryIds.filter(
 			(item, index) => categoryIds.indexOf(item) !== index
@@ -120,14 +120,14 @@
 
 		let sendRequests = categories.map((tokenId: any) => {
 			const sumTokens = utxos
-				.filter((u: any) => u.token.tokenId == tokenId && u.token.amount > 0n)
+				.filter((u: any) => u.token.category == tokenId && u.token.amount > 0n)
 				.map((u: any) => u.token.amount || 0n)
 				.reduce((a: any, b: any) => a + b, 0n);
 			return new TokenSendRequest({
 				cashaddr: cashaddr,
-				value: 800,
+				value: 800n,
 				amount: sumTokens,
-				tokenId: tokenId
+				category: tokenId
 			});
 		});
 		return await wallet!.send(sendRequests);
@@ -381,7 +381,7 @@
 										.padStart(14)} sat # {c.size} bytes</pre>
 								{#each c.tokenAmountChanges as tokenChange}
 									{#if tokenChange.amount != 0n}
-										<pre>  assets:cash:tokens  {tokenChange.amount.toLocaleString()} {tokenChange.tokenId} </pre>
+										<pre>  assets:cash:tokens  {tokenChange.amount.toLocaleString()} {tokenChange.category} </pre>
 									{/if}
 								{/each}
 								<pre>   &nbsp;</pre>

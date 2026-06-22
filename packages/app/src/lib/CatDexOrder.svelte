@@ -7,6 +7,7 @@
 	import Ticker from './Ticker.svelte';
 	import TokenIcon from './TokenIcon.svelte';
 	let {
+		assetDecimals,
 		authCategory,
 		assetCategory,
 		orderUtxo,
@@ -18,6 +19,7 @@
 		isMainnet
 	} = $props();
 	let bid = $derived(quantity > 0);
+	let decimals  = $derived(assetDecimals? assetDecimals: 1)
 
 	let bchIcon = isMainnet ? BCH : tBCH;
 </script>
@@ -31,14 +33,17 @@
 						<TokenIcon size={20} category={orderUtxo.token_data.category}></TokenIcon>
 					</div>
 					<div class="price">
-						{Number(price).toLocaleString(undefined, {
+						{Number(price/decimals).toLocaleString(undefined, {
 							minimumFractionDigits: 0,
 							maximumFractionDigits: 6
 						})}
 					</div>
 
 					<div class="quantity">
-						{Number(quantity).toLocaleString(undefined, {}).padStart(12)}
+						{(Number(quantity)/decimals).toLocaleString(undefined, {
+							minimumFractionDigits: 0,
+							maximumFractionDigits: 8
+						}).padStart(12)}
 						<TokenIcon size={20} category={assetCategory} {isMainnet} />
 					</div>
 				{/if}

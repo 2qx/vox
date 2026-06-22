@@ -55,6 +55,81 @@
           "web": "https://wrapped.cash"
         }
       }
-    }
+    },
+    "29db350a88f66124229824e75b753432551f59b972b0175eb7d71e528b9073cb": {
+			"2024-08-10T00:00:00.000Z": {
+				"name": "Future BCH 1,000,000",
+				"description": "A fungible token redeemable for Bitcoin Cash after block 1,000,000",
+				"token": {
+					"category": "29db350a88f66124229824e75b753432551f59b972b0175eb7d71e528b9073cb",
+					"decimals": 8,
+					"symbol": "FBCH-1000000"
+				},
+				"uris": {
+					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23966424; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
+					"web": "https://vox.cash/v?block=1000000"
+				}
+			}
+		},
+    "edad1c825338554b83e562aab2c2b220569033a2ccbd970975f3ddda320b70e1": {
+			"2024-08-10T00:00:00.000Z": {
+				"name": "Future BCH 2,000,000",
+				"description": "A fungible token redeemable for Bitcoin Cash after block 2,000,000",
+				"token": {
+					"category": "edad1c825338554b83e562aab2c2b220569033a2ccbd970975f3ddda320b70e1",
+					"decimals": 8,
+					"symbol": "FBCH-2000000"
+				},
+				"uris": {
+					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23f00; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
+					"web": "https://vox.cash/v?block=2000000"
+				}
+			}
+		},
+    "03882c71eb1eced84a39fd392df210bb175e6a109bd0c918444b93b67ea8854a": {
+			"2024-08-10T00:00:00.000Z": {
+				"name": "Future BCH 3,000,000",
+				"description": "A fungible token redeemable for Bitcoin Cash after block 3,000,000",
+				"token": {
+					"category": "03882c71eb1eced84a39fd392df210bb175e6a109bd0c918444b93b67ea8854a",
+					"decimals": 8,
+					"symbol": "FBCH-3000000"
+				},
+				"uris": {
+					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23ff7500; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
+					"web": "https://vox.cash/v?block=3000000"
+				}
+			}
+		},
+    "5e296fd6ce4c63996094f4ddb22441867411a6bcbb732430ad4f4cc6b4fb3480": {
+			"2024-08-10T00:00:00.000Z": {
+				"name": "Future BCH 4,000,000",
+				"description": "A fungible token redeemable for Bitcoin Cash after block 4,000,000",
+				"token": {
+					"category": "5e296fd6ce4c63996094f4ddb22441867411a6bcbb732430ad4f4cc6b4fb3480",
+					"decimals": 8,
+					"symbol": "FBCH-4000000"
+				},
+				"uris": {
+					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23cc0; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
+					"web": "https://vox.cash/v?block=4000000"
+				}
+			}
+		},
+    "3c9002a0d75c1c92661cf020e269670315755a1253c00b609157cc7d3b70e995": {
+			"2024-08-10T00:00:00.000Z": {
+				"name": "Future BCH 5,000,000",
+				"description": "A fungible token redeemable for Bitcoin Cash after block 5,000,000",
+				"token": {
+					"category": "3c9002a0d75c1c92661cf020e269670315755a1253c00b609157cc7d3b70e995",
+					"decimals": 8,
+					"symbol": "FBCH-5000000"
+				},
+				"uris": {
+					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%230c0; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
+					"web": "https://vox.cash/v?block=5000000"
+				}
+			}
+		}
   }
 }
