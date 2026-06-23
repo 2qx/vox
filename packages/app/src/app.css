@@ -56,15 +56,6 @@ a:hover {
 	text-decoration: underline;
 }
 
-h1 {
-	font-size: 2rem;
-	text-align: center;
-}
-
-h2 {
-	font-size: 1.5rem;
-}
-
 pre {
 	font-size: 16px;
 	font-family: var(--font-mono);
@@ -103,12 +94,6 @@ button:focus:not(:focus-visible) {
 }
 
 
-
-@media (min-width: 720px) {
-	h1 {
-		font-size: 2.4rem;
-	}
-}
 
 .visually-hidden {
 	border: 0;
