@@ -35,6 +35,7 @@
 		: 'https://cbch.loping.net/address/';
 
 	const protocol_prefix = cashAssemblyToHex(`OP_RETURN <"${Channel.PROTOCOL_IDENTIFIER}">`);
+	const fee = isMainnet ? 1 : 10;
 
 	let now = $state(0);
 	let balance = $state(0);
@@ -96,7 +97,8 @@
 			postId,
 			walletUnspent[0],
 			(Math.round(now / 1000) + 10) * 10,
-			key
+			key,
+			fee
 		);
 
 		let raw_tx = binToHex(encodeTransactionBch(likePostTx.transaction));
@@ -108,6 +110,7 @@
 		if (response instanceof Error) throw response;
 		now = response.height;
 	};
+
 	const updateWallet = async function () {
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
@@ -135,7 +138,7 @@
 		if (response instanceof Error) throw response;
 		let old = response.filter((u: UtxoI) => u.height > 0 && now - u.height > 1000).slice(0,300);
 		if (old.length > 0) {
-			let clearPostTx = Channel.clear(topic, old, walletUnspent[0], key, now);
+			let clearPostTx = Channel.clear(topic, old, walletUnspent[0], key, now, undefined, fee);
 			let raw_tx = binToHex(encodeTransactionBch(clearPostTx.transaction));
 			console.log(raw_tx);
 			await broadcast(raw_tx);
@@ -195,7 +198,8 @@
 				walletUnspent[0],
 				(Math.round(now / 1000) + 10) * 10,
 				key,
-				sequence
+				sequence,
+				fee
 			);
 			const returned = post.transaction.outputs[post.transaction.outputs.length - 1].valueSatoshis;
 			return Number(sumSourceOutputValue(post.sourceOutputs) - returned);
@@ -207,7 +211,7 @@
 	const send = async function (msg: string) {
 		let minValue = (Math.round(now / 1000) + 10) * 10;
 
-		let post = Channel.post(topic, msg, walletUnspent[0], minValue, key, sequence);
+		let post = Channel.post(topic, msg, walletUnspent[0], minValue, key, sequence, fee);
 
 		let raw_tx = binToHex(encodeTransactionBch(post.transaction));
 		await broadcast(raw_tx);
@@ -243,10 +247,12 @@
 		let sendResponse = await wallet.send(
 			new TokenSendRequest({
 				cashaddr: wallet.getTokenDepositAddress()!,
-				tokenId: thisAuth,
+				category: thisAuth,
+				nft:{
 				commitment: uname, // NFT Commitment message
 				capability: NFTCapability.minting, // NFT capability
-				value: balance + amount // Satoshi value
+				},
+				value: BigInt(balance + amount) // Satoshi value
 			})
 		);
 		await updateWallet();

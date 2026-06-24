@@ -413,7 +413,7 @@ export class Channel {
         return chunked.map((m) => {
             return {
                 lockingBytecode: this.getLockingBytecode(channel),
-                valueSatoshis: BigInt(couponValue + Math.floor(Math.random() * 20)),
+                valueSatoshis: BigInt(couponValue + Math.floor(Math.random() * 100)),
                 token: {
                     amount: 0n,
                     category: hexToBin(auth.token_data!.category),
@@ -429,9 +429,10 @@ export class Channel {
 
     static getLikeOutput(channel: string, postId: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBch> {
         let m = "6a02562b" + binToHex(encodeDataPush(hexToBin(postId)))
+        console.log(BigInt(couponValue + Math.floor(Math.random() * 100)))
         return {
             lockingBytecode: this.getLockingBytecode(channel),
-            valueSatoshis: BigInt(couponValue),
+            valueSatoshis: BigInt(couponValue + Math.floor(Math.random() * 100)),
             token: {
                 amount: 0n,
                 category: hexToBin(auth.token_data!.category),
@@ -442,6 +443,7 @@ export class Channel {
             }
         }
     }
+
 
 
     static getReplyOutput(channel: string, postId: string, message: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBch>[] {
@@ -558,8 +560,7 @@ export class Channel {
         sourceOutputs.push(this.getWalletSourceOutput(auth, key));
 
         let valueIn = sumSourceOutputValue(sourceOutputs)
-        let valueOut = sumOutputValue(config.outputs)
-        let change = valueIn - valueOut;
+        let change = valueIn - sumOutputValue(config.outputs);
         config.outputs.push(this.getChangeOutput(auth, change, key))
 
         return this.buildAndValidateTransaction(config, sourceOutputs, fee)
@@ -602,7 +603,7 @@ export class Channel {
 
         sourceOutputs.push(this.getWalletSourceOutput(auth, key));
         let valueIn = sumSourceOutputValue(sourceOutputs)
-        let change = valueIn - sumOutputValue(config.outputs);
+        let change = valueIn - sumOutputValue(config.outputs)
         config.outputs.push(this.getChangeOutput(auth, change, key));
         return this.buildAndValidateTransaction(config, sourceOutputs, fee);
 
@@ -696,6 +697,7 @@ export class Channel {
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
 
         const estimatedFee = getTransactionFees(result.transaction, fee)
+        console.log(estimatedFee)
         const lastIdx = config.outputs.length - 1
         config.outputs[lastIdx]!.valueSatoshis = config.outputs[lastIdx]!.valueSatoshis - estimatedFee
 

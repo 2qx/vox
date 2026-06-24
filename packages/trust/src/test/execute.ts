@@ -1,6 +1,6 @@
 import test from 'ava';
 
-import { binToHex, encodeTransactionBch, publicKeyToP2pkhLockingBytecode } from "@bitauth/libauth";
+import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch, publicKeyToP2pkhLockingBytecode } from "@bitauth/libauth";
 
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
@@ -14,10 +14,11 @@ test('test executing some trusts', async t => {
     const alice = await getAnAliceWallet(64_000_000)
     let provider = alice.provider!
 
+    let aliceLockingBytecodeResponse = cashAddressToLockingBytecode(alice.getDepositAddress())
+    if(typeof aliceLockingBytecodeResponse == "string") throw aliceLockingBytecodeResponse
+    let alice_lockingBytecode = aliceLockingBytecodeResponse.bytecode
 
-    let alice_pkh = alice.getPublicKeyHash(false) as Uint8Array
-    let alice_lockingBytecode = publicKeyToP2pkhLockingBytecode( {publicKey: alice.publicKey!, throwErrors:false}) as Uint8Array
-
+    let key = getHdPrivateKey(alice.mnemonic!, alice.derivationPath.slice(0, -2), alice.isTestnet)
     // Make a "main" badger token.
 
     let data = {
@@ -40,37 +41,25 @@ test('test executing some trusts', async t => {
         },
         value: 800
     } as UtxoI
+    t.truthy(true)
 
-    let contract_address = Trust.getAddress(data, "bchreg");
+    console.log("here0")
+    // @ts-ignore
+    let walletUtxos = await provider.performRequest(
+        "blockchain.address.listunspent",
+        alice.getDepositAddress(),
+        "include_tokens"
+    )
 
-    const ftToken2 = await alice.send(
-        [
-            {
-                cashaddr: contract_address,
-                value: 10_000_000n
-            },
-            {
-                cashaddr: contract_address,
-                value: 10_000_001n
-            },
-            {
-                cashaddr: contract_address,
-                value: 10_000_005n
-            },
-            {
-                cashaddr: contract_address,
-                value: 10_000_060n
-            },
-            {
-                cashaddr: contract_address,
-                value: 10_000_900n
-            },
-            {
-                cashaddr: contract_address,
-                value: 10_000_500n
-            }
-        ]
-    );
+    console.log("here1")
+    let contract_scripthash = Trust.getScriptHash(record)
+    let fundingTx = Trust.fund(10_000_000, alice_lockingBytecode , walletUtxos, key);
+
+    // @ts-ignore
+    await provider.performRequest(
+        "blockchain.transaction.broadcast",
+        binToHex(encodeTransactionBch(fundingTx.transaction))
+    )
 
     await sleep(1000)
 
@@ -80,12 +69,12 @@ test('test executing some trusts', async t => {
         blocks: 4385,
     });
 
-    await sleep(5000)
+    await sleep(1000)
 
     // @ts-ignore
     let trustUtxos = await provider.performRequest(
-        "blockchain.address.listunspent",
-        contract_address,
+        "blockchain.scripthash.listunspent",
+        contract_scripthash,
         "include_tokens"
     )
     let jobs = trustUtxos.map((u: UtxoI) => { return { record: record, utxo: u } })
@@ -96,6 +85,7 @@ test('test executing some trusts', async t => {
     await sleep(3000)
     t.assert(height - trustUtxos[0]!.height >= 4383)
 
+    console.log("here")
     let bob = await RegTestWallet.newRandom();
     await sleep(1000);
     let batchTx = Trust.execute(

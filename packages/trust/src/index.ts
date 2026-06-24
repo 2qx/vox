@@ -8,7 +8,7 @@ import {
   cashAssemblyToBin,
   cashAddressToLockingBytecode,
   CompilerBch,
-  createVirtualMachineBch,
+  createVirtualMachineBch2026,
   generateTransaction,
   hexToBin,
   InputTemplate,
@@ -20,7 +20,10 @@ import {
 } from '@bitauth/libauth';
 
 import {
-  getLibauthCompiler
+  getLibauthCompiler,
+  getWalletInput,
+  getWalletSourceOutput,
+  getChangeOutput
 } from '@unspent/tau';
 
 import {
@@ -28,10 +31,10 @@ import {
   decodePushBytes,
   getTransactionFees,
   getScriptHash,
-  getAddress,
   sumOutputValue,
   sumSourceOutputValue,
-  UtxoI
+  UtxoI,
+  UnspentError
 } from '@unspent/tau';
 
 export interface TrustData {
@@ -57,7 +60,7 @@ export default class Trust {
 
   static compiler: CompilerBch = getLibauthCompiler(this.template);
 
-  static vm = createVirtualMachineBch();
+  static vm = createVirtualMachineBch2026();
 
   static PERIOD = 4383;
   static INSTALLMENT_DENOMINATOR = 100;
@@ -155,12 +158,15 @@ export default class Trust {
     )
   }
 
-  static getAddress(data: TrustData, prefix = "bitcoincash"): string {
-    let bytecodeData = this.dataToBytecode(data)
-    return getAddress(
-      this.getLockingBytecode(bytecodeData),
-      prefix as CashAddressNetworkPrefix
-    )
+  /**
+     * Get cashaddress
+     *
+     * @throws {Error} Throws no address error.
+     * @returns a cashaddress.
+     */
+  static getAddress(
+  ): string {
+    throw Error(UnspentError.NoCashAddrForp2s)
   }
 
   static getSourceOutput(data: BytecodeDataI, utxo: UtxoI): Output {
@@ -179,6 +185,21 @@ export default class Trust {
     return {
       lockingBytecode: data["recipient"]!,
       valueSatoshis: BigInt(outputValue),
+    }
+
+  }
+
+  static getDeposit(data: BytecodeDataI, amount: number): OutputTemplate<CompilerBch> {
+
+    return {
+      lockingBytecode: {
+        data: {
+          "bytecode": data
+        },
+        compiler: this.compiler,
+        script: 'lock'
+      },
+      valueSatoshis: BigInt(amount),
     }
 
   }
@@ -234,6 +255,155 @@ export default class Trust {
         valueSatoshis: BigInt(utxo.value),
       },
     } as InputTemplate<CompilerBch>
+  }
+
+
+  static getWalletInputs(
+    utxos: UtxoI[],
+    amount: bigint,
+    privateKey?: string,
+    sourceOutputs: Output[] = []
+  ): {
+    inputs: InputTemplate<CompilerBch>[],
+    outputs: OutputTemplate<CompilerBch>[],
+    sourceOutputs: Output[]
+  } {
+
+    let inputs: InputTemplate<CompilerBch>[] = [];
+    let outputs: OutputTemplate<CompilerBch>[] = [];
+
+    // Only use straight sat utxos if placing Bch
+    utxos = utxos.filter(u => !u.token_data)
+
+    // TODO: sort by highest value first
+    if (utxos.length == 0) throw Error("no wallet utxos left, maximum recursion depth reached.");
+
+    // get a random utxo.
+    const randomIdx = Math.floor(Math.random() * utxos.length)
+    const randomUtxo = utxos[randomIdx]!
+
+    // remove the random utxo in place
+    utxos.splice(randomIdx, 1);
+
+    // spend the utxo
+    inputs.push(getWalletInput(randomUtxo, privateKey))
+    sourceOutputs.push(getWalletSourceOutput(randomUtxo, privateKey));
+    let sumSats = sumSourceOutputValue(sourceOutputs)
+
+    if (
+      // or collecting sats and not enough sats inputs 
+      (sumSats < amount)
+    ) {
+      // to it again
+      let nextTry = this.getWalletInputs(
+        [...utxos],
+        amount,
+        privateKey,
+        [...sourceOutputs]
+      )
+      inputs.push(...nextTry.inputs)
+      outputs.push(...nextTry.outputs)
+      sourceOutputs = nextTry.sourceOutputs
+    }
+    return { inputs, outputs, sourceOutputs }
+  }
+
+  static getWalletLayers(
+    config: {
+      locktime: number;
+      version: number;
+      inputs: InputTemplate<CompilerBch>[];
+      outputs: OutputTemplate<CompilerBch>[];
+    },
+    sourceOutputs: Output[],
+    walletUtxos: UtxoI[],
+    privateKey?: string,
+  ) {
+    // Calculate excess cash and tokens required to fund the exchange
+    let sumSatsOut = sumOutputValue(config.outputs)
+    let sumSatsIn = sumSourceOutputValue(sourceOutputs)
+    let satsRequired = sumSatsOut - sumSatsIn
+
+    const satsIn = this.getWalletInputs(walletUtxos, satsRequired, privateKey)
+    config.inputs.push(...satsIn.inputs);
+    sourceOutputs.push(...satsIn.sourceOutputs);
+
+
+
+
+    // Calculate excess cash and tokens to be returned as change
+    sumSatsOut = sumOutputValue(config.outputs)
+    sumSatsIn = sumSourceOutputValue(sourceOutputs)
+    let cashChange = sumSatsIn - sumSatsOut
+    config.outputs.push(getChangeOutput(cashChange, 0n, undefined, privateKey))
+
+    return config
+  }
+
+  static fund(
+    amount: number,
+    lockingBytecode: Uint8Array | string,
+    walletUtxos: UtxoI[],
+    privateKey?: string,
+    fee = 1
+  ): {
+    transaction: Transaction,
+    sourceOutputs: Output[],
+    verify: string | boolean
+  } {
+    const inputs: InputTemplate<CompilerBch>[] = [];
+    const outputs: OutputTemplate<CompilerBch>[] = [];
+    let sourceOutputs: Output[] = [];
+
+    if (typeof lockingBytecode !== "string") lockingBytecode = binToHex(lockingBytecode)
+    let data = this.dataToBytecode(
+      { "recipient": lockingBytecode }
+    )
+
+    let config = {
+      locktime: 0,
+      version: 2,
+      inputs, outputs,
+    }
+
+    // amount
+    config.outputs.push(this.getDeposit(data, amount))
+    config = this.getWalletLayers(config, sourceOutputs, walletUtxos, privateKey)
+
+    let result = generateTransaction(config);
+    if (!result.success) throw new Error('generate transaction failed!, errors: ' + stringify(result.errors));
+    let transaction = result.transaction
+
+    const estimatedFee = getTransactionFees(result.transaction, fee)
+
+    // subtract fees off the change output
+    const outIdx = config.outputs.length - 1
+    config.outputs[outIdx]!.valueSatoshis = config.outputs[outIdx]!.valueSatoshis - estimatedFee
+
+    result = generateTransaction(config);
+    if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+
+    transaction = result.transaction
+    const tokenValidationResult = verifyTransactionTokens(
+      transaction,
+      sourceOutputs,
+      { maximumTokenCommitmentLength: 128 }
+    );
+    if (tokenValidationResult !== true) throw tokenValidationResult;
+
+    let verify = this.vm.verify({
+      sourceOutputs: sourceOutputs,
+      transaction: transaction,
+    })
+
+    if (typeof verify == "string") throw verify
+
+    return {
+      sourceOutputs: sourceOutputs,
+      transaction: transaction,
+      verify: verify
+    }
+
   }
 
   /**

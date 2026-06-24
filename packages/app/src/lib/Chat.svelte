@@ -30,6 +30,7 @@
 	const isMainnet = page.url.hostname == 'vox.cash';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
 	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const fee = isMainnet ? 1 : 10;
 	const explorer = isMainnet
 		? 'https://explorer.salemkode.com/address/'
 		: 'https://cbch.loping.net/address/';
@@ -100,14 +101,15 @@
 			postId,
 			walletUnspent[0],
 			(Math.round(now / 1000) + 10) * 10,
-			key
+			key,
+			fee
 		);
 
 		let raw_tx = binToHex(encodeTransactionBch(likePostTx.transaction));
 		await broadcast(raw_tx);
 	};
 
-	const reply = async function (postId: string, message:string) {
+	const reply = async function (postId: string, message: string) {
 		let replyPostTx = Channel.reply(
 			topic,
 			postId,
@@ -146,18 +148,19 @@
 	};
 
 	const emptyBaton = async function () {
-		let response  = await wallet.send([
+		let response = await wallet.send([
 			new TokenSendRequest({
 				cashaddr: wallet.getTokenDepositAddress(),
-				tokenId: walletUnspent[0].token_data.category,
-				amount: 0,
-				capability: walletUnspent[0].token_data.nft.capability,
-				commitment: walletUnspent[0].token_data.nft.commitment,
-				value: 800
-
+				category: walletUnspent[0].token_data.category,
+				amount: 0n,
+				nft: {
+					capability: walletUnspent[0].token_data.nft.capability,
+					commitment: walletUnspent[0].token_data.nft.commitment
+				},
+				value: 800n
 			})
 		]);
-		console.log(response)
+		console.log(response);
 	};
 
 	const clearPosts = async function () {
@@ -203,7 +206,9 @@
 		if (unspentResponse instanceof Error) throw unspentResponse;
 		contractBalance = sumUtxoValue(unspentResponse);
 
-		let tx_hashes = Array.from(new Set(unspentResponse.map((utxo: any) => utxo.tx_hash))) as string[];
+		let tx_hashes = Array.from(
+			new Set(unspentResponse.map((utxo: any) => utxo.tx_hash))
+		) as string[];
 
 		let historyResponse = await electrumClient.request(
 			'blockchain.scripthash.get_history',
@@ -272,7 +277,7 @@
 	const send = async function (msg: string) {
 		let minValue = (Math.round(now / 1000) + 10) * 10;
 
-		let post = Channel.post(topic, msg, walletUnspent[0], minValue, key, sequence);
+		let post = Channel.post(topic, msg, walletUnspent[0], minValue, key, sequence, [], fee);
 
 		let raw_tx = binToHex(encodeTransactionBch(post.transaction));
 		await broadcast(raw_tx);
@@ -308,10 +313,12 @@
 		let sendResponse = await wallet.send(
 			new TokenSendRequest({
 				cashaddr: wallet.getTokenDepositAddress()!,
-				tokenId: thisAuth,
-				commitment: uname, // NFT Commitment message
-				capability: NFTCapability.minting, // NFT capability
-				value: balance + amount // Satoshi value
+				category: thisAuth,
+				nft: {
+					commitment: uname, // NFT Commitment message
+					capability: NFTCapability.minting // NFT capability
+				},
+				value: BigInt(balance + amount) // Satoshi value
 			})
 		);
 		await updateWallet();

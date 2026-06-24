@@ -136,9 +136,7 @@
     }
   },
   "supported": [
-    "BCH_2023_05",
-    "BCH_2024_05",
-    "BCH_2025_05",
+    "BCH_2026_05",
     "BCH_SPEC"
   ],
   "version": 0
