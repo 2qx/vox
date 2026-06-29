@@ -414,6 +414,7 @@
 		left: 30px;
 		top: -45px;
 	}
+	
 	.deleteMe button {
 		background-color: rgb(233, 138, 138); /* Green */
 		padding: 5px;

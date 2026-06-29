@@ -148,7 +148,7 @@
 		if (coupons) {
 			couponGrouped = Map.groupBy(
 				coupons,
-				({ locktime, placement, value }) => `${locktime}-${placement}-${value}`
+				({ locktime, placement, value }) => `${locktime}-${placement}-${value/10}`
 			);
 
 			coupons.sort((a: any, b: any) => parseFloat(b.spb) - parseFloat(a.spb));

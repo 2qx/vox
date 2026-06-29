@@ -101,7 +101,7 @@
 		padding: 5px 5px 5px 15px;
 		background-color: #eeeeee;
 		margin: auto;
-		width: 100%;
+		width: 80%;
 		white-space: pre-line;
 		word-break: break-word;
 	}

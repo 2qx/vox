@@ -27,23 +27,9 @@ test('test executing some trusts', async t => {
 
     let recordCommitment = Trust.encodeCommitment(data)
 
-    let record = {
-        height: 100,
-        tx_hash: "deaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead",
-        tx_pos: 1,
-        token_data: {
-            category: "deaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead",
-            nft: {
-                commitment: recordCommitment,
-                capability: "none"
-            },
-            amount: "0"
-        },
-        value: 800
-    } as UtxoI
+    let record = recordCommitment
     t.truthy(true)
 
-    console.log("here0")
     // @ts-ignore
     let walletUtxos = await provider.performRequest(
         "blockchain.address.listunspent",
@@ -51,7 +37,6 @@ test('test executing some trusts', async t => {
         "include_tokens"
     )
 
-    console.log("here1")
     let contract_scripthash = Trust.getScriptHash(record)
     let fundingTx = Trust.fund(10_000_000, alice_lockingBytecode , walletUtxos, key);
 
@@ -85,7 +70,7 @@ test('test executing some trusts', async t => {
     await sleep(3000)
     t.assert(height - trustUtxos[0]!.height >= 4383)
 
-    console.log("here")
+
     let bob = await RegTestWallet.newRandom();
     await sleep(1000);
     let batchTx = Trust.execute(

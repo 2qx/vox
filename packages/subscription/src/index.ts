@@ -50,12 +50,15 @@ export interface SubscriptionData {
 }
 
 export type SubscriptionJob = {
-    record: UtxoI,
+    record: string | Uint8Array,
     utxo: UtxoI
 }
 
 export interface SubscriptionRequest {
-    asset: Uint8Array;
+    installmentCount: number;
+    category: Uint8Array;
+    data: SubscriptionData;
+    utxo?: UtxoI
 }
 
 export default class Subscription {
@@ -74,7 +77,7 @@ export default class Subscription {
 
     static vm = createVirtualMachineBch2025();
 
-    static dataToBytecode(data: SubscriptionData) {
+    static dataToBytecode(data: SubscriptionData): BytecodeDataI {
         return {
             "installment": bigIntToVmNumber(data.installment),
             "recipient": data.recipient,
@@ -83,28 +86,36 @@ export default class Subscription {
         }
     }
 
-    static parseNFT(utxo: UtxoI): BytecodeDataI {
-
-        if (utxo.token_data?.nft?.commitment) {
-            let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment))
-            if (binToUtf8(byteData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error("Non-subscription record NFT passed as subscription")
-            return {
-                "installment": byteData[1]!,
-                "recipient": byteData[2]!,
-                "period": byteData[3]!,
-                "auth": hexToBin(utxo.token_data.category)
-            }
-
-        } else {
-            throw Error("Could not parse subscription NFT")
+    static bytecodeToData(bytecode: BytecodeDataI): SubscriptionData {
+        const installment = vmNumberToBigInt(bytecode["installment"]!)
+        if(typeof installment !== "bigint") throw installment
+        return {
+            "installment":  installment,
+            "recipient": bytecode['recipient']!,
+            "period": binToNumberUintLE(bytecode['period']!),
+            "auth": new Uint8Array(bytecode['auth']!).reverse(),
         }
     }
 
+    static parseCommitment(record: string | Uint8Array): BytecodeDataI {
+
+        if (typeof record === "string") record = hexToBin(record)
+        const decodedData = decodePushBytes(record)
+        if (binToUtf8(decodedData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error(`"Non-${typeof this} record NFT passed as ${typeof this}"`)
+        let byteData = {
+            "installment": decodedData[1]!,
+            "recipient": decodedData[2]!,
+            "period": decodedData[3]!,
+            "auth": decodedData[4]!
+        }
+
+        return byteData
+
+    }
+
     static encodeCommitment(data: SubscriptionData) {
-        let commitment = cashAssemblyToBin(
-            `<"${this.PROTOCOL_IDENTIFIER}"><${data.installment}><0x${binToHex(data.recipient)}><${data.period}>`)
-        if (typeof commitment === "string") throw commitment
-        return binToHex(commitment)
+        const bytecode = this.dataToBytecode(data)
+        return binToHex(this.getLockingBytecode(bytecode))
     }
 
 
@@ -122,22 +133,6 @@ export default class Subscription {
             'Failed to generate bytecode, script: , ' + JSON.stringify(lockingBytecodeResult, null, '  '
             ));
         return lockingBytecodeResult.bytecode
-    }
-
-    static getUnlockingBytecode(
-        data: BytecodeDataI
-    ): Uint8Array {
-        const bytecodeResult = this.compiler.generateBytecode(
-            {
-                data: {
-                    "bytecode": data
-                },
-                scriptId: 'execute'
-            })
-        if (!bytecodeResult.success) throw new Error(
-            'Failed to generate bytecode, script: , ' + JSON.stringify(bytecodeResult, null, '  '
-            ));
-        return bytecodeResult.bytecode
     }
 
     /**
@@ -173,16 +168,17 @@ export default class Subscription {
     }
 
     static getSourceOutput(
-        data: BytecodeDataI,
+        data: SubscriptionData,
         utxo: UtxoI
     ): Output {
-
+        let bytecode = this.dataToBytecode(data)
         return {
-            lockingBytecode: this.getLockingBytecode(data),
+            lockingBytecode: this.getLockingBytecode(bytecode),
             valueSatoshis: BigInt(utxo.value),
             token: utxo.token_data ? {
                 category: hexToBin(utxo.token_data.category!),
                 amount: BigInt(utxo.token_data.amount),
+                // Omit NFT to cause signing error.
                 // nft: utxo.token_data.nft ? {
                 //     commitment: hexToBin(utxo.token_data.nft.commitment!),
                 //     capability: utxo.token_data.nft.capability,
@@ -193,17 +189,19 @@ export default class Subscription {
     }
 
     static getInput(
-        data: BytecodeDataI,
+        data: SubscriptionData,
         utxo: UtxoI,
-        age: number
+        age?: number
     ): InputTemplate<CompilerBch> {
+
+        let bytecode = this.dataToBytecode(data)
         return {
             outpointIndex: utxo.tx_pos,
             outpointTransactionHash: hexToBin(utxo.tx_hash),
             sequenceNumber: age,
             unlockingBytecode: {
                 data: {
-                    "bytecode": data
+                    "bytecode": bytecode
                 },
                 compiler: this.compiler,
                 script: 'execute',
@@ -211,6 +209,7 @@ export default class Subscription {
                 token: utxo.token_data ? {
                     category: hexToBin(utxo.token_data!.category!),
                     amount: BigInt(utxo.token_data!.amount),
+                    // Omit NFT to cause signing error.
                     // nft: utxo.token_data.nft ? {
                     //     commitment: hexToBin(utxo.token_data.nft.commitment!),
                     //     capability: utxo.token_data.nft.capability,
@@ -220,15 +219,38 @@ export default class Subscription {
         } as InputTemplate<CompilerBch>
     }
 
+    static subscriptionToOutput(
+        subscription: SubscriptionRequest
+    ): OutputTemplate<CompilerBch> {
+
+        let data = this.dataToBytecode(subscription.data)
+        let lockingBytecode = this.getLockingBytecode(data)
+
+        let asset = (typeof subscription.category == "string") ? hexToBin(subscription.category) : subscription.category
+
+        let cashReserves = BigInt(subscription.installmentCount * this.EXECUTOR_FEE)
+        let tokenReserves = BigInt(subscription.installmentCount) * subscription.data.installment
+
+        let output: OutputTemplate<CompilerBch> =
+        {
+            lockingBytecode: lockingBytecode,
+            valueSatoshis: cashReserves,
+            token: {
+                category: asset,
+                amount: tokenReserves
+            }
+        }
+
+        return output
+    }
+
     static getInstallmentOutput(
-        data: BytecodeDataI,
+        data: SubscriptionData,
         utxo: UtxoI
     ): OutputTemplate<CompilerBch> {
 
 
-        let installment = vmNumberToBigInt(data["installment"]!)
-        if (typeof installment === 'string') throw installment
-
+        let installment = data.installment
 
         // If the subscription has more than one installment left...
         if (BigInt(utxo.token_data?.amount!) < installment) {
@@ -237,8 +259,8 @@ export default class Subscription {
 
         // otherwise, liquidate the remaining tokens
         return {
-            lockingBytecode: data["recipient"]!,
-            valueSatoshis: 800n,
+            lockingBytecode: data.recipient,
+            valueSatoshis: 1000n,
             token: utxo.token_data ? {
                 category: hexToBin(utxo.token_data!.category!),
                 amount: installment
@@ -247,17 +269,15 @@ export default class Subscription {
     }
 
     static getReturnOutput(
-        data: BytecodeDataI,
+        data: SubscriptionData,
         utxo: UtxoI
     ): OutputTemplate<CompilerBch> {
 
-
-        let installment = vmNumberToBigInt(data["installment"]!)
-        if (typeof installment === 'string') throw installment
+        const bytecode = this.dataToBytecode(data)
         return {
             lockingBytecode: {
                 data: {
-                    "bytecode": data
+                    "bytecode": bytecode
                 },
                 compiler: this.compiler,
                 script: 'lock'
@@ -265,7 +285,7 @@ export default class Subscription {
             valueSatoshis: BigInt(utxo.value - this.EXECUTOR_FEE),
             token: utxo.token_data ? {
                 category: hexToBin(utxo.token_data!.category!),
-                amount: BigInt(utxo.token_data!.amount) - installment
+                amount: BigInt(utxo.token_data!.amount) - data.installment
             } : undefined
         }
 
@@ -390,8 +410,8 @@ export default class Subscription {
         let tokenChange = sumTokenAmountsIn - sumTokenAmountsOut
 
         if (tokenChange > 0) {
-            config.outputs.push(getChangeOutput(800n, tokenChange, assetCat, privateKey))
-            cashChange -= 800n
+            config.outputs.push(getChangeOutput(1000n, tokenChange, assetCat, privateKey))
+            cashChange -= 1000n
         }
         config.outputs.push(getChangeOutput(cashChange, 0n, undefined, privateKey))
 
@@ -399,25 +419,27 @@ export default class Subscription {
     }
 
 
-    // static setBlackBoardLayers(
-    //     authCat: Uint8Array | string,
-    //     assetCat: Uint8Array | string,
-    //     utxos: UtxoI[],
-    //     orders: SubscriptionRequest[],
-    //     sourceOutputs: Output[] = []
-    // ): {
-    //     inputs: InputTemplate<CompilerBch>[],
-    //     outputs: OutputTemplate<CompilerBch>[],
-    //     sourceOutputs: Output[]
-    // } {
-    //     let inputs: InputTemplate<CompilerBch>[] = [];
-    //     let outputs: OutputTemplate<CompilerBch>[] = [];
+    static setThreadLayers(
+        subscriptions: SubscriptionRequest[],
+        sourceOutputs: Output[] = []
+    ): {
+        inputs: InputTemplate<CompilerBch>[],
+        outputs: OutputTemplate<CompilerBch>[],
+        sourceOutputs: Output[]
+    } {
+        let inputs: InputTemplate<CompilerBch>[] = [];
+        let outputs: OutputTemplate<CompilerBch>[] = [];
 
-    //     inputs.push(...utxos.map(u => this.getInput(authCat, assetCat, u)))
-    //     sourceOutputs.push(...utxos.map(u => this.getSourceOutput(authCat, assetCat, u)))
-    //     outputs.push(...orders.map(o => this.orderRequestToOutputs(authCat, assetCat, o)).flat())
-    //     return { inputs, outputs, sourceOutputs }
-    // }
+        let covenantSet = new Set(subscriptions.map(s => {return s.data}))
+        if(covenantSet.size>1) throw "Cannot mix covenant types"
+
+        // inputs.push(...utxos.map(u => this.getInput(data, u, data.period)))
+        // sourceOutputs.push(...utxos.map(u => this.getSourceOutput(data, u)))
+
+
+        outputs.push(...subscriptions.map(s => this.subscriptionToOutput(s)))
+        return { inputs, outputs, sourceOutputs }
+    }
 
     /**
      * Pay a monthly subscription installment.
@@ -452,15 +474,13 @@ export default class Subscription {
 
         // add sources, inputs, and installment outputs to the config
         for (let job of jobs) {
-            let data = this.parseNFT(job.record)
+            let byteData = this.parseCommitment(job.record)
             // if the job is not in mempool
             if (job.utxo.height > 0 && job.utxo.value > 5800) {
                 const age = height - job.utxo.height
-                const period = binToNumberUintLE(data['period']!)
-                const installment = vmNumberToBigInt(data["installment"]!)
-                if (typeof installment === "string") throw installment
+                const data = this.bytecodeToData(byteData)
                 // if the subscription is ready to be processed
-                if (age >= period && BigInt(job.utxo.token_data?.amount!) >= installment) {
+                if (age >= data.period && BigInt(job.utxo.token_data?.amount!) >= data.installment) {
                     config.inputs.push(this.getInput(data, job.utxo, age));
                     config.outputs.push(this.getInstallmentOutput(data, job.utxo));
                     sourceOutputs.push(this.getSourceOutput(data, job.utxo));
@@ -470,15 +490,13 @@ export default class Subscription {
 
         // add principal return outputs
         for (let job of jobs) {
-            let data = this.parseNFT(job.record)
+            let byteData = this.parseCommitment(job.record)
             // if the job is not in mempool
             if (job.utxo.height > 0 && job.utxo.value > 5800) {
                 const age = height - job.utxo.height
-                const period = binToNumberUintLE(data['period']!)
-                const installment = vmNumberToBigInt(data["installment"]!)
-                if (typeof installment === "string") throw installment
+                const data = this.bytecodeToData(byteData)
                 // if the subscription is ready to be processed
-                if (age >= period && BigInt(job.utxo.token_data?.amount!) >= installment) {
+                if (age >= data.period && BigInt(job.utxo.token_data?.amount!) >= data.installment) {
                     config.outputs.push(this.getReturnOutput(data, job.utxo));
                 }
             }
@@ -486,16 +504,14 @@ export default class Subscription {
 
         // cash out subscriptions below the installment threshold.
         for (let job of jobs) {
-            let data = this.parseNFT(job.record)
+            let byteData = this.parseCommitment(job.record)
             // if the job is not in mempool
             if (job.utxo.height > 0 && job.utxo.value > 5800) {
                 const age = height - job.utxo.height
-                const period = binToNumberUintLE(data['period']!)
-                const installment = vmNumberToBigInt(data["installment"]!)
-                if (typeof installment === "string") throw installment
+                const data = this.bytecodeToData(byteData)
 
                 // if the subscription is ready to be processed
-                if (age >= period && BigInt(job.utxo.token_data?.amount!) < installment) {
+                if (age >= data.period && BigInt(job.utxo.token_data?.amount!) < data.installment) {
                     config.inputs.push(this.getInput(data, job.utxo, age));
                     config.outputs.push(this.getInstallmentOutput(data, job.utxo));
                     sourceOutputs.push(this.getSourceOutput(data, job.utxo));
@@ -508,7 +524,7 @@ export default class Subscription {
             config.outputs.push(
                 this.getExecutorOutput(
                     executorCashaddress,
-                    (config.inputs.length * (this.EXECUTOR_FEE - 800))
+                    (config.inputs.length * (this.EXECUTOR_FEE - 1000))
                 )
             )
         }
@@ -576,8 +592,7 @@ export default class Subscription {
     static administer(
         authUtxo: UtxoI,
         assetCat: Uint8Array | string,
-        //@ts-ignore
-        contractUtxos: UtxoI[],
+        subscriptions: SubscriptionRequest[],
         walletUtxos: UtxoI[],
         privateKey?: string,
         addressIndex = 0,
@@ -604,11 +619,14 @@ export default class Subscription {
         config.inputs.push(...authLayers.inputs);
         config.outputs.push(...authLayers.outputs);
         let sourceOutputs = authLayers.sourceOutputs;
+        
+        const threadLayers = this.setThreadLayers(subscriptions)
+        config.inputs.push(...threadLayers.inputs);
 
-        // const threadLayers = this.setThreadLayers(authCat, assetCat, contractUtxos)
-        // config.inputs.push(...threadLayers.inputs);
-        // config.outputs.push(...threadLayers.outputs);
-        // sourceOutputs.push(...threadLayers.sourceOutputs);
+        sourceOutputs.push(...threadLayers.sourceOutputs);
+        
+        config.outputs.push(...threadLayers.outputs);
+
 
         config = this.getWalletLayers(assetCat, config, sourceOutputs, walletUtxos, privateKey)
 

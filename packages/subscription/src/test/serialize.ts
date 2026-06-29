@@ -25,22 +25,9 @@ test('test encoding subscription NFT commitment', async t => {
 
 test('test parsing subscription NFT', async t => {
 
-    const record = {
-        tx_pos: 0,
-        tx_hash: "00",
-        value: 800,
-        height: -1,
-        token_data: {
-            category: "beef00000000000000000000000000000000000000000000000000000000beef",
-            amount: "0",
-            nft: {
-                capability: "mutable" as TokenCapabilities,
-                commitment: "0355335302e80317a914e78564d75c446f8c00c757a2bd783d30c4f0819a87029000"
-            }
-        }
-    }
+    let commitment = "0355335302e80317a914e78564d75c446f8c00c757a2bd783d30c4f0819a87029000"
 
-    let data = Subscription.parseNFT(record)
+    let data = Subscription.parseCommitment(commitment)
     t.is(binToNumberUintLE(data["installment"]!), 1000)
     t.is(binToHex(data["recipient"]!), "a914e78564d75c446f8c00c757a2bd783d30c4f0819a87")
     t.is(binToNumberInt16LE(data["period"]!), 144)

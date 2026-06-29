@@ -63,19 +63,18 @@ export default class Dutch {
     }
 
 
-    static parseNFT(utxo: UtxoI): BytecodeDataI {
+    static parseCommitment(record: string | Uint8Array): BytecodeDataI {
 
-        if (utxo.token_data?.nft?.commitment) {
-            let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment))
-            if (binToUtf8(byteData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error("Non-subscription record NFT passed as subscription")
-            return {
-                "open": byteData[1]!,
-                "recipient": byteData[2]!
-            }
-        } else {
-            throw Error("Could not parse subscription NFT")
+        if (typeof record === "string") record = hexToBin(record)
+        const decodedData = decodePushBytes(record)
+        if (binToUtf8(decodedData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error(`"Non-${typeof this} record NFT passed as ${typeof this}"`)
+        return {
+            "open": decodedData[1]!,
+            "recipient": decodedData[2]!,
         }
+
     }
+
 
     static encodeCommitment(data: DutchAuctionData) {
         let commitment = cashAssemblyToBin(
@@ -112,9 +111,9 @@ export default class Dutch {
      * @returns a cashaddress.
      */
     static getScriptHash(
-        record: UtxoI,
+        record: string|Uint8Array,
         reversed = true): string {
-        let data = this.parseNFT(record)
+        let data = this.parseCommitment(record)
         return getScriptHash(this.getLockingBytecode(data), reversed)
     }
 
@@ -328,7 +327,7 @@ export default class Dutch {
      */
 
     static execute(
-        record: UtxoI,
+        record: string|Uint8Array,
         utxo: UtxoI,
         walletUtxos: UtxoI[],
         height: number,
@@ -351,7 +350,7 @@ export default class Dutch {
             outputs
         }
 
-        const data = this.parseNFT(record)
+        const data = this.parseCommitment(record)
 
         let age = height - utxo.height
         let outputValue = Math.round(binToNumberUintLE(data["open"]!) / age) + 1

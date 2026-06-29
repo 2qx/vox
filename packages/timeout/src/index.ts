@@ -38,7 +38,6 @@ export interface TimeoutData {
 
 
 
-
 export default class Timeout {
 
     static PROTOCOL_IDENTIFIER = "U3T"
@@ -54,24 +53,6 @@ export default class Timeout {
 
     static vm = createVirtualMachineBch();
 
-
-    static parseNFT(utxo: UtxoI): BytecodeDataI {
-
-        if (utxo.token_data?.nft?.commitment) {
-            let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment))
-            if (binToUtf8(byteData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error("Non-subscription record NFT passed as subscription")
-            return {
-                "recipient": byteData[1]!,
-                "timeout": byteData[2]!,
-                "auth": hexToBin(utxo.token_data.category)
-            }
-        } else {
-            throw Error("Could not parse subscription NFT")
-        }
-    }
-
-
-
     static dataToBytecode(data: TimeoutData) {
         return {
             "recipient": hexToBin(data.recipient),
@@ -80,15 +61,25 @@ export default class Timeout {
         }
     }
 
+    static parseCommitment(record: string | Uint8Array): BytecodeDataI {
 
-    static encodeCommitment(data: TimeoutData): Uint8Array {
-        let commitment = cashAssemblyToBin(
-            `<"${this.PROTOCOL_IDENTIFIER}"><0x${data.recipient}><${data.timeout}>
-        `)
-        if (typeof commitment === "string") throw commitment
-        return commitment
+        if (typeof record === "string") record = hexToBin(record)
+        const decodedData = decodePushBytes(record)
+        if (binToUtf8(decodedData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error(`"Non-${typeof this} record NFT passed as ${typeof this}"`)
+        let byteData = {
+            "recipient": decodedData[1]!,
+            "timeout": decodedData[2]!,
+            "auth": decodedData[3]!
+        }
+
+        return byteData
+
     }
 
+    static encodeCommitment(data: TimeoutData) {
+        const bytecode = this.dataToBytecode(data)
+        return binToHex(this.getLockingBytecode(bytecode))
+    }
 
 
     static getLockingBytecode(
@@ -231,7 +222,7 @@ export default class Timeout {
      */
 
     static liquidate(
-        record: UtxoI,
+        record: string|Uint8Array,
         utxo: UtxoI
     ): string {
 
@@ -245,7 +236,7 @@ export default class Timeout {
             outputs
         }
 
-        let data = this.parseNFT(record)
+        let data = this.parseCommitment(record)
 
         config.inputs.push(this.getInput(data, utxo));
         config.outputs.push(this.getOutput(data, utxo));

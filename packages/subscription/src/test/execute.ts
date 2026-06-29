@@ -125,7 +125,7 @@ test('test executing some subscriptions', async t => {
     t.deepEqual(output0?.lockingBytecode, data.recipient, "output lockingBytecode pays recipient")
     // t.deepEqual(output1?.lockingBytecode, hexToBin(data.recipient), "output lockingBytecode pays recipient")
 
-    t.assert(output0?.valueSatoshis == 800n, "min sats out")
+    t.assert(output0?.valueSatoshis == 1000n, "min sats out")
     // t.assert(output1?.valueSatoshis == 800n, "min sats out")
 
     t.assert(output0?.token?.amount == data.installment, "output0 auth cat matches")

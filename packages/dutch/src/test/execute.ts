@@ -27,22 +27,7 @@ test('test buying an NFT at auction', async t => {
         open: 100_000
     }
 
-    let recordCommitment = Dutch.encodeCommitment(data)
 
-    let record = {
-        height: 907664,
-        tx_hash: "deaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead",
-        tx_pos: 1,
-        token_data: {
-            category: "deaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead",
-            nft: {
-                commitment: recordCommitment,
-                capability: "none"
-            },
-            amount: "0"
-        },
-        value: 800
-    } as UtxoI
 
     let contract_address = Dutch.getAddress(data, "bchreg");
     const genesisResponse = await alice.tokenGenesis({
@@ -79,6 +64,8 @@ test('test buying an NFT at auction', async t => {
     )
 
     let height = await provider.getBlockHeight()
+
+    let record = Dutch.encodeCommitment(data)
 
     let bidTx = Dutch.execute(
         record,
