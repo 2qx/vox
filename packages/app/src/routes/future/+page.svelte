@@ -125,7 +125,7 @@
 		coupons = coupons?.filter((c) => !(c.tx_hash == coupon.tx_hash && c.tx_pos == coupon.tx_pos));
 		couponGrouped = Map.groupBy(
 			coupons!,
-			({ locktime, placement, value }) => `${locktime}-${placement}-${value}`
+			({ locktime, placement, value }) => `${locktime}-${placement}-${Math.floor(value/100)*100}`
 		);
 		walletUnspent = swapTx.walletUtxos;
 		vaultCache.set(coupon.locktime, swapTx.contractUtxos);
@@ -148,7 +148,7 @@
 		if (coupons) {
 			couponGrouped = Map.groupBy(
 				coupons,
-				({ locktime, placement, value }) => `${locktime}-${placement}-${value}`
+				({ locktime, placement, value }) => `${locktime}-${placement}-${Math.floor(value/100)*100}`
 			);
 
 			coupons.sort((a: any, b: any) => parseFloat(b.spb) - parseFloat(a.spb));
