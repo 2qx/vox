@@ -198,8 +198,10 @@
 		);
 		let sendResponse = await wallet.tokenGenesis({
 			cashaddr: wallet.getTokenDepositAddress()!, // token UTXO recipient, if not specified will default to sender's address
-			commitment: uname, // NFT Commitment message
-			capability: NFTCapability.minting, // NFT capability
+			nft: {
+				commitment: uname, // NFT Commitment message
+				capability: NFTCapability.minting // NFT capability
+			},
 			value: 800 // Satoshi value
 		});
 	};
@@ -209,9 +211,11 @@
 		let sendResponse = await wallet.tokenMint(myAuthBatons[0].token_data.category, [
 			new TokenMintRequest({
 				cashaddr: SmallIndex.getAddress(CatDex.PROTOCOL_IDENTIFIER)!,
-				commitment: message,
-				capability: NFTCapability.none,
-				value: duration
+				nft: {
+					commitment: message,
+					capability: NFTCapability.none
+				},
+				value: BigInt(duration)
 			})
 		]);
 		sleep(500);
