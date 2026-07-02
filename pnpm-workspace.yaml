@@ -14,5 +14,5 @@ packages:
  - 'packages/timeout'
  - 'packages/trust'
  - 'packages/wrap'
-# - 'packages/app'
+ - 'packages/app'
 # - 'packages/*'

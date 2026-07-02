@@ -31,6 +31,7 @@ import {
     type CashAddressNetworkPrefix,
     getLibauthCompiler,
     getScriptHash,
+    getWalletLayers,
     numToVm,
     UtxoI,
 } from '@unspent/tau';
@@ -191,127 +192,6 @@ export default class Dutch {
 
     }
 
-    static getChangeOutput(
-        value: bigint,
-        utxo: UtxoI,
-        privateKey?: any,
-        addressIndex = 0
-    ): OutputTemplate<CompilerBch> {
-
-        const lockingBytecode = privateKey ? {
-            compiler: this.compiler,
-            data: {
-                hdKeys: {
-                    addressIndex: addressIndex,
-                    hdPublicKeys: {
-                        'wallet': deriveHdPublicKey(privateKey).hdPublicKey
-                    },
-                },
-            },
-            script: 'wallet_lock'
-        } : Uint8Array.from(Array(33))
-
-        return {
-            lockingBytecode: lockingBytecode,
-            valueSatoshis: value,
-            token: utxo.token_data ? {
-                category: hexToBin(utxo.token_data.category!),
-                amount: BigInt(utxo.token_data.amount),
-                nft: utxo.token_data.nft ? {
-                    commitment: hexToBin(utxo.token_data.nft.commitment!),
-                    capability: utxo.token_data.nft.capability,
-                } : undefined
-            } : undefined
-        }
-    }
-
-
-
-    static getWalletInputs(
-        utxos: UtxoI[],
-        amount: bigint,
-        sourceOutputs: Output[] = [],
-        privateKey?: string,
-        addressIndex = 0,
-    ): {
-        inputs: InputTemplate<CompilerBch>[],
-        outputs: OutputTemplate<CompilerBch>[],
-        sourceOutputs: Output[]
-    } {
-
-        let inputs: InputTemplate<CompilerBch>[] = [];
-        let outputs: OutputTemplate<CompilerBch>[] = [];
-
-
-        // Only use straight sat utxos
-        utxos = utxos.filter(u => !u.token_data)
-
-        // TODO: sort by highest value first
-        if (utxos.length == 0) throw Error("no wallet utxos left, maximum recursion depth reached.");
-
-        // get a random utxo.
-        const randomIdx = Math.floor(Math.random() * utxos.length)
-        const randomUtxo = utxos[randomIdx]!
-
-        // remove the random utxo in place
-        utxos.splice(randomIdx, 1);
-
-        // spend the utxo
-        inputs.push(getWalletInput(randomUtxo, privateKey, addressIndex))
-        sourceOutputs.push(getWalletSourceOutput(randomUtxo, privateKey, addressIndex));
-        let sumSats = sumSourceOutputValue(sourceOutputs)
-        if (
-            // or collecting sats and not enough sats inputs 
-            (sumSats < amount)
-        ) {
-            // to it again
-            let nextTry = this.getWalletInputs(
-                [...utxos],
-                amount,
-                [...sourceOutputs],
-                privateKey,
-                addressIndex
-            )
-            inputs.push(...nextTry.inputs)
-            outputs.push(...nextTry.outputs)
-            sourceOutputs = nextTry.sourceOutputs
-        }
-        return { inputs, outputs, sourceOutputs }
-    }
-
-    static getWalletLayers(
-        utxo: UtxoI,
-        config: {
-            locktime: number;
-            version: number;
-            inputs: InputTemplate<CompilerBch>[];
-            outputs: OutputTemplate<CompilerBch>[];
-        },
-        sourceOutputs: Output[],
-        walletUtxos: UtxoI[],
-        privateKey?: string,
-        addressIndex = 0
-    ) {
-        // Calculate excess cash and tokens required to fund the exchange
-        let sumSatsOut = sumOutputValue(config.outputs)
-        let sumSatsIn = sumSourceOutputValue(sourceOutputs)
-        let satsRequired = sumSatsOut - sumSatsIn
-
-        const satsIn = this.getWalletInputs(walletUtxos, satsRequired, undefined, privateKey, addressIndex)
-        config.inputs.push(...satsIn.inputs);
-        sourceOutputs.push(...satsIn.sourceOutputs);
-
-
-        // Calculate excess cash and tokens to be returned as change
-        sumSatsOut = sumOutputValue(config.outputs)
-        sumSatsIn = sumSourceOutputValue(sourceOutputs)
-        let cashChange = sumSatsIn - sumSatsOut
-
-        config.outputs.push(this.getChangeOutput(cashChange, utxo, privateKey, addressIndex))
-
-        return config
-    }
-
     /**
      * Bid on lot records.
      *
@@ -362,7 +242,7 @@ export default class Dutch {
         // Cash out the consignor
         config.outputs.push(this.getOutput(data, outputValue));
 
-        config = this.getWalletLayers(utxo, config, sourceOutputs, walletUtxos, privateKey, addressIndex);
+        config = getWalletLayers(config, sourceOutputs, walletUtxos, privateKey, addressIndex);
 
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));

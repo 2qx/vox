@@ -108,6 +108,15 @@ export function sumTokenAmounts(utxos: UtxoI[], tokenId: string): bigint {
   }
 }
 
+
+export function valueDifference(
+  source: Output[],
+  outputs: OutputTemplate<CompilerBch>[]): bigint {
+  let sumOut = sumOutputValue(outputs)
+  let sumIn = sumSourceOutputValue(source)
+  return sumOut - sumIn
+}
+
 export function sumSourceOutputValue(source: Output[], subTokenDust = false) {
   if (source.length > 0) {
     const balanceArray: bigint[] = source.map((o: Output) => {

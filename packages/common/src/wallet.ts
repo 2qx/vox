@@ -59,6 +59,7 @@ export function getWalletLayers(
     sourceOutputs: Output[],
     walletUtxos: UtxoI[],
     privateKey?: string,
+    addressIndex?: number
 ): {
     locktime: number;
     version: number;
@@ -70,7 +71,7 @@ export function getWalletLayers(
     let sumSatsIn = sumSourceOutputValue(sourceOutputs)
     let satsRequired = sumSatsOut - sumSatsIn
 
-    const satsIn = getWalletInputs(walletUtxos, satsRequired, privateKey)
+    const satsIn = getWalletInputs(walletUtxos, satsRequired, undefined, privateKey, addressIndex)
     config.inputs.push(...satsIn.inputs);
     sourceOutputs.push(...satsIn.sourceOutputs);
 
@@ -81,7 +82,7 @@ export function getWalletLayers(
         let tokensRequired = tokenDifference(sourceOutputs, config.outputs, asset)
 
         if (tokensRequired > 0n) {
-            const tokensIn = getWalletInputs(walletUtxos, tokensRequired, privateKey, asset)
+            const tokensIn = getWalletInputs(walletUtxos, tokensRequired, asset, privateKey, addressIndex)
             config.inputs.push(...tokensIn.inputs);
             sourceOutputs.push(...tokensIn.sourceOutputs);
         }
@@ -89,7 +90,7 @@ export function getWalletLayers(
         let tokenChange = -tokenDifference(sourceOutputs, config.outputs, asset)
 
         if (tokenChange > 0) {
-            config.outputs.push(getChangeOutput(800n, tokenChange, asset, privateKey))
+            config.outputs.push(getChangeOutput(800n, tokenChange, asset, privateKey, addressIndex))
         }
     }
 
@@ -106,8 +107,9 @@ export function getWalletLayers(
 export function getWalletInputs(
     utxos: UtxoI[],
     amount: bigint,
-    privateKey?: string,
     category?: Uint8Array | string,
+    privateKey?: string,
+    addressIndex: number = 0,
     sourceOutputs: Output[] = []
 ): {
     inputs: InputTemplate<CompilerBch>[],
@@ -140,8 +142,8 @@ export function getWalletInputs(
     utxos.splice(randomIdx, 1);
 
     // spend the utxo
-    inputs.push(getWalletInput(randomUtxo, privateKey))
-    sourceOutputs.push(getWalletSourceOutput(randomUtxo, privateKey));
+    inputs.push(getWalletInput(randomUtxo, privateKey, addressIndex))
+    sourceOutputs.push(getWalletSourceOutput(randomUtxo, privateKey, addressIndex));
     let sumSats = sumSourceOutputValue(sourceOutputs)
     let sumTokenAmounts = sumSourceOutputTokenAmounts(sourceOutputs, category)
     if (
@@ -154,8 +156,9 @@ export function getWalletInputs(
         let nextTry = getWalletInputs(
             [...utxos],
             amount,
-            privateKey,
             category,
+            privateKey,
+            addressIndex,
             [...sourceOutputs]
         )
         inputs.push(...nextTry.inputs)

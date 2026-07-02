@@ -76,9 +76,9 @@ export default class Timeout {
 
     }
 
-    static encodeCommitment(data: TimeoutData) {
+    static encodeCommitment(data: TimeoutData): Uint8Array {
         const bytecode = this.dataToBytecode(data)
-        return binToHex(this.getLockingBytecode(bytecode))
+        return this.getLockingBytecode(bytecode)
     }
 
 
@@ -96,23 +96,6 @@ export default class Timeout {
             'Failed to generate bytecode, script: , ' + JSON.stringify(lockingBytecodeResult, null, '  '
             ));
         return lockingBytecodeResult.bytecode
-    }
-
-
-    static getUnlockingBytecode(
-        data: BytecodeDataI
-    ): Uint8Array {
-        const bytecodeResult = this.compiler.generateBytecode(
-            {
-                data: {
-                    "bytecode": data
-                },
-                scriptId: 'unlock'
-            })
-        if (!bytecodeResult.success) throw new Error(
-            'Failed to generate bytecode, script: , ' + JSON.stringify(bytecodeResult, null, '  '
-            ));
-        return bytecodeResult.bytecode
     }
 
     /**
@@ -149,7 +132,15 @@ export default class Timeout {
 
         return {
             lockingBytecode: this.getLockingBytecode(data),
-            valueSatoshis: BigInt(utxo.value)
+            valueSatoshis: BigInt(utxo.value),
+            token: utxo.token_data ? {
+                category: hexToBin(utxo.token_data!.category!),
+                amount: BigInt(utxo.token_data!.amount),
+                nft: utxo.token_data.nft ? {
+                    commitment: hexToBin(utxo.token_data.nft.commitment!),
+                    capability: utxo.token_data.nft.capability,
+                } : undefined
+            } : undefined
         }
 
     }
@@ -221,7 +212,7 @@ export default class Timeout {
      * @returns a transaction template.
      */
 
-    static liquidate(
+    static process(
         record: string|Uint8Array,
         utxo: UtxoI
     ): string {

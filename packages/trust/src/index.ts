@@ -28,10 +28,9 @@ import {
   decodePushBytes,
   getTransactionFees,
   getScriptHash,
-  sumOutputValue,
-  sumSourceOutputValue,
   UtxoI,
-  UnspentError
+  UnspentError,
+  valueDifference
 } from '@unspent/tau';
 
 export interface TrustData {
@@ -59,6 +58,7 @@ export default class Trust {
 
   static vm = createVirtualMachineBch2026();
 
+  //static PERIOD = 1;
   static PERIOD = 4383;
   static INSTALLMENT_DENOMINATOR = 100;
   static RETURN_NUMERATOR = 9_899;
@@ -80,7 +80,7 @@ export default class Trust {
 
     if (typeof record === "string") record = hexToBin(record)
     const decodedData = decodePushBytes(record)
-    if (binToUtf8(decodedData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error(`"Non-${typeof this} record NFT passed as ${typeof this}"`)
+    if (binToUtf8(decodedData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error(`"Non-${this.name} record NFT passed as ${this.name}"`)
     let byteData = {
       "recipient": decodedData[1]!
     }
@@ -180,7 +180,6 @@ export default class Trust {
   static getReturnOutput(data: BytecodeDataI, utxo: UtxoI): OutputTemplate<CompilerBch> {
 
     let outputValue = Math.round((utxo.value * this.RETURN_NUMERATOR) / this.RETURN_DENOMINATOR)
-
     return {
       lockingBytecode: {
         data: {
@@ -359,10 +358,11 @@ export default class Trust {
       }
     }
 
-    if (executorCashaddress && config.inputs.length > 0) {
-      let sumSatsOut = sumOutputValue(config.outputs)
-      let sumSatsIn = sumSourceOutputValue(sourceOutputs)
-      let executorBonus = sumSatsIn - sumSatsOut
+    if (executorCashaddress) {
+
+
+      let executorBonus = -valueDifference(sourceOutputs, config.outputs)
+      console.log(executorBonus)
       if (executorBonus > 0) {
         config.outputs.push(
           this.getExecutorOutput(
@@ -377,22 +377,16 @@ export default class Trust {
     if (!result.success) throw new Error('generate transaction failed!, errors: ' + stringify(result.errors));
     let transaction = result.transaction
 
-    if (executorCashaddress && config.inputs.length > 0) {
+    if (executorCashaddress) {
       const estimatedFee = getTransactionFees(result.transaction, fee) + 1n
+      console.log(estimatedFee)
       const lastIdx = config.outputs.length - 1
       config.outputs[lastIdx]!.valueSatoshis = config.outputs[lastIdx]!.valueSatoshis - estimatedFee
     }
 
     result = generateTransaction(config);
     if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
-
     transaction = result.transaction
-    const tokenValidationResult = verifyTransactionTokens(
-      transaction,
-      sourceOutputs,
-      { maximumTokenCommitmentLength: 40 }
-    );
-    if (tokenValidationResult !== true) throw tokenValidationResult;
 
     let verify = this.vm.verify({
       sourceOutputs: sourceOutputs,
