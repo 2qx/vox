@@ -299,8 +299,10 @@
 		let uname = cashAssemblyToHex(`OP_RETURN <"${Channel.PROTOCOL_IDENTIFIER}"> <"pseudonymous">`);
 		let sendResponse = await wallet.tokenGenesis({
 			cashaddr: wallet.getTokenDepositAddress()!, // token UTXO recipient, if not specified will default to sender's address
-			commitment: uname, // NFT Commitment message
-			capability: NFTCapability.minting, // NFT capability
+			nft: {
+				commitment: uname, // NFT Commitment message
+				capability: NFTCapability.minting // NFT capability
+			},
 			value: 1_000_000 // Satoshi value
 		});
 	};
