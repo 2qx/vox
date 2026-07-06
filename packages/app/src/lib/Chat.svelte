@@ -6,7 +6,7 @@
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet, NFTCapability, TokenSendRequest } from 'mainnet-js';
+	import { BaseWallet, Connection, Wallet, TestNetWallet, NFTCapability, TokenSendRequest } from 'mainnet-js';
 	import { blo } from 'blo';
 
 	import {
@@ -329,6 +329,14 @@
 	onMount(async () => {
 		BaseWallet.StorageProvider = IndexedDBProvider;
 		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
+		if (isMainnet) {
+				let conn = new Connection('mainnet', 'wss://bch.imaginary.cash:50004');
+				wallet.provider = conn.networkProvider;
+			}else{
+				let conn = new Connection('testnet', 'wss://chipnet.bch.ninja:50004');
+				//let conn = new Connection('testnet', 'wss://chipnet.imaginary.cash:50004');
+				wallet.provider = conn.networkProvider;
+			}
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 		let bytecodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());
 		if (typeof bytecodeResult == 'string') throw bytecodeResult;
