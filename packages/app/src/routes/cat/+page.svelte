@@ -30,7 +30,7 @@
 	} from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
-	import { BaseWallet, Wallet, TestNetWallet, NFTCapability, TokenMintRequest } from 'mainnet-js';
+	import { BaseWallet, Connection, Wallet, TestNetWallet, NFTCapability, TokenMintRequest } from 'mainnet-js';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 
@@ -342,6 +342,17 @@
 	onMount(async () => {
 		BaseWallet.StorageProvider = IndexedDBProvider;
 		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
+
+		if (isMainnet) {
+			let conn = new Connection('mainnet', 'wss://bch.imaginary.cash:50004');
+			wallet.provider = conn.networkProvider;
+			globalThis.BCH = conn.networkProvider
+		} else {
+			let conn = new Connection('testnet', 'wss://chipnet.bch.ninja:50004');
+			//let conn = new Connection('testnet', 'wss://chipnet.imaginary.cash:50004');
+			wallet.provider = conn.networkProvider;
+			globalThis.tBCH = conn.networkProvider
+		}
 
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 		let lockcodeResult = cashAddressToLockingBytecode(wallet.getDepositAddress());

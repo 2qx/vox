@@ -199,10 +199,12 @@
 			if (isMainnet) {
 				let conn = new Connection('mainnet', 'wss://bch.imaginary.cash:50004');
 				wallet.provider = conn.networkProvider;
+				globalThis.BCH = conn.networkProvider;
 			}else{
 				let conn = new Connection('testnet', 'wss://chipnet.bch.ninja:50004');
 				//let conn = new Connection('testnet', 'wss://chipnet.imaginary.cash:50004');
 				wallet.provider = conn.networkProvider;
+				globalThis.tBCH = conn.networkProvider;
 			}
 
 			key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
