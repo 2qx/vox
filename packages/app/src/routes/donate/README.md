@@ -26,7 +26,7 @@ In such a context, both Vox (and earlier iterations) have been the subject of ta
 
 But protocols are resistant to libel and sabotage. Bitcoin Script won't give up if someone maligns it or if a fundraiser fails. Code written on bitcoin doesn't care what people on the internet said. 
 
-If toxic trolls are allowed to act as gatekeepers to general spaces, and all new developer talent is funneled to the oracle liquidation app career pipeline, then as a bitcoin project, we would be dead.
+But if obvious trolls were allowed to act as gatekeepers to general spaces, and all new developer talent were funneled to the oracle liquidation app career pipeline, then as a bitcoin project, we would be pretty cooked.
 
 As a response to the current situation of public spaces in Bitcoin Cash, Vox channels are spaces that can't be captured or cheaply moderated by bad actors. 
 
