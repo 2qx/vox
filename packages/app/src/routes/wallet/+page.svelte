@@ -21,7 +21,14 @@
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet, TokenSendRequest, WalletTypeEnum } from 'mainnet-js';
+	import {
+		BaseWallet,
+		Connection,
+		Wallet,
+		TestNetWallet,
+		TokenSendRequest,
+		WalletTypeEnum
+	} from 'mainnet-js';
 
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
@@ -29,7 +36,7 @@
 	import FutureUtxo from '$lib/FutureUtxo.svelte';
 
 	const isMainnet = page.url.hostname == 'vox.cash';
-	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.imaginary.cash';
 	const metadata = isMainnet ? BCMR : tBCMR;
 	const SERIES_MAP = isMainnet ? CATEGORY_MAP : CATEGORY_MAP_CHIPNET;
 
@@ -76,7 +83,7 @@
 	};
 
 	async function redeemFutures(tx_hash: string, tx_pos: number, locktime: number, amount: number) {
-		let utxoToRedeem = unspent?.filter((u) => (u.tx_hash == tx_hash && u.tx_pos == tx_pos)).pop();
+		let utxoToRedeem = unspent?.filter((u) => u.tx_hash == tx_hash && u.tx_pos == tx_pos).pop();
 		let vaultUtxos = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
 			Vault.getScriptHash(locktime),
@@ -87,8 +94,7 @@
 			(u: UtxoI) => u.token_data?.category == utxoToRedeem?.token_data?.category
 		);
 
-
-		console.log(vaultUtxos)
+		console.log(vaultUtxos);
 		if (utxoToRedeem) {
 			let walletUnspent = [...assetsCash!, utxoToRedeem];
 			let swapTx = Vault.swap(-amount, vaultUtxos, walletUnspent, locktime, key);
@@ -190,6 +196,16 @@
 		try {
 			BaseWallet.StorageProvider = IndexedDBProvider;
 			wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
+			if (isMainnet) {
+				let conn = new Connection('mainnet', 'wss://bch.imaginary.cash:50004');
+				wallet.provider = conn.networkProvider;
+				globalThis.BCH = conn.networkProvider;
+			}else{
+				let conn = new Connection('testnet', 'wss://chipnet.bch.ninja:50004');
+				//let conn = new Connection('testnet', 'wss://chipnet.imaginary.cash:50004');
+				wallet.provider = conn.networkProvider;
+				globalThis.tBCH = conn.networkProvider;
+			}
 
 			key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
 			let lockingBytecode = cashAddressToLockingBytecode(wallet.getDepositAddress());
