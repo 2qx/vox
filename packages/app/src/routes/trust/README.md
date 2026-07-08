@@ -1,11 +1,13 @@
 ### About Unspent Trusts
 
-An unspent trust is a monthly annuity paying one percent of the current balance to a beneficiary.
+An unspent trust is a simple monthly annuity paying one percent (1%) of the current balance to a predefined destination.
 
-Like the trust funding the bitcoin network, the terms of the unspent trust are *irrevocable*, meaning they cannot be altered later.
+The terms are *irrevocable* by design, meaning they cannot be altered later. This design feature makes the stream of revenue assured regardless of the value of the underlying principal. 
 
-Instead of paying every block, this contract is designed to pay out on a monthly *period* (every 4383 blocks). 
+The operation of bitcoin network is financed by a similar trust, paying out every block. Block reward began paying 50 coins per block, then halved every 210,000 blocks (~4 years). This instrument is called a *variable* annuity, because the amount being paid changes over time. 
 
-The block rewards financing the bitcoin network started at 50 coins per block, then halved every 210,000 blocks (~4 years). That type of annuity is called a *variable* annuity, because the amount being paid changes. Unspent Trusts installments are also variable. Each payment is one percent of the current balance on the contract. 
+Unspent trusts are designed to pay out on a monthly *period* (every 4383 blocks). 
 
-Checkout the earlier version at [unspent.cash](https://unspent.cash).
+The half-life or emission rate of funds from these individual trusts are purposefully designed to be slower than the emission of coins for the maintenance of the overall network.
+
+This app uses a version 3 unspent trust contract, which features an executor fee proportional to the trust balance (1‱) and batching. 

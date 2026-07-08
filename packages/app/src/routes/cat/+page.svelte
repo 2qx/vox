@@ -70,7 +70,6 @@
 	let contractState = $state('');
 	let timer: any;
 
-	let unspent: any[] = $state([]);
 	let walletUnspent: any[] = $state([]);
 	let orders: any[] = $state([]);
 	let myOrders: any[] = $state([]);
@@ -229,6 +228,7 @@
 	};
 
 	const updateAsset = async function () {
+		orders = [];
 		await updateWallet();
 		await updateOrders();
 		if (typeof selectedAsset == 'string') {
@@ -278,10 +278,11 @@
 		let oldOrders = replace ? myDexUtxos : [];
 		let satOrderBook = myOrderBook.map((o) => {
 			return {
-				price: o.price ,
+				price: o.price/assetDecimals ,
 				quantity: BigInt(o.quantity * assetDecimals)
 			} as OrderRequest;
 		});
+
 		let tx = CatDex.administer(
 			myAuthBatons[0],
 			selectedAsset!,
@@ -598,7 +599,7 @@
 							<div>
 								<img width="24" src={bchIcon} alt={baseTicker} />
 								<br />
-								{(BigInt(myMarketSatoshis) / BigInt(assetDecimals)).toLocaleString()} sats {baseTicker}
+								{(BigInt(myMarketSatoshis) ).toLocaleString()} sats {baseTicker}
 							</div>
 						{/if}
 						{#if myMarketTokens}

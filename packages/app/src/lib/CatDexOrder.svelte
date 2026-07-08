@@ -33,7 +33,7 @@
 						<TokenIcon size={20} category={orderUtxo.token_data.category}></TokenIcon>
 					</div>
 					<div class="price">
-						{Number(price/decimals).toLocaleString(undefined, {
+						{Number(price*decimals).toLocaleString(undefined, {
 							minimumFractionDigits: 0,
 							maximumFractionDigits: 6
 						})}

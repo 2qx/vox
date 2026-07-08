@@ -53,6 +53,7 @@
 
 	let unspent: any[] = $state([]);
 	let walletUnspent: any[] = $state([]);
+	let authBaton: any = $state();
 	let balance = $state(0);
 	let stakeValue = $state(0);
 
@@ -99,6 +100,11 @@
 		walletUnspent = response;
 		balance = sumUtxoValue(walletUnspent, true);
 
+		authBaton = walletUnspent
+			.filter((u: UtxoI) => u.token_data)
+			.filter((u: UtxoI) => u.token_data?.nft)
+			.filter((u: UtxoI) => u.token_data?.nft?.commitment! == binToHex(Trust.getLockingBytecode({ recipient: recipient })))
+
 		walletUnspent = walletUnspent
 			.filter((u: UtxoI) => !u.token_data)
 			.filter((u: UtxoI) => u.height > 0);
@@ -127,7 +133,6 @@
 			record: Trust.getLockingBytecode({ recipient: recipient }),
 			utxo: utxo
 		};
-		console.log(job);
 		let unlockResponse = Trust.execute([job], now, wallet.getDepositAddress(), relayFee);
 		let raw_tx = binToHex(encodeTransactionBch(unlockResponse.transaction));
 		console.log(raw_tx);
@@ -231,6 +236,7 @@
 
 		{transactionError}
 
+		<!-- {#if authBaton} -->
 		{#if unspent.length > 0}
 			<h4>Your irrevocable trusts:</h4>
 			<div class="grid">
@@ -292,6 +298,9 @@
 				<p>No trusts for this wallet.</p>
 			</div>
 		{/if}
+		<!-- {:else}
+		<p><b>Unspent trusts are irrevocable.</b></p>
+		{/if} -->
 	{:else}
 		<div class="swap">
 			<p>Not connected.</p>
