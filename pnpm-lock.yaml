@@ -9,7 +9,7 @@ patchedDependencies:
     hash: f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08
     path: patches/@electrum-cash__network.patch
   mainnet-js:
-    hash: 16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523
+    hash: c2a9521a3bb52940c91526fb361ee6ad2703f291e3de46c13063c91e4cae6c19
     path: patches/mainnet-js.patch
 
 importers:
@@ -45,7 +45,7 @@ importers:
         version: 2.0.10
       mainnet-js:
         specifier: 3.1.7
-        version: 3.1.7(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)
+        version: 3.1.7(patch_hash=c2a9521a3bb52940c91526fb361ee6ad2703f291e3de46c13063c91e4cae6c19)
       typedoc:
         specifier: ^0.28.12
         version: 0.28.14(typescript@5.8.2)
@@ -114,7 +114,7 @@ importers:
         version: 2.0.0
       mainnet-js:
         specifier: 3.1.7
-        version: 3.1.7(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)
+        version: 3.1.7(patch_hash=c2a9521a3bb52940c91526fb361ee6ad2703f291e3de46c13063c91e4cae6c19)
       pako:
         specifier: 2.1.0
         version: 2.1.0
@@ -203,19 +203,6 @@ importers:
         specifier: ^20.17.24
         version: 20.17.24
 
-  packages/blocktop:
-    dependencies:
-      '@bitauth/libauth':
-        specifier: ^3.1.0-next.8
-        version: 3.1.0-next.8
-      '@unspent/tau':
-        specifier: workspace:*
-        version: link:../common
-    devDependencies:
-      '@types/node':
-        specifier: ^20.17.24
-        version: 20.17.24
-
   packages/catdex:
     dependencies:
       '@bitauth/libauth':
@@ -249,19 +236,6 @@ importers:
         version: link:../common
 
   packages/dutch:
-    dependencies:
-      '@bitauth/libauth':
-        specifier: ^3.1.0-next.8
-        version: 3.1.0-next.8
-      '@unspent/tau':
-        specifier: workspace:*
-        version: link:../common
-    devDependencies:
-      '@types/node':
-        specifier: ^20.17.24
-        version: 20.17.24
-
-  packages/flash:
     dependencies:
       '@bitauth/libauth':
         specifier: ^3.1.0-next.8
@@ -2602,7 +2576,7 @@ snapshots:
 
   '@mainnet-cash/indexeddb-storage@3.1.7':
     dependencies:
-      mainnet-js: 3.1.7(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523)
+      mainnet-js: 3.1.7(patch_hash=c2a9521a3bb52940c91526fb361ee6ad2703f291e3de46c13063c91e4cae6c19)
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -3666,7 +3640,7 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.0
 
-  mainnet-js@3.1.7(patch_hash=16d52577e1f6a8b0b78f7b8cc903dcb6be39d81dfe4014645d78a98aad873523):
+  mainnet-js@3.1.7(patch_hash=c2a9521a3bb52940c91526fb361ee6ad2703f291e3de46c13063c91e4cae6c19):
     dependencies:
       '@bitauth/libauth': 3.1.0-next.8
       '@electrum-cash/network': 4.2.2(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)
