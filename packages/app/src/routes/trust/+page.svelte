@@ -8,7 +8,7 @@
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet } from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet, NFTCapability } from 'mainnet-js';
 
 	import {
 		cashAssemblyToHex,
@@ -45,6 +45,7 @@
 	let transactionError: string | boolean = $state('');
 	let scripthash = $state('');
 	let recipient: Uint8Array = $state(new Uint8Array());
+	let record: Uint8Array = $state(new Uint8Array());
 
 	let timer: any = 0;
 
@@ -53,7 +54,7 @@
 
 	let unspent: any[] = $state([]);
 	let walletUnspent: any[] = $state([]);
-	let authBaton: any = $state();
+	let authBaton: UtxoI | undefined = $state(undefined);
 	let balance = $state(0);
 	let stakeValue = $state(0);
 
@@ -103,11 +104,9 @@
 		authBaton = walletUnspent
 			.filter((u: UtxoI) => u.token_data)
 			.filter((u: UtxoI) => u.token_data?.nft)
-			.filter((u: UtxoI) => u.token_data?.nft?.commitment! == binToHex(Trust.getLockingBytecode({ recipient: recipient })))
+			.filter((u: UtxoI) => u.token_data?.nft?.commitment! == binToHex(record))[0];
 
-		walletUnspent = walletUnspent
-			.filter((u: UtxoI) => !u.token_data)
-			.filter((u: UtxoI) => u.height > 0);
+		walletUnspent = walletUnspent.filter((u: UtxoI) => !u.token_data);
 	};
 
 	const updateUnspent = async function () {
@@ -135,14 +134,26 @@
 		};
 		let unlockResponse = Trust.execute([job], now, wallet.getDepositAddress(), relayFee);
 		let raw_tx = binToHex(encodeTransactionBch(unlockResponse.transaction));
-		console.log(raw_tx);
 		await broadcast(raw_tx);
 	};
 
+	const userOkay = async function () {
+
+		try {
+			let sendResponse = await wallet.tokenGenesis({
+				cashaddr: wallet.getTokenDepositAddress()!, // token UTXO recipient, if not specified will default to sender's address
+				nft: {
+					commitment: binToHex(record), // NFT Commitment message
+					capability: NFTCapability.none // NFT capability
+				},
+				value: 1000 // Satoshi value
+			});
+		} catch (e) {
+			console.log(e);
+		}
+	};
+
 	const lock = async function () {
-		console.log('stake value:', stakeValue);
-		console.log('balance:', balance);
-		console.log('unspent:', walletUnspent);
 		if (stakeValue && stakeValue > 50_000) {
 			let lockResponse = Trust.fund(
 				Math.floor(stakeValue),
@@ -165,7 +176,7 @@
 		if (typeof lockingCodeResult == 'string') throw lockingCodeResult;
 		walletScriptHash = getScriptHash(lockingCodeResult.bytecode);
 		recipient = lockingCodeResult.bytecode;
-		let record = Trust.getLockingBytecode({ recipient: recipient });
+		record = Trust.getLockingBytecode({ recipient: recipient });
 		scripthash = Trust.getScriptHash(record);
 
 		// Initialize an electrum client.
@@ -190,6 +201,11 @@
 	});
 </script>
 
+<svelte:head>
+	<title>Unspent</title>
+	<meta name="description" content="Fund an annuity." />
+</svelte:head>
+
 <section>
 	<div class="status">
 		<BitauthLink template={Trust.template} />
@@ -199,108 +215,129 @@
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
 	</div>
+
+	<h1>Fund an annuity</h1>
+
 	{#if connectionStatus == 'CONNECTED'}
-		<div class="swap">
-			<div class="stakeForm">
-				<div class="purple-theme">
-					<label for="stakeValue">{baseTicker} to Lock</label>
-					<RangeSlider
-						bind:value={stakeValue}
-						id="stakeValue"
-						float={true}
-						min={0}
-						step={100_000}
-						formatter={(v) => `${v / 100_000_000} BCH`}
-						max={balance - 3_000}
-					/>
-					{stakeValue! / 100_000_000}
-					{baseTicker}
+		{#if authBaton}
+			<div class="swap">
+				<div class="stakeForm">
+					<div class="purple-theme">
+						<label for="stakeValue">{baseTicker} to Lock</label>
+						<RangeSlider
+							bind:value={stakeValue}
+							id="stakeValue"
+							float={true}
+							min={0}
+							step={100_000}
+							formatter={(v) => `${v / 100_000_000} BCH`}
+							max={balance - 3_000}
+						/>
+						{stakeValue! / 100_000_000}
+						{baseTicker}
+					</div>
+				</div>
+				<div class="stake">
+					{#if stakeValue! / 100_000_000}
+						<button
+							onclick={() => {
+								lock();
+							}}
+						>
+							stake
+						</button>
+					{:else}
+						<button disabled> stake </button>
+						<br />
+						<span style="font-size:large; color: red;"></span>
+					{/if}
 				</div>
 			</div>
-			<div class="stake">
-				{#if stakeValue! / 100_000_000}
-					<button
-						onclick={() => {
-							lock();
-						}}
-					>
-						stake
-					</button>
-				{:else}
-					<button disabled> stake </button>
-					<br />
-					<span style="font-size:large; color: red;"></span>
-				{/if}
-			</div>
-		</div>
 
-		{transactionError}
+			{transactionError}
 
-		<!-- {#if authBaton} -->
-		{#if unspent.length > 0}
-			<h4>Your irrevocable trusts:</h4>
-			<div class="grid">
-				{#each unspent as t, i}
-					{#if !t.token_data && unspent[i]}
-						<div class="container">
-							<div class="post">
-								<div class="balance">
-									<div>
-										<b>Trust</b>
-										<br />
-										
-										<img src={unspentIcon} width="48px" />
+			{#if unspent.length > 0}
+				<h4>Your irrevocable trusts:</h4>
+				<div class="grid">
+					{#each unspent as t, i}
+						{#if !t.token_data && unspent[i]}
+							<div class="container">
+								<div class="post">
+									<div class="balance">
+										<div>
+											<b>Trust</b>
+											<br />
+
+											<img src={unspentIcon} width="48px" />
+										</div>
+										<div class="fill">
+											<div></div>
+										</div>
+										<div class="end">
+											<span style="font-size:large"
+												>{Number(unspent[i].value).toLocaleString(undefined, {})} sats</span
+											>
+											<br />
+											{#if unspent[i].height > 0 && unspent[i].height - now >= Trust.PERIOD}
+												<button class="action" onclick={() => unlock(now, unspent[i])}
+													>{t.value / 100_000_000}
+													{baseTicker}
+													<img height="40px" src={bchIcon} />
+												</button>
+											{:else}
+												<button class="action" disabled
+													>unlock in <br />
+													<span style="font-weight:600"
+														>{unspent[i].height > 0
+															? Trust.PERIOD - (now - unspent[i].height)
+															: Trust.PERIOD}</span
+													>
+													Blocks
+												</button>
+											{/if}
+										</div>
 									</div>
-									<div class="fill">
-										<div></div>
+									<div class="header">
+										<div class="timestamp">
+											<img
+												height={20}
+												src={blo(`${unspent[i].tx_hash}:${unspent[i].tx_pos}`, 20)}
+											/>
+											{unspent[i].tx_hash} : {unspent[i].tx_pos}
+										</div>
+										<div class="fill"></div>
+										<div class="timestamp">{unspent[i].height}</div>
 									</div>
-									<div class="end">
-										<span style="font-size:large"
-											>{Number(unspent[i].value).toLocaleString(undefined, {})} sats</span
-										>
-										<br />
-										{#if unspent[i].height > 0 && unspent[i].height - now >= Trust.PERIOD}
-											<button class="action" onclick={() => unlock(now, unspent[i])}
-												>{t.value / 100_000_000}
-												{baseTicker}
-												<img height="40px" src={bchIcon} />
-											</button>
-										{:else}
-											<button class="action" disabled
-												>unlock in <br />
-												<span style="font-weight:600"
-													>{unspent[i].height > 0
-														? Trust.PERIOD - (now- unspent[i].height)
-														: Trust.PERIOD}</span
-												>
-												Blocks
-											</button>
-										{/if}
-									</div>
-								</div>
-								<div class="header">
-									<div class="timestamp">
-										<img
-											height={20}
-											src={blo(`${unspent[i].tx_hash}:${unspent[i].tx_pos}`, 20)}
-										/> {unspent[i].tx_hash} : {unspent[i].tx_pos}
-									</div>
-									<div class="fill"></div>
-									<div class="timestamp">{unspent[i].height}</div>
 								</div>
 							</div>
-						</div>
-					{/if}
-				{/each}
-			</div>
+						{/if}
+					{/each}
+				</div>
+			{:else}
+				<div class="swap">
+					<p>No trusts found for this wallet.</p>
+				</div>
+			{/if}
 		{:else}
-			<div class="swap">
-				<p>No trusts for this wallet.</p>
+			<div>
+				<p><b>IMPORTANT: Unspent trusts are IRREVOCABLE annuities.</b></p>
+
+				<ul>
+					<li>Once a contract is funded, the trust can <b>never be changed.</b></li>
+					<li>There are <b>no early withdraws</b>, only scheduled distributions.</li>
+					<li><b>Backup you seed phrase</b> prior to funding a trust.</li>
+					<li>
+						Do <b>NOT</b> use an exchange address, trusts are designed survive all centralized fiat exchanges.
+					</li>
+				</ul>
+				<p>
+					Each contract is the minimal code required to allow monthly installments in perpetuity.
+					Everyone who chooses to fund an unspent trust should share in the similar collective
+					outcome.
+				</p>
 			</div>
+			<button onclick={() => userOkay()}> I understand the risks. </button>
 		{/if}
-		<!-- {:else}
-		<p><b>Unspent trusts are irrevocable.</b></p>
-		{/if} -->
 	{:else}
 		<div class="swap">
 			<p>Not connected.</p>

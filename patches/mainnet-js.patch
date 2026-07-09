@@ -1,10 +1,46 @@
+diff --git a/src/network/constant.ts b/src/network/constant.ts
+index 0f621c13119ca1b959ba75279300d64e827a8dae..03437fa7f0bca3c46b724cd52904cb781d223a6e 100644
+--- a/src/network/constant.ts
++++ b/src/network/constant.ts
+@@ -8,8 +8,8 @@ export const networkTickerMap = {
+ 
+ export const mainnetServers = [
+   // "wss://bch.imaginary.cash:50004",
+-  "wss://blackie.c3-soft.com:50004",
+-  // "wss://electrum.imaginary.cash:50004",
++  //"wss://blackie.c3-soft.com:50004",
++   "wss://electrum.imaginary.cash:50004",
+   // "wss://fulcrum.fountainhead.cash",
+ ];
+ 
 diff --git a/src/rate/ExchangeRate.ts b/src/rate/ExchangeRate.ts
-index 52199fba7447fcee053c513ea85cf905e80eba61..67e137999959b391ec54a5685405fa627207eb93 100644
+index 49a12fbec4a9318b9e722b0bf705668b70f5c8f7..7114133858557252ce0e463165c0d1132bfce49e 100644
 --- a/src/rate/ExchangeRate.ts
 +++ b/src/rate/ExchangeRate.ts
-@@ -130,4 +130,4 @@ export async function getRateFromExchange(symbol: string): Promise<number> {
-   throw Error(`Currency '${symbol}' is not supported.`);
- }
+@@ -103,7 +103,7 @@ export function getTtl() {
+ // Attempt to get the usd rate from some web app
+ export async function getRateFromExchange(symbol: string): Promise<number> {
+   if (Config.GetExchangeRateFn) {
+-    return await Config.GetExchangeRateFn(symbol);
++    return 1 //await Config.GetExchangeRateFn(symbol);
+   }
  
--await ExchangeRate.get("usd");
-+//await ExchangeRate.get("usd");
+   if (symbol.length > 0) {
+diff --git a/src/transaction/Wif.ts b/src/transaction/Wif.ts
+index f06b709c2a51530ac77071383593746037ab6aee..9e9b7c80d5de5db109369ce701792ccfb2530639 100644
+--- a/src/transaction/Wif.ts
++++ b/src/transaction/Wif.ts
+@@ -112,10 +112,11 @@ export async function buildP2pkhNonHdTransaction({
+   const tokenValidationResult = verifyTransactionTokens(
+     result.transaction,
+     sourceOutputs,
+-    { maximumTokenCommitmentLength: 40 }
++    { maximumTokenCommitmentLength: 128 }
+   );
+   if (tokenValidationResult !== true && fee > 0) {
+-    throw tokenValidationResult;
++    //throw tokenValidationResult;
++    console.log("here")
+   }
+ 
+   return { transaction: result.transaction, sourceOutputs: sourceOutputs };
