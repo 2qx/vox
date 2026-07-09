@@ -229,7 +229,7 @@
 		{/if}
 	</div>
 
-	<h1>Stake coins for futures</h1>
+	<h1>Swap coins for futures</h1>
 
 	<div class="swap">
 		<div>
