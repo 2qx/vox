@@ -74,7 +74,6 @@
 
 	.quantity {
 		flex: 1;	
-		white-space: pre-wrap;
 		font-size: small;
 		font-weight: 400;
 		text-align: end;
