@@ -13,7 +13,7 @@
 		TestNetWallet,
 		NFTCapability,
 		TokenSendRequest
-	} from 'mainnet-js';
+	} from '@unspent/wallet';
 	import { blo } from 'blo';
 
 	import {

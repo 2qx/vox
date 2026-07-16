@@ -73,14 +73,16 @@
 	}
 
 	.quantity {
+		flex: 1;	
 		white-space: pre-wrap;
 		font-size: small;
-		font-weight: 500;
+		font-weight: 400;
 		text-align: end;
 	}
 	.price {
+		font-style: italic;
 		min-width: 40px;
-		font-size: medium;
+		font-size: small;
 		font-weight: 600;
 		text-align: end;
 	}
@@ -93,13 +95,12 @@
 		flex: 1;
 		word-break: break-all;
 		display: flex;
-		justify-content: space-between;
 		align-items: center;
 	}
 
 	
 	.order div {
-		padding: 2px;
+		padding: 1px;
 	}
 	
 	.auth {

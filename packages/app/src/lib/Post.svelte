@@ -6,7 +6,7 @@
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet, NFTCapability, TokenSendRequest } from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet, NFTCapability, TokenSendRequest } from '@unspent/wallet';
 	import { blo } from 'blo';
 
 	import {

@@ -8,7 +8,7 @@
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet, NFTCapability } from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet, NFTCapability } from '@unspent/wallet';
 
 	import {
 		cashAssemblyToHex,
@@ -138,7 +138,7 @@
 	};
 
 	const userOkay = async function () {
-
+		await wallet.sendMax(wallet.getDepositAddress());
 		try {
 			let sendResponse = await wallet.tokenGenesis({
 				cashaddr: wallet.getTokenDepositAddress()!, // token UTXO recipient, if not specified will default to sender's address

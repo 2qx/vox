@@ -20,7 +20,7 @@
 	} from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
-	import { BaseWallet, Wallet, TestNetWallet } from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet } from '@unspent/wallet';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 

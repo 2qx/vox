@@ -29,7 +29,8 @@ body {
 }
 
 
-h1,h2 {
+h1,
+h2 {
 	font-weight: 500;
 }
 
@@ -93,6 +94,33 @@ button:focus:not(:focus-visible) {
 	outline: none;
 }
 
+
+.button {
+	background-color: #a45eb6;
+	/* Green */
+	border: none;
+	color: white;
+	padding: 15px 15px;
+	border-radius: 30px;
+	text-align: center;
+	text-decoration: none;
+	display: inline-block;
+	font-size: 16px;
+	margin: auto;
+	filter: drop-shadow(5px 5px 5px #b1aeaead);
+
+}
+
+
+
+.button:disabled {
+	background-color: rgb(202, 191, 204);
+	color: white;
+}
+
+.button:hover {
+	background-color: #9933b3;
+}
 
 .visually-hidden {
 	border: 0;

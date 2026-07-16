@@ -35,7 +35,7 @@
 	} from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
-	import { BaseWallet, Connection, Wallet, TestNetWallet, NFTCapability, TokenMintRequest } from 'mainnet-js';
+	import { BaseWallet, Connection, Wallet, TestNetWallet, NFTCapability, TokenMintRequest } from '@unspent/wallet';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 
@@ -517,7 +517,7 @@
 		<br />
 		{#if transaction && transactionValid}
 			<div class="swap">
-				<button onclick={() => broadcast(transaction_hex)}>Broadcast</button>
+				<button class="button" onclick={() => broadcast(transaction_hex)}>Broadcast</button>
 			</div>
 			<Transaction {transaction} {sourceOutputs} category={selectedAsset} />
 		{/if}
@@ -567,8 +567,8 @@
 							You have a CatDex baton. <br />
 							For others to can find your orders, announce your membership in the CatDex.
 						</p>
-						<button onclick={() => announceAuthBaton(4364)}>Month (4364 sats)</button>
-						<button onclick={() => announceAuthBaton(52596)}>Year (52596 sats) </button>
+						<button class="button" onclick={() => announceAuthBaton(4364)}>Month (4364 sats)</button>
+						<button class="button" onclick={() => announceAuthBaton(52596)}>Year (52596 sats) </button>
 						<p>Membership fees are non-refundable and are claimed by miners.</p>
 						{#if myMembership > 0}
 							<b
@@ -588,7 +588,7 @@
 					<a href="/wallet">Deposit funds</a> to create a CatDex authentication baton.
 				{:else if myAuthBatons.length == 0}
 					<p>To write orders, you need to create a CatDex Authentication Baton (1000 sats).</p>
-					<button onclick={() => newAuthBaton()}>Create a new Baton</button>
+					<button class="button"  onclick={() => newAuthBaton()}>Create a new Baton</button>
 				{:else}
 					<h3>Your Decentralized Listing</h3>
 					{#each myAuthBatons as authBaton}
@@ -643,16 +643,16 @@
 
 					<br />
 					{#if myOrderBook.length > 0}
-						<button onclick={() => postOrders(true)}>Replace Orders</button>
+						<button class="button"  onclick={() => postOrders(true)}>Replace Orders</button>
 
-						<button onclick={() => postOrders()}>Append Orders</button>
+						<button class="button"  onclick={() => postOrders()}>Append Orders</button>
 					{:else}
-						<button onclick={() => postOrders(true)}> Clear Orders </button>
-						<button onclick={() => addMyOrder(0)}>New Orders</button><br />
+						<button class="button" onclick={() => postOrders(true)}> Clear Orders </button>
+						<button class="button" onclick={() => addMyOrder(0)}>New Orders</button><br />
 					{/if}
 
 					{#if myOldDexUtxos.length > 0}
-						<button onclick={() => clearOldOrders()}> Clear Old Orders </button>
+						<button class="button" onclick={() => clearOldOrders()}> Clear Old Orders </button>
 					{/if}
 					{#if myOrderBook.length > 0}
 						<div class="orders">
@@ -700,8 +700,8 @@
 								{/if}
 							</div>
 							<div class="listButtons">
-								<button onclick={() => addMyOrder(i + 1)}>+</button>
-								<button
+								<button class="button" onclick={() => addMyOrder(i + 1)}>+</button>
+								<button class="button" 
 									onclick={() => {
 										dropOrder(i);
 									}}>-</button

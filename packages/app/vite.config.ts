@@ -18,6 +18,7 @@ export default defineConfig({
 			include: [
 				/@fbch\/lib/, 
 				/@unspent\/drip/, 
+				/@unspent\/wallet/, 
 				/@unspent\/wrap/, 
 				/node_modules/
 			]

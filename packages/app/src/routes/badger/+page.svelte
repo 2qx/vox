@@ -22,7 +22,7 @@
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet } from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet } from '@unspent/wallet';
 
 	import {
 		getDefaultElectrum,
@@ -274,7 +274,7 @@
 			</div>
 			<div class="stake">
 				{#if (stakeValue! / 100_000_000) * stakeBlock >= 1}
-					<button
+					<button class="button"
 						onclick={() => {
 							lock();
 						}}
@@ -282,7 +282,7 @@
 						stake
 					</button>
 				{:else}
-					<button disabled> stake </button>
+					<button class="button" disabled> stake </button>
 					<br />
 					<span style="font-size:large; color: red;"></span>
 				{/if}
@@ -359,25 +359,7 @@
 		margin: 0 0 3px 0;
 	}
 
-	button {
-		background-color: #a45eb6; /* Green */
-		border: none;
-		color: white;
-		padding: 10px;
-		border-radius: 20px;
-		text-align: center;
-		text-decoration: none;
-		display: inline-block;
-		font-size: 16px;
-	}
-
-	button:disabled {
-		background-color: rgb(202, 191, 204);
-		color: white;
-	}
-	button:hover {
-		background-color: #9933b3;
-	}
+	
 
 	label {
 		margin: 8px;

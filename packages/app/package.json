@@ -53,7 +53,7 @@
 		"@unspent/trust": "workspace:*",
 		"@unspent/tau": "workspace:*",
 		"@unspent/wrap": "workspace:*",
-		"mainnet-js": "3.1.7",
+		"@unspent/wallet": "workspace:*",
 		"blo": "2.0.0",
 		"pako": "2.1.0"
 	}
