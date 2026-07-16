@@ -81,7 +81,7 @@
 	}
 	.price {
 		font-style: italic;
-		min-width: 40px;
+		min-width: 35px;
 		font-size: small;
 		font-weight: 600;
 		text-align: end;
