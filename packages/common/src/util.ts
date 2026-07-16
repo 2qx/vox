@@ -36,7 +36,7 @@ export function getAddress(lockingBytecode: Uint8Array, prefix = "bitcoincash" a
   return result.address
 }
 
-export function getTransactionId(txn: Uint8Array): string{
+export function getTransactionId(txn: Uint8Array): string {
   return swapEndianness(binToHex(hash256(txn)))
 }
 
@@ -108,6 +108,15 @@ export function sumTokenAmounts(utxos: UtxoI[], tokenId: string): bigint {
   }
 }
 
+
+export function valueDifference(
+  source: Output[],
+  outputs: OutputTemplate<CompilerBch>[]): bigint {
+  let sumOut = sumOutputValue(outputs)
+  let sumIn = sumSourceOutputValue(source)
+  return sumOut - sumIn
+}
+
 export function sumSourceOutputValue(source: Output[], subTokenDust = false) {
   if (source.length > 0) {
     const balanceArray: bigint[] = source.map((o: Output) => {
@@ -132,6 +141,31 @@ export function sumOutputValue(outputs: OutputTemplate<CompilerBch>[], subTokenD
   }
 }
 
+export function getDistinctFungibleTokenCategories(source: Output[], outputs: OutputTemplate<CompilerBch>[]): Uint8Array[] {
+
+  let inArray = source
+    .filter((o) => o.token)
+    .map((o: OutputTemplate<CompilerBch>) => {
+      return o.token?.category;
+    }).filter(cat => cat !== undefined);
+  let outputArray = outputs
+    .filter((o) => o.token !== undefined)
+    .map((o: OutputTemplate<CompilerBch>) => {
+      return o.token?.category;
+    }).filter(cat => cat !== undefined);
+  // make distinct
+  return [...new Set([...inArray, ...outputArray])];
+}
+
+export function tokenDifference(
+  source: Output[],
+  outputs: OutputTemplate<CompilerBch>[],
+  asset: string | Uint8Array): bigint {
+  let sumTokenAmountsOut = sumOutputTokenAmounts(outputs, asset)
+  let sumTokenAmountsIn = sumSourceOutputTokenAmounts(source, asset)
+  return sumTokenAmountsOut - sumTokenAmountsIn
+}
+
 export function sumOutputTokenAmounts(
   outputs: OutputTemplate<CompilerBch>[],
   tokenId: string | Uint8Array) {
@@ -148,8 +182,6 @@ export function sumOutputTokenAmounts(
     return 0n;
   }
 }
-
-
 
 export function sumSourceOutputTokenAmounts(source: Output[], tokenId?: string | Uint8Array): bigint {
   if (tokenId && typeof tokenId !== "string") tokenId = binToHex(tokenId)
@@ -192,7 +224,7 @@ export function cashAssemblyToHex(str: string): string {
   return binToHex(result)
 }
 
-export function catUint8(uint8arrays:Uint8Array[]) {
+export function catUint8(uint8arrays: Uint8Array[]) {
   // Determine the length of the result.
   const totalLength = uint8arrays.reduce(
     (total, uint8array) => total + uint8array.byteLength,

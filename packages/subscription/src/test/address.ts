@@ -16,13 +16,13 @@ test('test subscription address', async t => {
     let bytecodeData = Subscription.dataToBytecode(data)
 
     t.is(
-        // cspell:disable-next-line
         binToHex(Subscription.getLockingBytecode(bytecodeData)),
+        "03553353" +
         "02e803" +
         "17a914e78564d75c446f8c00c757a2bd783d30c4f0819a87" +
         "029000" +
         "20efbe00000000000000000000000000000000000000000000000000000000adde" +
-        "00ce7c527e876367c0d05379a16367c0c3937568686d7551"
+        "00ce7c527e876367c0d05379a16367c0c3937568686d757551"
     )
 
 });

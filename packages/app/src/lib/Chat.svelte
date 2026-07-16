@@ -13,7 +13,7 @@
 		TestNetWallet,
 		NFTCapability,
 		TokenSendRequest
-	} from 'mainnet-js';
+	} from '@unspent/wallet';
 	import { blo } from 'blo';
 
 	import {
@@ -307,8 +307,8 @@
 		let sendResponse = await wallet.tokenGenesis({
 			cashaddr: wallet.getTokenDepositAddress()!, // token UTXO recipient, if not specified will default to sender's address
 			nft: {
-				commitment: uname, // NFT Commitment message
-				capability: NFTCapability.minting // NFT capability
+				commitment: uname, 
+				capability: NFTCapability.minting 
 			},
 			value: 1_000_000 // Satoshi value
 		});

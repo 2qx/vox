@@ -28,7 +28,7 @@
 		TestNetWallet,
 		TokenSendRequest,
 		WalletTypeEnum
-	} from 'mainnet-js';
+	} from '@unspent/wallet';
 
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
@@ -54,6 +54,7 @@
 	let assetsCommodity: UtxoI[] | undefined = $state([]);
 	let assetsFuture: UtxoI[] | undefined = $state([]);
 	let assetsAuth: UtxoI[] | undefined = $state([]);
+	let assetsInfo: UtxoI[] | undefined = $state([]);
 	let assetsOther: UtxoI[] | undefined = $state([]);
 	let showInfo = $state(false);
 	let scripthash = $state('');
@@ -94,7 +95,6 @@
 			(u: UtxoI) => u.token_data?.category == utxoToRedeem?.token_data?.category
 		);
 
-		console.log(vaultUtxos);
 		if (utxoToRedeem) {
 			let walletUnspent = [...assetsCash!, utxoToRedeem];
 			let swapTx = Vault.swap(-amount, vaultUtxos, walletUnspent, locktime, key);
@@ -166,6 +166,8 @@
 				return 'future';
 			} else if (token_data!.nft?.commitment.startsWith('6a035533')) {
 				return 'auth';
+			} else if (token_data!.nft?.commitment.startsWith('03553350')) {
+				return 'info';
 			} else {
 				return 'other';
 			}
@@ -175,6 +177,7 @@
 		assetsCommodity = classifiedUtxos.commodity;
 		assetsFuture = classifiedUtxos.future;
 		assetsAuth = classifiedUtxos.auth;
+		assetsInfo = classifiedUtxos.info;
 		assetsOther = classifiedUtxos.other;
 		return unspent;
 	};
@@ -200,7 +203,7 @@
 				let conn = new Connection('mainnet', 'wss://bch.imaginary.cash:50004');
 				wallet.provider = conn.networkProvider;
 				globalThis.BCH = conn.networkProvider;
-			}else{
+			} else {
 				let conn = new Connection('testnet', 'wss://chipnet.bch.ninja:50004');
 				//let conn = new Connection('testnet', 'wss://chipnet.imaginary.cash:50004');
 				wallet.provider = conn.networkProvider;
@@ -281,7 +284,7 @@
 
 					<p id="deposit" style="text-align: center;">{wallet.getDepositAddress()}</p>
 				{:else}
-					<button
+					<button class="button"
 						onclick={() => {
 							showTokenAddress = !showTokenAddress;
 						}}
@@ -344,6 +347,13 @@
 				{/each}
 			{/if}
 
+			{#if assetsInfo.length > 0}
+				<h3>assets : informational</h3>
+				{#each assetsInfo as u, i (u.tx_hash + ':' + u.tx_pos)}
+					<Utxo {...u} {...{ isMainnet: isMainnet }} />
+				{/each}
+			{/if}
+
 			{#if assetsOther!.length > 0}
 				<h3>assets : other</h3>
 				{#each assetsOther! as u, i (u.tx_hash + ':' + u.tx_pos)}
@@ -351,8 +361,8 @@
 				{/each}
 			{/if}
 			<div class="walletHead">
-				<button onclick={() => consolidateFungibleTokens()}> Consolidate Tokens</button>
-				<button onclick={() => consolidateSats()}> Consolidate Sats</button>
+				<button class="button" onclick={() => consolidateFungibleTokens()}> Consolidate Tokens</button>
+				<button class="button" onclick={() => consolidateSats()}> Consolidate Sats</button>
 			</div>
 		{:else}
 			<p>loading wallet...</p>
@@ -360,7 +370,7 @@
 
 		{#if wallet}
 			<div class="showSeed">
-				<button onclick={toggleSeed}>Show/hide backup</button>
+				<button class="button" onclick={toggleSeed}>Show/hide backup</button>
 				{#if showInfo}
 					<h3>DO NOT SHARE WITH ANYONE!</h3>
 					<p>
@@ -371,7 +381,7 @@
 			</div>
 
 			<div class="history">
-				<button
+				<button class="button"
 					onclick={() => {
 						showHistory = !showHistory;
 					}}
@@ -442,18 +452,7 @@
 		background-color: #fff;
 	}
 
-	button {
-		background-color: #a45eb6; /* Green */
-		border: none;
-		color: white;
-		padding: 15px 15px;
-		border-radius: 20px;
-		text-align: center;
-		text-decoration: none;
-		display: inline-block;
-		font-size: 16px;
-		margin: auto;
-	}
+	
 
 	.walletHead {
 		padding: 15px 15px;

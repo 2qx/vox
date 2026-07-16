@@ -4,7 +4,7 @@
 	import type { PageProps } from './$types';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet } from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet } from '@unspent/wallet';
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
 
 	import BCH from '$lib/images/BCH.svg';

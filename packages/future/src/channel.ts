@@ -121,7 +121,7 @@ function parsePostTransaction(
             body = code.map(
                 commitment => decodePushBytes(commitment.slice(2))[1]
             ).map(bin => binToUtf8(bin!)).join("")
-        } else if (payload[0] == "V+") {
+        } else if (code[0].slice(0, 8) == "6a0256b2") {
             ref = code[0].slice(10)
             like = 1
         } else if (payload[0] == "V,") {
@@ -445,6 +445,7 @@ export class Channel {
     }
 
 
+
     static getReplyOutput(channel: string, postId: string, message: string, auth: UtxoI, couponValue: number): OutputTemplate<CompilerBch>[] {
         let m = cashAssemblyToHex('OP_RETURN <"V,">') + binToHex(encodeDataPush(hexToBin(postId)))
 
@@ -642,7 +643,7 @@ export class Channel {
 
         sourceOutputs.push(this.getWalletSourceOutput(auth, key));
         let valueIn = sumSourceOutputValue(sourceOutputs)
-        let change = valueIn - sumOutputValue(config.outputs)
+        let change = valueIn - sumOutputValue(config.outputs);
         config.outputs.push(this.getChangeOutput(auth, change, key));
         return this.buildAndValidateTransaction(config, sourceOutputs, fee);
 
@@ -683,7 +684,7 @@ export class Channel {
 
         sourceOutputs.push(this.getWalletSourceOutput(auth, key));
         let valueIn = sumSourceOutputValue(sourceOutputs)
-        let change = valueIn - sumOutputValue(config.outputs)
+        let change = valueIn - sumOutputValue(config.outputs);;
         config.outputs.push(this.getChangeOutput(auth, change, key));
         return this.buildAndValidateTransaction(config, sourceOutputs, fee);
 

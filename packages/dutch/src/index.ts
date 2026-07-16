@@ -31,6 +31,7 @@ import {
     type CashAddressNetworkPrefix,
     getLibauthCompiler,
     getScriptHash,
+    getWalletLayers,
     numToVm,
     UtxoI,
 } from '@unspent/tau';
@@ -63,19 +64,18 @@ export default class Dutch {
     }
 
 
-    static parseNFT(utxo: UtxoI): BytecodeDataI {
+    static parseCommitment(record: string | Uint8Array): BytecodeDataI {
 
-        if (utxo.token_data?.nft?.commitment) {
-            let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment))
-            if (binToUtf8(byteData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error("Non-subscription record NFT passed as subscription")
-            return {
-                "open": byteData[1]!,
-                "recipient": byteData[2]!
-            }
-        } else {
-            throw Error("Could not parse subscription NFT")
+        if (typeof record === "string") record = hexToBin(record)
+        const decodedData = decodePushBytes(record)
+        if (binToUtf8(decodedData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error(`"Non-${typeof this} record NFT passed as ${typeof this}"`)
+        return {
+            "open": decodedData[1]!,
+            "recipient": decodedData[2]!,
         }
+
     }
+
 
     static encodeCommitment(data: DutchAuctionData) {
         let commitment = cashAssemblyToBin(
@@ -112,9 +112,9 @@ export default class Dutch {
      * @returns a cashaddress.
      */
     static getScriptHash(
-        record: UtxoI,
+        record: string|Uint8Array,
         reversed = true): string {
-        let data = this.parseNFT(record)
+        let data = this.parseCommitment(record)
         return getScriptHash(this.getLockingBytecode(data), reversed)
     }
 
@@ -192,127 +192,6 @@ export default class Dutch {
 
     }
 
-    static getChangeOutput(
-        value: bigint,
-        utxo: UtxoI,
-        privateKey?: any,
-        addressIndex = 0
-    ): OutputTemplate<CompilerBch> {
-
-        const lockingBytecode = privateKey ? {
-            compiler: this.compiler,
-            data: {
-                hdKeys: {
-                    addressIndex: addressIndex,
-                    hdPublicKeys: {
-                        'wallet': deriveHdPublicKey(privateKey).hdPublicKey
-                    },
-                },
-            },
-            script: 'wallet_lock'
-        } : Uint8Array.from(Array(33))
-
-        return {
-            lockingBytecode: lockingBytecode,
-            valueSatoshis: value,
-            token: utxo.token_data ? {
-                category: hexToBin(utxo.token_data.category!),
-                amount: BigInt(utxo.token_data.amount),
-                nft: utxo.token_data.nft ? {
-                    commitment: hexToBin(utxo.token_data.nft.commitment!),
-                    capability: utxo.token_data.nft.capability,
-                } : undefined
-            } : undefined
-        }
-    }
-
-
-
-    static getWalletInputs(
-        utxos: UtxoI[],
-        amount: bigint,
-        sourceOutputs: Output[] = [],
-        privateKey?: string,
-        addressIndex = 0,
-    ): {
-        inputs: InputTemplate<CompilerBch>[],
-        outputs: OutputTemplate<CompilerBch>[],
-        sourceOutputs: Output[]
-    } {
-
-        let inputs: InputTemplate<CompilerBch>[] = [];
-        let outputs: OutputTemplate<CompilerBch>[] = [];
-
-
-        // Only use straight sat utxos
-        utxos = utxos.filter(u => !u.token_data)
-
-        // TODO: sort by highest value first
-        if (utxos.length == 0) throw Error("no wallet utxos left, maximum recursion depth reached.");
-
-        // get a random utxo.
-        const randomIdx = Math.floor(Math.random() * utxos.length)
-        const randomUtxo = utxos[randomIdx]!
-
-        // remove the random utxo in place
-        utxos.splice(randomIdx, 1);
-
-        // spend the utxo
-        inputs.push(getWalletInput(randomUtxo, privateKey, addressIndex))
-        sourceOutputs.push(getWalletSourceOutput(randomUtxo, privateKey, addressIndex));
-        let sumSats = sumSourceOutputValue(sourceOutputs)
-        if (
-            // or collecting sats and not enough sats inputs 
-            (sumSats < amount)
-        ) {
-            // to it again
-            let nextTry = this.getWalletInputs(
-                [...utxos],
-                amount,
-                [...sourceOutputs],
-                privateKey,
-                addressIndex
-            )
-            inputs.push(...nextTry.inputs)
-            outputs.push(...nextTry.outputs)
-            sourceOutputs = nextTry.sourceOutputs
-        }
-        return { inputs, outputs, sourceOutputs }
-    }
-
-    static getWalletLayers(
-        utxo: UtxoI,
-        config: {
-            locktime: number;
-            version: number;
-            inputs: InputTemplate<CompilerBch>[];
-            outputs: OutputTemplate<CompilerBch>[];
-        },
-        sourceOutputs: Output[],
-        walletUtxos: UtxoI[],
-        privateKey?: string,
-        addressIndex = 0
-    ) {
-        // Calculate excess cash and tokens required to fund the exchange
-        let sumSatsOut = sumOutputValue(config.outputs)
-        let sumSatsIn = sumSourceOutputValue(sourceOutputs)
-        let satsRequired = sumSatsOut - sumSatsIn
-
-        const satsIn = this.getWalletInputs(walletUtxos, satsRequired, undefined, privateKey, addressIndex)
-        config.inputs.push(...satsIn.inputs);
-        sourceOutputs.push(...satsIn.sourceOutputs);
-
-
-        // Calculate excess cash and tokens to be returned as change
-        sumSatsOut = sumOutputValue(config.outputs)
-        sumSatsIn = sumSourceOutputValue(sourceOutputs)
-        let cashChange = sumSatsIn - sumSatsOut
-
-        config.outputs.push(this.getChangeOutput(cashChange, utxo, privateKey, addressIndex))
-
-        return config
-    }
-
     /**
      * Bid on lot records.
      *
@@ -328,7 +207,7 @@ export default class Dutch {
      */
 
     static execute(
-        record: UtxoI,
+        record: string|Uint8Array,
         utxo: UtxoI,
         walletUtxos: UtxoI[],
         height: number,
@@ -351,7 +230,7 @@ export default class Dutch {
             outputs
         }
 
-        const data = this.parseNFT(record)
+        const data = this.parseCommitment(record)
 
         let age = height - utxo.height
         let outputValue = Math.round(binToNumberUintLE(data["open"]!) / age) + 1
@@ -363,7 +242,7 @@ export default class Dutch {
         // Cash out the consignor
         config.outputs.push(this.getOutput(data, outputValue));
 
-        config = this.getWalletLayers(utxo, config, sourceOutputs, walletUtxos, privateKey, addressIndex);
+        config = getWalletLayers(config, sourceOutputs, walletUtxos, privateKey, addressIndex);
 
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));

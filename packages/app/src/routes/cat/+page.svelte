@@ -14,7 +14,12 @@
 
 	import Readme from './README.md';
 
-	import { default as CatDex, getAllMarketOrders, OldCatDex } from '@unspent/catdex';
+	import {
+		default as CatDex,
+		getAllMarketOrders,
+		OldCatDex,
+		type OrderRequest
+	} from '@unspent/catdex';
 
 	import SmallIndex from '@unspent/small';
 
@@ -30,7 +35,7 @@
 	} from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
-	import { BaseWallet, Connection, Wallet, TestNetWallet, NFTCapability, TokenMintRequest } from 'mainnet-js';
+	import { BaseWallet, Connection, Wallet, TestNetWallet, NFTCapability, TokenMintRequest } from '@unspent/wallet';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 
@@ -52,6 +57,7 @@
 
 	let { data }: PageProps = $props();
 	let selectedAsset = $state(data.asset);
+	let assetDecimals = $state(1);
 
 	let now: number = $state(0);
 
@@ -64,7 +70,6 @@
 	let contractState = $state('');
 	let timer: any;
 
-	let unspent: any[] = $state([]);
 	let walletUnspent: any[] = $state([]);
 	let orders: any[] = $state([]);
 	let myOrders: any[] = $state([]);
@@ -223,11 +228,13 @@
 	};
 
 	const updateAsset = async function () {
+		orders = [];
 		await updateWallet();
 		await updateOrders();
 		if (typeof selectedAsset == 'string') {
 			goto(`?asset=${selectedAsset}`, { keepFocus: true });
 			assetBalance = sumTokenAmounts(walletUnspent, selectedAsset);
+			assetDecimals = Math.pow(10, bcmr.get(selectedAsset).token.decimals);
 		} else {
 			assetBalance = 0n;
 		}
@@ -269,12 +276,18 @@
 
 	const postOrders = async function (replace = false) {
 		let oldOrders = replace ? myDexUtxos : [];
+		let satOrderBook = myOrderBook.map((o) => {
+			return {
+				price: o.price/assetDecimals ,
+				quantity: BigInt(o.quantity * assetDecimals)
+			} as OrderRequest;
+		});
 
 		let tx = CatDex.administer(
 			myAuthBatons[0],
 			selectedAsset!,
 			oldOrders,
-			myOrderBook,
+			satOrderBook,
 			walletUnspent,
 			key
 		);
@@ -286,7 +299,13 @@
 	const updateSwap = function () {
 		if (amount) {
 			try {
-				let result = CatDex.swap(BigInt(amount), orders, walletUnspent, key);
+				console.log(BigInt(Math.round(Number(amount) * Number(assetDecimals))));
+				let result = CatDex.swap(
+					BigInt(Math.round(Number(amount) * Number(assetDecimals))),
+					orders,
+					walletUnspent,
+					key
+				);
 				transaction = result.transaction;
 				sourceOutputs = result.sourceOutputs;
 				transaction_hex = binToHex(encodeTransactionBch(transaction));
@@ -415,6 +434,7 @@
 			'blockchain.scripthash.subscribe',
 			SmallIndex.getScriptHash(CatDex.PROTOCOL_IDENTIFIER)
 		);
+		updateAsset();
 	});
 
 	onDestroy(async () => {
@@ -477,9 +497,7 @@
 						alt={bcmr.get(selectedAsset).token.symbol}
 					/>
 					<br />
-					{(
-						assetBalance / BigInt(Math.pow(10, bcmr.get(selectedAsset).token.decimals))
-					).toLocaleString()}
+					{(assetBalance / BigInt(assetDecimals)).toLocaleString()}
 					{bcmr.get(selectedAsset).token.symbol}
 				</div>
 			</div>
@@ -499,7 +517,7 @@
 		<br />
 		{#if transaction && transactionValid}
 			<div class="swap">
-				<button onclick={() => broadcast(transaction_hex)}>Broadcast</button>
+				<button class="button" onclick={() => broadcast(transaction_hex)}>Broadcast</button>
 			</div>
 			<Transaction {transaction} {sourceOutputs} category={selectedAsset} />
 		{/if}
@@ -510,14 +528,24 @@
 				<p><b>BID</b></p>
 				<CatDexOrderHeader />
 				{#each orders.filter((o) => o.quantity > 0) as o}
-					<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+					<CatDexOrder
+						{...o}
+						{assetDecimals}
+						assetCategory={selectedAsset}
+						{...{ isMainnet: isMainnet }}
+					/>
 				{/each}
 			</div>
 			<div class="askBook">
 				<p><b>ASK</b></p>
 				<CatDexOrderHeader />
 				{#each orders.filter((o) => o.quantity < 0).toReversed() as o}
-					<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+					<CatDexOrder
+						{...o}
+						{assetDecimals}
+						assetCategory={selectedAsset}
+						{...{ isMainnet: isMainnet }}
+					/>
 				{/each}
 			</div>
 		</div>
@@ -539,8 +567,8 @@
 							You have a CatDex baton. <br />
 							For others to can find your orders, announce your membership in the CatDex.
 						</p>
-						<button onclick={() => announceAuthBaton(4364)}>Month (4364 sats)</button>
-						<button onclick={() => announceAuthBaton(52596)}>Year (52596 sats) </button>
+						<button class="button" onclick={() => announceAuthBaton(4364)}>Month (4364 sats)</button>
+						<button class="button" onclick={() => announceAuthBaton(52596)}>Year (52596 sats) </button>
 						<p>Membership fees are non-refundable and are claimed by miners.</p>
 						{#if myMembership > 0}
 							<b
@@ -560,7 +588,7 @@
 					<a href="/wallet">Deposit funds</a> to create a CatDex authentication baton.
 				{:else if myAuthBatons.length == 0}
 					<p>To write orders, you need to create a CatDex Authentication Baton (1000 sats).</p>
-					<button onclick={() => newAuthBaton()}>Create a new Baton</button>
+					<button class="button"  onclick={() => newAuthBaton()}>Create a new Baton</button>
 				{:else}
 					<h3>Your Decentralized Listing</h3>
 					{#each myAuthBatons as authBaton}
@@ -571,7 +599,7 @@
 							<div>
 								<img width="24" src={bchIcon} alt={baseTicker} />
 								<br />
-								{myMarketSatoshis.toLocaleString()} sats {baseTicker}
+								{(BigInt(myMarketSatoshis) ).toLocaleString()} sats {baseTicker}
 							</div>
 						{/if}
 						{#if myMarketTokens}
@@ -582,9 +610,7 @@
 									alt={bcmr.get(selectedAsset).token.symbol}
 								/>
 								<br />
-								{(
-									myMarketTokens / BigInt(Math.pow(10, bcmr.get(selectedAsset).token.decimals))
-								).toLocaleString()}
+								{(BigInt(myMarketTokens) / BigInt(assetDecimals)).toLocaleString()}
 								{bcmr.get(selectedAsset).token.symbol}
 							</div>
 						{/if}
@@ -594,29 +620,39 @@
 						<div>
 							<p><b>BID</b></p>
 							{#each myOrders.filter((o) => o.quantity > 0) as o}
-								<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+								<CatDexOrder
+									{...o}
+									{assetDecimals}
+									assetCategory={selectedAsset}
+									{...{ isMainnet: isMainnet }}
+								/>
 							{/each}
 						</div>
 						<div class="askBook">
 							<p><b>ASK</b></p>
 							{#each myOrders.filter((o) => o.quantity < 0).toReversed() as o}
-								<CatDexOrder {...o} assetCategory={selectedAsset} {...{ isMainnet: isMainnet }} />
+								<CatDexOrder
+									{...o}
+									{assetDecimals}
+									assetCategory={selectedAsset}
+									{...{ isMainnet: isMainnet }}
+								/>
 							{/each}
 						</div>
 					</div>
 
 					<br />
 					{#if myOrderBook.length > 0}
-						<button onclick={() => postOrders(true)}>Replace Orders</button>
+						<button class="button"  onclick={() => postOrders(true)}>Replace Orders</button>
 
-						<button onclick={() => postOrders()}>Append Orders</button>
+						<button class="button"  onclick={() => postOrders()}>Append Orders</button>
 					{:else}
-						<button onclick={() => postOrders(true)}> Clear Orders </button>
-						<button onclick={() => addMyOrder(0)}>New Orders</button><br />
+						<button class="button" onclick={() => postOrders(true)}> Clear Orders </button>
+						<button class="button" onclick={() => addMyOrder(0)}>New Orders</button><br />
 					{/if}
 
 					{#if myOldDexUtxos.length > 0}
-						<button onclick={() => clearOldOrders()}> Clear Old Orders </button>
+						<button class="button" onclick={() => clearOldOrders()}> Clear Old Orders </button>
 					{/if}
 					{#if myOrderBook.length > 0}
 						<div class="orders">
@@ -664,8 +700,8 @@
 								{/if}
 							</div>
 							<div class="listButtons">
-								<button onclick={() => addMyOrder(i + 1)}>+</button>
-								<button
+								<button class="button" onclick={() => addMyOrder(i + 1)}>+</button>
+								<button class="button" 
 									onclick={() => {
 										dropOrder(i);
 									}}>-</button

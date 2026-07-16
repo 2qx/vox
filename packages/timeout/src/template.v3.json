@@ -36,18 +36,17 @@
   },
   "scenarios": {
     "base": {
-      "description": "",
-      "name": "Base Scenario",
       "data": {
         "bytecode": {
           "auth": "0xbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeef",
           "timeout": "10",
           "recipient": "0xa914e78564d75c446f8c00c757a2bd783d30c4f0819a87"
         }
-      }
+      },
+      "description": "",
+      "name": "Base Scenario"
     },
     "release": {
-      
       "description": "Send assets to receipt without special authorization",
       "extends": "base",
       "name": "Release assets after the timeout",
@@ -142,15 +141,15 @@
       "script": "OP_1",
       "unlocks": "lock"
     },
-    "lock": {
-      "lockingType": "standard",
-      "name": "Timeout",
-      "script": "<recipient>  <timeout> <auth> //\n// contract Timeout(\n\n//   // Category of the authenticating baton\n//   // The auth baton is managed by the wallet of the user, \n//   // The contract is agnostic of the token paid to the receipt.\n//   bytes32 authCat,\n\n//   // length of time (blocks) to lock utxos \n//   int timeout,\n\n//   // LockingBytecode of the beneficiary, the address receiving payments\n//   bytes recipientLockingBytecode\n\n// ) {\n\n   OP_3 OP_PICK OP_0 OP_NUMEQUAL OP_IF \n  //function execute() {\n\n//  Require version 2 for BIP68 support\n    OP_TXVERSION OP_2 OP_NUMEQUALVERIFY\n//  require(tx.version == 2);\n\n//  Check that time has passed and that time locks are enabled\n    OP_SWAP OP_CHECKSEQUENCEVERIFY OP_DROP \n//  require(tx.age >= timeout, \"must satisfy age (bip68)\");\n\n//  Check that each output sends to the recipient\n    OP_INPUTINDEX OP_OUTPUTBYTECODE OP_ROT OP_EQUALVERIFY \n//  require(tx.outputs[this.activeInputIndex].lockingBytecode == recipientLockingBytecode);\n\n//  Check that each output sends the balance minus an executor allowance\n    OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE <2500> OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY\n//  require(tx.outputs[this.activeInputIndex].value >= tx.inputs[this.activeInputIndex].value - 2500);\n\n//  Require tokens go forward\n    OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_NUMEQUALVERIFY \n//  require(tx.outputs[this.activeInputIndex].tokenAmount == tx.inputs[this.activeInputIndex].tokenAmount);\n\n//  Require the token is of the same category\n    OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY \n//  require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory, \"must be same token\");\n\n//  Require the NFT commitment is passed on, if it exists\n    OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_EQUAL\n// require(tx.outputs[this.activeInputIndex].nftCommitment == tx.inputs[this.activeInputIndex].nftCommitment, \"must pass NFT\");\n        \n// } \n    OP_NIP OP_NIP\n\n  // Allow refreshing, or withdraw, with the authentication baton\n     OP_ELSE OP_3 OP_ROLL OP_1 OP_NUMEQUALVERIFY \n  // function administer() {\n\n      // Authentication failed, script fails.\n         OP_0 OP_UTXOTOKENCATEGORY OP_SWAP OP_2 OP_CAT OP_EQUAL  //\n      // require(tx.inputs[0].tokenCategory == authCat + 0x02);\n      \n  // } \n  OP_NIP OP_NIP OP_ENDIF\n\n"
-    },
     "wallet_unlock": {
       "name": "Unlock",
       "script": "<key.schnorr_signature.all_outputs>\n<key.public_key>",
       "unlocks": "wallet_lock"
+    },
+    "lock": {
+      "lockingType": "standard",
+      "name": "Timeout",
+      "script": "<\"U3T\"> <recipient>  <timeout> <auth> //\n// contract Timeout(\n\n//   // Category of the authenticating baton\n//   // The auth baton is managed by the wallet of the user, \n//   // The contract is agnostic of the token paid to the receipt.\n//   bytes32 authCat,\n\n//   // length of time (blocks) to lock utxos \n//   int timeout,\n\n//   // LockingBytecode of the beneficiary, the address receiving payments\n//   bytes recipientLockingBytecode\n\n// ) {\n\n   OP_3 OP_PICK OP_0 OP_NUMEQUAL OP_IF \n  //function execute() {\n\n//  Require version 2 for BIP68 support\n    OP_TXVERSION OP_2 OP_NUMEQUALVERIFY\n//  require(tx.version == 2);\n\n//  Check that time has passed and that time locks are enabled\n    OP_SWAP OP_CHECKSEQUENCEVERIFY OP_DROP \n//  require(tx.age >= timeout, \"must satisfy age (bip68)\");\n\n//  Check that each output sends to the recipient\n    OP_INPUTINDEX OP_OUTPUTBYTECODE OP_ROT OP_EQUALVERIFY \n//  require(tx.outputs[this.activeInputIndex].lockingBytecode == recipientLockingBytecode);\n\n//  Check that each output sends the balance minus an executor allowance\n    OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE <2500> OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY\n//  require(tx.outputs[this.activeInputIndex].value >= tx.inputs[this.activeInputIndex].value - 2500);\n\n//  Require tokens go forward\n    OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_NUMEQUALVERIFY \n//  require(tx.outputs[this.activeInputIndex].tokenAmount == tx.inputs[this.activeInputIndex].tokenAmount);\n\n//  Require the token is of the same category\n    OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY \n//  require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory, \"must be same token\");\n\n//  Require the NFT commitment is passed on, if it exists\n    OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_EQUAL\n// require(tx.outputs[this.activeInputIndex].nftCommitment == tx.inputs[this.activeInputIndex].nftCommitment, \"must pass NFT\");\n        \n// } \n    OP_NIP OP_NIP\n\n  // Allow refreshing, or withdraw, with the authentication baton\n     OP_ELSE OP_4 OP_ROLL OP_1 OP_NUMEQUALVERIFY \n  // function administer() {\n\n      // Authentication failed, script fails.\n         OP_0 OP_UTXOTOKENCATEGORY OP_SWAP OP_2 OP_CAT OP_EQUAL  //\n      // require(tx.inputs[0].tokenCategory == authCat + 0x02);\n      \n  // } \n  OP_NIP OP_NIP OP_NIP OP_ENDIF\n\n"
     },
     "wallet_lock": {
       "lockingType": "standard",
@@ -159,8 +158,7 @@
     }
   },
   "supported": [
-    "BCH_2023_05",
+    "BCH_2026_05",
     "BCH_SPEC"
-  ],
-  "version": 0
+  ]
 }

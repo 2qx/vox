@@ -85,7 +85,7 @@
 			description: 'Get one percent of a fund monthly in perpetuity.',
 			image: '/unspent.svg',
 			link: '/trust',
-			disabled: true
+			disabled: false
 		},
 		{
 			name: 'Vox',

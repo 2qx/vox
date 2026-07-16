@@ -27,7 +27,7 @@
 	} from '@unspent/tau';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
-	import { BaseWallet, Wallet, TestNetWallet, hexToBin } from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet, hexToBin } from '@unspent/wallet';
 
 	const isMainnet = page.url.hostname == 'vox.cash';
 	const category = isMainnet ? binToHex(bptCat) : binToHex(tbptCat);

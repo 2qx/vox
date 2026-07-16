@@ -16,7 +16,7 @@
 	import SmallIndex from '@unspent/small';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
-	import { BaseWallet, Wallet, TestNetWallet, NFTCapability, TokenMintRequest } from 'mainnet-js';
+	import { BaseWallet, Wallet, TestNetWallet, NFTCapability, TokenMintRequest } from '@unspent/wallet';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 

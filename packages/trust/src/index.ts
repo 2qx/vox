@@ -4,11 +4,9 @@ import packageInfo from '../package.json' with { type: "json" };
 import {
   binToHex,
   binToUtf8,
-  CashAddressNetworkPrefix,
-  cashAssemblyToBin,
   cashAddressToLockingBytecode,
   CompilerBch,
-  createVirtualMachineBch,
+  createVirtualMachineBch2026,
   generateTransaction,
   hexToBin,
   InputTemplate,
@@ -20,7 +18,9 @@ import {
 } from '@bitauth/libauth';
 
 import {
-  getLibauthCompiler
+  getLibauthCompiler,
+  getChangeOutput,
+  getWalletLayers
 } from '@unspent/tau';
 
 import {
@@ -28,10 +28,9 @@ import {
   decodePushBytes,
   getTransactionFees,
   getScriptHash,
-  getAddress,
-  sumOutputValue,
-  sumSourceOutputValue,
-  UtxoI
+  UtxoI,
+  UnspentError,
+  valueDifference
 } from '@unspent/tau';
 
 export interface TrustData {
@@ -39,7 +38,7 @@ export interface TrustData {
 }
 
 export type TrustJob = {
-  record: UtxoI,
+  record: string | Uint8Array,
   utxo: UtxoI
 }
 
@@ -57,39 +56,41 @@ export default class Trust {
 
   static compiler: CompilerBch = getLibauthCompiler(this.template);
 
-  static vm = createVirtualMachineBch();
+  static vm = createVirtualMachineBch2026();
 
+  //static PERIOD = 1;
   static PERIOD = 4383;
   static INSTALLMENT_DENOMINATOR = 100;
   static RETURN_NUMERATOR = 9_899;
   static RETURN_DENOMINATOR = 10_000;
 
-  static dataToBytecode(data: TrustData) {
+  static dataToBytecode(data: TrustData): BytecodeDataI {
     return {
       "recipient": hexToBin(data.recipient)
     }
   }
 
-
-
-  static parseNFT(utxo: UtxoI): BytecodeDataI {
-
-    if (utxo.token_data?.nft?.commitment) {
-      let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment))
-      if (binToUtf8(byteData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error("Non-annuity record NFT passed as annuity")
-      return {
-        "recipient": byteData[1]!
-      }
-    } else {
-      throw Error("Could not parse annuity NFT")
+  static bytecodeToData(bytecode: BytecodeDataI): TrustData {
+    return {
+      "recipient": binToHex(bytecode['recipient']!),
     }
   }
 
+  static parseCommitment(record: string | Uint8Array): BytecodeDataI {
+
+    if (typeof record === "string") record = hexToBin(record)
+    const decodedData = decodePushBytes(record)
+    if (binToUtf8(decodedData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error(`"Non-${this.name} record NFT passed as ${this.name}"`)
+    let byteData = {
+      "recipient": decodedData[1]!
+    }
+    return byteData
+
+  }
+
   static encodeCommitment(data: TrustData) {
-    let commitment = cashAssemblyToBin(
-      `<"${this.PROTOCOL_IDENTIFIER}"><0x${data.recipient}>`)
-    if (typeof commitment === "string") throw commitment
-    return binToHex(commitment)
+    const bytecode = this.dataToBytecode(data)
+    return binToHex(this.getLockingBytecode(bytecode))
   }
 
   static getLockingBytecode(data: BytecodeDataI): Uint8Array {
@@ -119,23 +120,26 @@ export default class Trust {
      * @returns a cashaddress.
      */
   static getScriptHash(
-    record: UtxoI,
+    record: string | Uint8Array,
     reversed = true
   ): string {
     return getScriptHash(
       this.getLockingBytecode(
-        this.parseNFT(record)
+        this.parseCommitment(record)
       ),
       reversed
     )
   }
 
-  static getAddress(data: TrustData, prefix = "bitcoincash"): string {
-    let bytecodeData = this.dataToBytecode(data)
-    return getAddress(
-      this.getLockingBytecode(bytecodeData),
-      prefix as CashAddressNetworkPrefix
-    )
+  /**
+     * Get cashaddress
+     *
+     * @throws {Error} Throws no address error.
+     * @returns a cashaddress.
+     */
+  static getAddress(
+  ): string {
+    throw Error(UnspentError.NoCashAddrForp2s)
   }
 
   static getSourceOutput(data: BytecodeDataI, utxo: UtxoI): Output {
@@ -149,7 +153,7 @@ export default class Trust {
 
   static getInstallmentOutput(data: BytecodeDataI, utxo: UtxoI): OutputTemplate<CompilerBch> {
 
-    let outputValue = Math.round((utxo.value) / this.INSTALLMENT_DENOMINATOR) 
+    let outputValue = Math.round((utxo.value) / this.INSTALLMENT_DENOMINATOR)
 
     return {
       lockingBytecode: data["recipient"]!,
@@ -158,10 +162,24 @@ export default class Trust {
 
   }
 
+  static getDepositOutput(data: BytecodeDataI, amount: number): OutputTemplate<CompilerBch> {
+
+    return {
+      lockingBytecode: {
+        data: {
+          "bytecode": data
+        },
+        compiler: this.compiler,
+        script: 'lock'
+      },
+      valueSatoshis: BigInt(amount),
+    }
+
+  }
+
   static getReturnOutput(data: BytecodeDataI, utxo: UtxoI): OutputTemplate<CompilerBch> {
 
-    let outputValue = Math.round((utxo.value * this.RETURN_NUMERATOR) / this.RETURN_DENOMINATOR) 
-
+    let outputValue = Math.round((utxo.value * this.RETURN_NUMERATOR) / this.RETURN_DENOMINATOR)
     return {
       lockingBytecode: {
         data: {
@@ -211,6 +229,73 @@ export default class Trust {
     } as InputTemplate<CompilerBch>
   }
 
+
+  static fund(
+    amount: number,
+    lockingBytecode: Uint8Array | string,
+    walletUtxos: UtxoI[],
+    privateKey?: string,
+    fee = 1
+  ): {
+    transaction: Transaction,
+    sourceOutputs: Output[],
+    verify: string | boolean
+  } {
+    const inputs: InputTemplate<CompilerBch>[] = [];
+    const outputs: OutputTemplate<CompilerBch>[] = [];
+    let sourceOutputs: Output[] = [];
+
+    if (typeof lockingBytecode !== "string") lockingBytecode = binToHex(lockingBytecode)
+    let data = this.dataToBytecode(
+      { "recipient": lockingBytecode }
+    )
+
+    let config = {
+      locktime: 0,
+      version: 2,
+      inputs, outputs,
+    }
+
+    // amount
+    config.outputs.push(this.getDepositOutput(data, amount))
+    config = getWalletLayers(config, sourceOutputs, walletUtxos, privateKey)
+
+    let result = generateTransaction(config);
+    if (!result.success) throw new Error('generate transaction failed!, errors: ' + stringify(result.errors));
+    let transaction = result.transaction
+
+    const estimatedFee = getTransactionFees(result.transaction, fee)
+
+    // subtract fees off the change output
+    const outIdx = config.outputs.length - 1
+    config.outputs[outIdx]!.valueSatoshis = config.outputs[outIdx]!.valueSatoshis - estimatedFee
+
+    result = generateTransaction(config);
+    if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+
+    transaction = result.transaction
+    const tokenValidationResult = verifyTransactionTokens(
+      transaction,
+      sourceOutputs,
+      { maximumTokenCommitmentLength: 128 }
+    );
+    if (tokenValidationResult !== true) throw tokenValidationResult;
+
+    let verify = this.vm.verify({
+      sourceOutputs: sourceOutputs,
+      transaction: transaction,
+    })
+
+    if (typeof verify == "string") throw verify
+
+    return {
+      sourceOutputs: sourceOutputs,
+      transaction: transaction,
+      verify: verify
+    }
+
+  }
+
   /**
      * Step annuity installments forward 
      *
@@ -246,7 +331,7 @@ export default class Trust {
 
     // add sources, inputs, and installment outputs to the config
     for (let job of jobs) {
-      let data = this.parseNFT(job.record)
+      let data = this.parseCommitment(job.record)
       // if the job is not in mempool
       if (job.utxo.height > 0) {
         const age = height - job.utxo.height
@@ -262,7 +347,7 @@ export default class Trust {
 
     // add principal return outputs
     for (let job of jobs) {
-      let data = this.parseNFT(job.record)
+      let data = this.parseCommitment(job.record)
       // if the job is not in mempool
       if (job.utxo.height > 0) {
         const age = height - job.utxo.height
@@ -273,10 +358,11 @@ export default class Trust {
       }
     }
 
-    if (executorCashaddress && config.inputs.length > 0) {
-      let sumSatsOut = sumOutputValue(config.outputs)
-      let sumSatsIn = sumSourceOutputValue(sourceOutputs)
-      let executorBonus = sumSatsIn - sumSatsOut 
+    if (executorCashaddress) {
+
+
+      let executorBonus = -valueDifference(sourceOutputs, config.outputs)
+      console.log(executorBonus)
       if (executorBonus > 0) {
         config.outputs.push(
           this.getExecutorOutput(
@@ -291,7 +377,7 @@ export default class Trust {
     if (!result.success) throw new Error('generate transaction failed!, errors: ' + stringify(result.errors));
     let transaction = result.transaction
 
-    if (executorCashaddress && config.inputs.length > 0) {
+    if (executorCashaddress) {
       const estimatedFee = getTransactionFees(result.transaction, fee) + 1n
       console.log(estimatedFee)
       const lastIdx = config.outputs.length - 1
@@ -300,14 +386,7 @@ export default class Trust {
 
     result = generateTransaction(config);
     if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
-
     transaction = result.transaction
-    const tokenValidationResult = verifyTransactionTokens(
-      transaction,
-      sourceOutputs,
-      { maximumTokenCommitmentLength: 40 }
-    );
-    if (tokenValidationResult !== true) throw tokenValidationResult;
 
     let verify = this.vm.verify({
       sourceOutputs: sourceOutputs,

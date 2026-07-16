@@ -22,6 +22,7 @@ import {
     getTransactionFees,
     getAddress,
     type CashAddressNetworkPrefix,
+    getChangeOutput,
     getLibauthCompiler,
     getScriptHash,
     UtxoI,
@@ -198,31 +199,6 @@ export default class Wrap {
         }
     }
 
-    static getChangeOutput(
-        amount: bigint,
-        privateKey?: any,
-        addressIndex = 0
-    ): OutputTemplate<CompilerBch> {
-
-        const lockingBytecode = privateKey ? {
-            compiler: this.compiler,
-            data: {
-                hdKeys: {
-                    addressIndex: addressIndex,
-                    hdPublicKeys: {
-                        'wallet': deriveHdPublicKey(privateKey).hdPublicKey
-                    },
-                },
-            },
-            script: 'wallet_lock'
-        } : Uint8Array.from(Array(33))
-
-        return {
-            lockingBytecode: lockingBytecode,
-            valueSatoshis: amount
-        }
-    }
-
 
     /**
      * Get source outputs, transform contract & wallet outpoints for spending verification.
@@ -349,7 +325,7 @@ export default class Wrap {
             }
 
             let satsOut = (sumSats) - (amount + 800n)
-            outputs.push(this.getChangeOutput(satsOut, privateKey))
+            outputs.push(getChangeOutput(satsOut, 0n, undefined, privateKey))
         }
         // Liquidate this utxo and try again
         else {

@@ -536,7 +536,12 @@ export default class CatDex {
         sourceOutputs: Output[],
         walletUtxos: UtxoI[],
         privateKey?: string,
-    ) {
+    ): {
+            locktime: number;
+            version: number;
+            inputs: InputTemplate<CompilerBch>[];
+            outputs: OutputTemplate<CompilerBch>[];
+        } {
         // Calculate excess cash and tokens required to fund the exchange
         let sumSatsOut = sumOutputValue(config.outputs)
         let sumSatsIn = sumSourceOutputValue(sourceOutputs)

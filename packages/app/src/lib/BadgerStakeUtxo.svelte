@@ -48,7 +48,7 @@
 				</div>
 				<div class="auth">
 					{#if hasMatured}
-						<button
+						<button class="button"
 							onclick={() => {
 								unlock({
 									tx_hash: tx_hash,
@@ -134,20 +134,7 @@
 		}
 	}
 
-	button {
-		background-color: #a45eb6; /* Green */
-		border: none;
-		color: white;
-		padding: 5px;
-		border-radius: 20px;
-		text-align: center;
-		text-decoration: none;
-		display: inline-block;
-	}
-
-	button:hover {
-		background-color: #9933b3;
-	}
+	
 
 	.stake.op {
 		background-color: #fff;

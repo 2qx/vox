@@ -1,0 +1,61 @@
+{
+  "type": "module",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/2qx/vox/"
+  },
+  "bugs": {
+    "url": "https://github.com/2qx/vox/issues"
+  },
+  "name": "@unspent/wallet",
+  "version": "3.1.9",
+  "homepage": "https://vox.cash",
+  "module": "out/module/index.js",
+  "browser": {
+    "http": false,
+    "https": false,
+    "fs": false,
+    "url": false
+  },
+  "exports": {
+    ".": {
+      "types": "./out/index.d.ts",
+      "import": "./out/index.js"
+    },
+    "./*.js": {
+      "types": "./out/*.d.ts",
+      "import": "./out/*.js"
+    },
+    "./*.json": "./out/*.json"
+  },
+  "scripts": {
+    "prepare": "pnpm run build",
+    "build": "tsc -p tsconfig.json",
+    "typedoc": "typedoc src/index.ts --out out/docs --options ../../config/typedoc.json"
+  },
+  "dependencies": {
+    "@bitauth/libauth": "^3.1.0-next.8",
+    "@electrum-cash/network": "^4.2.2",
+    "@electrum-cash/web-socket": "1.2.3"
+  },
+  "optionalDependencies": {
+    "dotenv": "^10.0.0"
+  },
+  "testPathIgnorePatterns": [
+    "dist"
+  ],
+  "sideEffects": [
+    "src/rate/ExchangeRate.ts",
+    "src/network/getRelayFeeCache.ts",
+    "src/network/default.ts"
+  ],
+  "keywords": [
+    "bch",
+    "bitcoin cash",
+    "wasm"
+  ],
+  "author": "readcash",
+  "devDependencies": {
+    "dotenv": "^10.0.0"
+  }
+}

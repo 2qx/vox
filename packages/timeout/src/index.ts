@@ -38,7 +38,6 @@ export interface TimeoutData {
 
 
 
-
 export default class Timeout {
 
     static PROTOCOL_IDENTIFIER = "U3T"
@@ -54,24 +53,6 @@ export default class Timeout {
 
     static vm = createVirtualMachineBch();
 
-
-    static parseNFT(utxo: UtxoI): BytecodeDataI {
-
-        if (utxo.token_data?.nft?.commitment) {
-            let byteData = decodePushBytes(hexToBin(utxo.token_data?.nft?.commitment))
-            if (binToUtf8(byteData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error("Non-subscription record NFT passed as subscription")
-            return {
-                "recipient": byteData[1]!,
-                "timeout": byteData[2]!,
-                "auth": hexToBin(utxo.token_data.category)
-            }
-        } else {
-            throw Error("Could not parse subscription NFT")
-        }
-    }
-
-
-
     static dataToBytecode(data: TimeoutData) {
         return {
             "recipient": hexToBin(data.recipient),
@@ -80,15 +61,25 @@ export default class Timeout {
         }
     }
 
+    static parseCommitment(record: string | Uint8Array): BytecodeDataI {
 
-    static encodeCommitment(data: TimeoutData): Uint8Array {
-        let commitment = cashAssemblyToBin(
-            `<"${this.PROTOCOL_IDENTIFIER}"><0x${data.recipient}><${data.timeout}>
-        `)
-        if (typeof commitment === "string") throw commitment
-        return commitment
+        if (typeof record === "string") record = hexToBin(record)
+        const decodedData = decodePushBytes(record)
+        if (binToUtf8(decodedData[0]!) !== this.PROTOCOL_IDENTIFIER) throw Error(`"Non-${typeof this} record NFT passed as ${typeof this}"`)
+        let byteData = {
+            "recipient": decodedData[1]!,
+            "timeout": decodedData[2]!,
+            "auth": decodedData[3]!
+        }
+
+        return byteData
+
     }
 
+    static encodeCommitment(data: TimeoutData): Uint8Array {
+        const bytecode = this.dataToBytecode(data)
+        return this.getLockingBytecode(bytecode)
+    }
 
 
     static getLockingBytecode(
@@ -105,23 +96,6 @@ export default class Timeout {
             'Failed to generate bytecode, script: , ' + JSON.stringify(lockingBytecodeResult, null, '  '
             ));
         return lockingBytecodeResult.bytecode
-    }
-
-
-    static getUnlockingBytecode(
-        data: BytecodeDataI
-    ): Uint8Array {
-        const bytecodeResult = this.compiler.generateBytecode(
-            {
-                data: {
-                    "bytecode": data
-                },
-                scriptId: 'unlock'
-            })
-        if (!bytecodeResult.success) throw new Error(
-            'Failed to generate bytecode, script: , ' + JSON.stringify(bytecodeResult, null, '  '
-            ));
-        return bytecodeResult.bytecode
     }
 
     /**
@@ -158,7 +132,15 @@ export default class Timeout {
 
         return {
             lockingBytecode: this.getLockingBytecode(data),
-            valueSatoshis: BigInt(utxo.value)
+            valueSatoshis: BigInt(utxo.value),
+            token: utxo.token_data ? {
+                category: hexToBin(utxo.token_data!.category!),
+                amount: BigInt(utxo.token_data!.amount),
+                nft: utxo.token_data.nft ? {
+                    commitment: hexToBin(utxo.token_data.nft.commitment!),
+                    capability: utxo.token_data.nft.capability,
+                } : undefined
+            } : undefined
         }
 
     }
@@ -230,8 +212,8 @@ export default class Timeout {
      * @returns a transaction template.
      */
 
-    static liquidate(
-        record: UtxoI,
+    static process(
+        record: string|Uint8Array,
         utxo: UtxoI
     ): string {
 
@@ -245,7 +227,7 @@ export default class Timeout {
             outputs
         }
 
-        let data = this.parseNFT(record)
+        let data = this.parseCommitment(record)
 
         config.inputs.push(this.getInput(data, utxo));
         config.outputs.push(this.getOutput(data, utxo));
