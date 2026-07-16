@@ -99,7 +99,6 @@
 		if (response instanceof Error) throw response;
 
 		walletUnspent = response;
-		balance = sumUtxoValue(walletUnspent, true);
 
 		authBaton = walletUnspent
 			.filter((u: UtxoI) => u.token_data)
@@ -107,6 +106,7 @@
 			.filter((u: UtxoI) => u.token_data?.nft?.commitment! == binToHex(record))[0];
 
 		walletUnspent = walletUnspent.filter((u: UtxoI) => !u.token_data);
+		balance = sumUtxoValue(walletUnspent, true);
 	};
 
 	const updateUnspent = async function () {
