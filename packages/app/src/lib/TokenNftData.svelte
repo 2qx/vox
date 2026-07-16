@@ -19,7 +19,7 @@
 	{:else if commitment.startsWith('6a03553358')}
 		CatDex: <i>{parseUsername(commitment)}</i>
 	{:else if commitment.startsWith('03553350')}
-		Unspent Trust: <i>{binToHex(Trust.parseCommitment(commitment).recipient)}</i>
+		Trust: <i>{binToHex(Trust.parseCommitment(commitment).recipient)}</i>
 	{:else}
 		{commitment}
 	{/if}

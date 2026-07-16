@@ -94,7 +94,7 @@
 		if (walletUnspent.length == 0 || spent.intersection(walletUnspentIds).size == 0) {
 			walletUnspent = response;
 		}
-		sumWallet = sumUtxoValue(walletUnspent, true);
+		sumWallet = sumUtxoValue(walletUnspent.filter((u) => !u.token_data), true);
 		sumWalletWrapped = sumTokenAmounts(walletUnspent, category);
 	};
 

@@ -260,7 +260,7 @@
 		<div class="scanable">
 			{#if wallet}
 				{#if !showTokenAddress}
-					<button
+					<button class="button"
 						onclick={() => {
 							showTokenAddress = !showTokenAddress;
 						}}
