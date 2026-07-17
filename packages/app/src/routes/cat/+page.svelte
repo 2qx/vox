@@ -619,7 +619,7 @@
 									alt={bcmr.get(selectedAsset).token.symbol}
 								/>
 								<br />
-								{(myMarketTokens / assetDecimals).toLocaleString()}
+								{(Number(myMarketTokens) / assetDecimals).toLocaleString()}
 								{bcmr.get(selectedAsset).token.symbol}
 							</div>
 						{/if}
