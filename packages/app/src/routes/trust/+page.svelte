@@ -246,10 +246,10 @@
 									lock();
 								}}
 							>
-								stake
+								lock
 							</button>
 						{:else}
-							<button disabled> stake </button>
+							<button disabled> lock </button>
 							<br />
 							<span style="font-size:large; color: red;"></span>
 						{/if}

@@ -160,10 +160,10 @@
 		let classifiedUtxos = Object.groupBy(unspent!, ({ token_data }) => {
 			if (!token_data) {
 				return 'cash';
-			} else if (bcmr.has(token_data!.category) && Number(token_data?.amount) > 0) {
-				return 'commodity';
 			} else if (SERIES_MAP.has(token_data!.category)) {
 				return 'future';
+			} else if (bcmr.has(token_data!.category) && Number(token_data?.amount) > 0) {
+				return 'commodity';
 			} else if (token_data!.nft?.commitment.startsWith('6a035533')) {
 				return 'auth';
 			} else if (token_data!.nft?.commitment.startsWith('03553350')) {
@@ -260,7 +260,8 @@
 		<div class="scanable">
 			{#if wallet}
 				{#if !showTokenAddress}
-					<button class="button"
+					<button
+						class="button"
 						onclick={() => {
 							showTokenAddress = !showTokenAddress;
 						}}
@@ -284,7 +285,8 @@
 
 					<p id="deposit" style="text-align: center;">{wallet.getDepositAddress()}</p>
 				{:else}
-					<button class="button"
+					<button
+						class="button"
 						onclick={() => {
 							showTokenAddress = !showTokenAddress;
 						}}
@@ -361,7 +363,9 @@
 				{/each}
 			{/if}
 			<div class="walletHead">
-				<button class="button" onclick={() => consolidateFungibleTokens()}> Consolidate Tokens</button>
+				<button class="button" onclick={() => consolidateFungibleTokens()}>
+					Consolidate Tokens</button
+				>
 				<button class="button" onclick={() => consolidateSats()}> Consolidate Sats</button>
 			</div>
 		{:else}
@@ -381,7 +385,8 @@
 			</div>
 
 			<div class="history">
-				<button class="button"
+				<button
+					class="button"
 					onclick={() => {
 						showHistory = !showHistory;
 					}}
@@ -451,8 +456,6 @@
 		text-align: center;
 		background-color: #fff;
 	}
-
-	
 
 	.walletHead {
 		padding: 15px 15px;

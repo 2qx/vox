@@ -35,7 +35,14 @@
 	} from '@bitauth/libauth';
 
 	import { ElectrumClient, ConnectionStatus } from '@electrum-cash/network';
-	import { BaseWallet, Connection, Wallet, TestNetWallet, NFTCapability, TokenMintRequest } from '@unspent/wallet';
+	import {
+		BaseWallet,
+		Connection,
+		Wallet,
+		TestNetWallet,
+		NFTCapability,
+		TokenMintRequest
+	} from '@unspent/wallet';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
 
@@ -278,7 +285,7 @@
 		let oldOrders = replace ? myDexUtxos : [];
 		let satOrderBook = myOrderBook.map((o) => {
 			return {
-				price: o.price/assetDecimals ,
+				price: o.price / assetDecimals,
 				quantity: BigInt(o.quantity * assetDecimals)
 			} as OrderRequest;
 		});
@@ -365,12 +372,11 @@
 		if (isMainnet) {
 			let conn = new Connection('mainnet', 'wss://bch.imaginary.cash:50004');
 			wallet.provider = conn.networkProvider;
-			globalThis.BCH = conn.networkProvider
+			globalThis.BCH = conn.networkProvider;
 		} else {
 			let conn = new Connection('testnet', 'wss://chipnet.bch.ninja:50004');
-			//let conn = new Connection('testnet', 'wss://chipnet.imaginary.cash:50004');
 			wallet.provider = conn.networkProvider;
-			globalThis.tBCH = conn.networkProvider
+			globalThis.tBCH = conn.networkProvider;
 		}
 
 		key = getHdPrivateKey(wallet.mnemonic!, wallet.derivationPath.slice(0, -2), wallet.isTestnet);
@@ -497,7 +503,7 @@
 						alt={bcmr.get(selectedAsset).token.symbol}
 					/>
 					<br />
-					{(assetBalance / BigInt(assetDecimals)).toLocaleString()}
+					{(Number(assetBalance) / assetDecimals).toLocaleString()}
 					{bcmr.get(selectedAsset).token.symbol}
 				</div>
 			</div>
@@ -567,8 +573,11 @@
 							You have a CatDex baton. <br />
 							For others to can find your orders, announce your membership in the CatDex.
 						</p>
-						<button class="button" onclick={() => announceAuthBaton(4364)}>Month (4364 sats)</button>
-						<button class="button" onclick={() => announceAuthBaton(52596)}>Year (52596 sats) </button>
+						<button class="button" onclick={() => announceAuthBaton(4364)}>Month (4364 sats)</button
+						>
+						<button class="button" onclick={() => announceAuthBaton(52596)}
+							>Year (52596 sats)
+						</button>
 						<p>Membership fees are non-refundable and are claimed by miners.</p>
 						{#if myMembership > 0}
 							<b
@@ -588,7 +597,7 @@
 					<a href="/wallet">Deposit funds</a> to create a CatDex authentication baton.
 				{:else if myAuthBatons.length == 0}
 					<p>To write orders, you need to create a CatDex Authentication Baton (1000 sats).</p>
-					<button class="button"  onclick={() => newAuthBaton()}>Create a new Baton</button>
+					<button class="button" onclick={() => newAuthBaton()}>Create a new Baton</button>
 				{:else}
 					<h3>Your Decentralized Listing</h3>
 					{#each myAuthBatons as authBaton}
@@ -599,7 +608,7 @@
 							<div>
 								<img width="24" src={bchIcon} alt={baseTicker} />
 								<br />
-								{(BigInt(myMarketSatoshis) ).toLocaleString()} sats {baseTicker}
+								{BigInt(myMarketSatoshis).toLocaleString()} sats {baseTicker}
 							</div>
 						{/if}
 						{#if myMarketTokens}
@@ -643,9 +652,9 @@
 
 					<br />
 					{#if myOrderBook.length > 0}
-						<button class="button"  onclick={() => postOrders(true)}>Replace Orders</button>
+						<button class="button" onclick={() => postOrders(true)}>Replace Orders</button>
 
-						<button class="button"  onclick={() => postOrders()}>Append Orders</button>
+						<button class="button" onclick={() => postOrders()}>Append Orders</button>
 					{:else}
 						<button class="button" onclick={() => postOrders(true)}> Clear Orders </button>
 						<button class="button" onclick={() => addMyOrder(0)}>New Orders</button><br />
@@ -701,7 +710,8 @@
 							</div>
 							<div class="listButtons">
 								<button class="button" onclick={() => addMyOrder(i + 1)}>+</button>
-								<button class="button" 
+								<button
+									class="button"
 									onclick={() => {
 										dropOrder(i);
 									}}>-</button
@@ -753,6 +763,10 @@
 		background: #ffffffbb;
 		z-index: 1;
 		max-width: 40em;
+	}
+
+	img {
+		filter: drop-shadow(5px 5px 5px #b1aeaead);
 	}
 	.swap {
 		display: flex;
