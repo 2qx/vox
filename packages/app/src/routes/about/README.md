@@ -20,16 +20,16 @@ Initial contract design began in late 2024, all contracts have been posted to [B
 - [x] reimplement Wrapped BCH (WBCH) mini-app
 - [x] Block Points (BPTS) mini-app
 - [x] Initial Vox Pop chat  
-- [ ] Future BCH (port)
-- [ ] SmallIndex database library (for market data)
-- [ ] CatDex limit order markets
+- [x] Future BCH (port)
+- [x] SmallIndex database library (for market data)
+- [x] CatDex limit order markets
 - [ ] Cauldron and Tapswap order-layers
 - [ ] Wallet build-out & upgrades
 - [ ] Subscriptions
 - [ ] Block Point × AMM swaps
-- [ ] Trusts
+- [x] Trusts
 - [ ] Dutch Token Auctions
-- [ ] reimplement Badgers (BADGERS)
+- [x] reimplement Badgers (BADGERS)
 - [ ] Locktime (hodl) / Timeout (will) Apps
 
 # Business model
