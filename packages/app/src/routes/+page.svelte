@@ -44,13 +44,19 @@
 			link: '/future',
 			disabled: false
 		},
-
 		{
 			name: 'Locktime',
 			description: 'Timed vault.',
 			image: '/locktime.svg',
 			link: '/locktime',
 			disabled: true
+		},
+		{
+			name: 'Photons',
+			description: 'Energy Oracle.',
+			image: '/photon.svg',
+			link: '/energy',
+			disabled: false
 		},
 		{
 			name: 'SmallDB',
@@ -73,13 +79,7 @@
 			link: '/timeout',
 			disabled: true
 		},
-		{
-			name: 'WBCH',
-			description: 'Wrapped Bitcoin Cash CashToken.',
-			image: '/WBCH.svg',
-			link: '/wrap',
-			disabled: false
-		},
+		
 		{
 			name: 'Trust',
 			description: 'Get one percent of a fund monthly in perpetuity.',
@@ -93,7 +93,14 @@
 			image: '/vox.svg',
 			link: '/pop',
 			disabled: false
-		}
+		},
+		{
+			name: 'WBCH',
+			description: 'Wrapped Bitcoin Cash CashToken.',
+			image: '/WBCH.svg',
+			link: '/wrap',
+			disabled: false
+		},
 	];
 </script>
 

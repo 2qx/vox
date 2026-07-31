@@ -1,0 +1,93 @@
+{
+  "contractName": "Mine",
+  "constructorInputs": [],
+  "abi": [
+    {
+      "name": "execute",
+      "inputs": [
+        {
+          "name": "age",
+          "type": "int"
+        },
+        {
+          "name": "pk",
+          "type": "pubkey"
+        }
+      ]
+    }
+  ],
+  "bytecode": "OP_TXVERSION OP_2 OP_NUMEQUALVERIFY OP_DUP OP_CHECKSEQUENCEVERIFY OP_DROP OP_DUP ffff00 OP_LESSTHAN OP_VERIFY OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY OP_TXINPUTCOUNT OP_1 OP_GREATERTHAN OP_IF OP_INPUTINDEX OP_OUTPUTVALUE 1027 OP_ADD OP_INPUTINDEX OP_UTXOVALUE OP_GREATERTHANOREQUAL OP_VERIFY OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_EQUALVERIFY OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_NUMEQUALVERIFY OP_ELSE OP_TXOUTPUTCOUNT OP_2 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE dc05 OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT a06806 OP_DIV OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_SIZE OP_NIP 65 OP_NUMEQUALVERIFY OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT 24 OP_SPLIT OP_OVER OP_4 OP_SPLIT OP_NIP OP_OVER OP_3 OP_PICK OP_6 OP_PICK OP_CHECKDATASIGVERIFY OP_DUP OP_BIN2NUM OP_ABS OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_4 OP_SPLIT OP_NIP 20 OP_SPLIT OP_DROP OP_BIN2NUM OP_ABS OP_2DUP OP_7 OP_PICK 8f00 OP_ADD OP_MUL 9000 OP_DIV OP_NUMEQUALVERIFY OP_0 OP_1 OP_OUTPUTTOKENAMOUNT OP_SIZE OP_NIP OP_8 OP_GREATERTHAN OP_IF ff OP_1 OP_OUTPUTTOKENAMOUNT OP_8 OP_NUM2BIN OP_CAT OP_NIP OP_ELSE fe OP_1 OP_OUTPUTTOKENAMOUNT OP_4 OP_NUM2BIN OP_CAT OP_NIP OP_ENDIF OP_TXVERSION OP_8 OP_NUM2BIN OP_TXINPUTCOUNT OP_CAT OP_0 OP_OUTPOINTTXHASH OP_CAT OP_0 OP_OUTPOINTINDEX OP_CAT OP_0 OP_INPUTBYTECODE OP_SIZE OP_NIP OP_CAT OP_0 OP_INPUTBYTECODE OP_CAT OP_0 OP_INPUTSEQUENCENUMBER OP_CAT OP_TXOUTPUTCOUNT OP_CAT OP_0 OP_OUTPUTVALUE OP_CAT ef OP_CAT OP_0 OP_OUTPUTTOKENCOMMITMENT OP_CAT OP_0 OP_OUTPUTTOKENAMOUNT OP_SIZE OP_NIP OP_CAT OP_0 OP_OUTPUTTOKENAMOUNT OP_CAT OP_0 OP_OUTPUTBYTECODE OP_CAT OP_1 OP_OUTPUTVALUE OP_CAT ef OP_CAT OP_1 OP_OUTPUTTOKENCOMMITMENT OP_CAT OP_1 OP_OUTPUTTOKENAMOUNT OP_SIZE OP_NIP OP_CAT OP_OVER OP_CAT OP_1 OP_OUTPUTBYTECODE OP_CAT OP_0 OP_4 OP_NUM2BIN OP_CAT OP_DUP OP_HASH256 20 OP_SPLIT OP_DROP OP_BIN2NUM OP_ABS OP_DUP OP_5 OP_PICK OP_LESSTHAN OP_VERIFY OP_2DROP OP_2DROP OP_2DROP OP_2DROP OP_ENDIF OP_2DROP OP_1",
+  "source": "  pragma cashscript >= 0.10.0;\n\n  // v20251130\n\n  // A token faucet with proof of work.\n  contract Mine() {\n\n    function execute(int age, pubkey pk) {\n\n        // Force a version two transaction\n        require(tx.version == 2);\n        \n        // Check the purported time has passed and that time locks are enabled\n        require(tx.age >= age);\n\n        // require the age passed be block based\n        require(age < 65535);\n\n        // Require the thread lives on\n        require(tx.outputs[this.activeInputIndex].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);\n\n        // Require the same token lives on\n        require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);\n\n        // If the baton is being used as an oracle ...\n        if(tx.inputs.length > 1){\n\n            // Require the oracle user pays an 10000 sat fee \n            require(tx.outputs[this.activeInputIndex].value + 10000 >= tx.inputs[this.activeInputIndex].value);\n\n            // The NFT commitment (difficulty+nonce) must not change\n            require(tx.outputs[this.activeInputIndex].nftCommitment == tx.inputs[this.activeInputIndex].nftCommitment);\n\n            // The number of fungible tokens must not changed\n            require(tx.outputs[this.activeInputIndex].tokenAmount == tx.inputs[this.activeInputIndex].tokenAmount);\n\n        }\n\n        // else (tx.inputs.length == 1)\n        else{\n\n            // require exactly two outputs\n            require(tx.outputs.length == 2);\n\n            // Allow miner to take 800 token dust, plus 400 network fee allowance \n            require(tx.outputs[this.activeInputIndex].value >= tx.inputs[this.activeInputIndex].value - 1500);\n\n            // The value on the miner output is enforced by the network \n            // ~~require(tx.outputs[1].value == 800);~~\n\n            // Emission schedule\n            // Allow a fraction of running token balance (plus one) to be withdrawn.\n            // Target a four year half life. \n            require(\n                tx.outputs[this.activeInputIndex].tokenAmount >= \n                (tx.inputs[this.activeInputIndex].tokenAmount - \n                (tx.inputs[this.activeInputIndex].tokenAmount/420000))\n            );\n\n            require(tx.outputs[this.activeInputIndex].nftCommitment.length == 101);\n\n            //   NFT Baton Commitment\n            // | Field     | Length   | Notes    |\n            // | :-        |       -: |          |\n            // | Nonce     |  4 bytes | (random) |\n            // | Target    | 32 bytes | (LE)     |\n            // | Signature | 65 bytes | DER      |\n            //\n            bytes message, bytes signature = tx.outputs[this.activeInputIndex].nftCommitment.split(36);\n            \n            bytes nextTargetBytes = message.split(4)[1];\n            require(checkDataSig(datasig(signature), message, pk));\n            \n\n            // Require the output carries the next target.\n            int nextTarget = abs(int(nextTargetBytes));\n            //int nextTarget = abs(int(tx.outputs[this.activeInputIndex].nftCommitment.split(4)[1].split(32)[0]));\n\n            \n            // Pop the previous difficulty\n            int prevTarget = abs(int(tx.inputs[this.activeInputIndex].nftCommitment.split(4)[1].split(32)[0]));\n            \n            // The set the next target as a function of the previous target and age.\n            // Equality prevents setting next target to zero.\n            require(nextTarget == (prevTarget * (age + 143) )/144);\n        \n            bytes rewardAmount = 0x;\n            if(bytes(tx.outputs[1].tokenAmount).length > 8){\n                rewardAmount = 0xff + bytes8(tx.outputs[1].tokenAmount);\n            } else{\n                rewardAmount = 0xfe + bytes4(tx.outputs[1].tokenAmount);\n            }\n\n            bytes preimage = bytes8(tx.version) + \n                             bytes(tx.inputs.length) + \n                             tx.inputs[0].outpointTransactionHash +\n                             bytes(tx.inputs[0].outpointIndex) +\n                             bytes(tx.inputs[0].unlockingBytecode.length) + \n                             tx.inputs[0].unlockingBytecode +\n                             bytes(tx.inputs[0].sequenceNumber)  +\n                             bytes(tx.outputs.length) + \n                             bytes(tx.outputs[0].value) +  \n                             0xef +\n                             bytes(tx.outputs[0].nftCommitment) + \n                             bytes(bytes(tx.outputs[0].tokenAmount).length) +\n                             bytes(tx.outputs[0].tokenAmount) + \n                             tx.outputs[0].lockingBytecode +\n                             bytes(tx.outputs[1].value) +  \n                             0xef +\n                             bytes(tx.outputs[1].nftCommitment) + \n                             bytes(bytes(tx.outputs[1].tokenAmount).length) +\n                             rewardAmount + \n                             tx.outputs[1].lockingBytecode +\n                             bytes4(0);\n\n            int nextHash = abs(int(hash256(preimage).split(32)[0]));\n\n            // Target a once per block emission schedule\n            // If the age is 0, lower the difficulty threshold ~0.7%\n            // If the age is 1, keep the present difficulty\n            // else, decrease difficulty in a linear manner  \n            require(nextHash < nextTarget);\n\n            \n        }   \n    }\n\n  }",
+  "debug": {
+    "bytecode": "c2529c690079b275007903ffff009f69c0cdc0c78769c0d1c0ce8769c351a063c0cc02102793c0c6a269c0d2c0cf8769c0d3c0d09c6967c4529c69c0ccc0c602dc0594a269c0d3c0d0c0d003a068069694a269c0d2827701659c69c0d201247f5179547f77517953795679ba6900798190c0cf547f7701207f758190517951795779028f009395029000969c690051d3827758a06301ff51d358807e517a756701fe51d354807e517a7568c25880c37e00c87e00c97e00ca82777e00ca7e00cb7ec47e00cc7e01ef7e00d27e00d382777e00d37e00cd7e51cc7e01ef7e51d27e51d382777e51797e51cd7e0054807e0079aa01207f758190007955799f69757575757575757568517777",
+    "sourceMap": "11:16:11:26;:30::31;:16:::1;:8::33;14:26:14:29:0;;:8::31:1;;17:16:17:19:0;;:22::27;:16:::1;:8::29;20:27:20:48:0;:16::65:1;:79::100:0;:69::117:1;:16;:8::119;23:27:23:48:0;:16::63:1;:77::98:0;:67::113:1;:16;:8::115;26:11:26:27:0;:30::31;:11:::1;:32:37:9:0;29:31:29:52;:20::59:1;:62::67:0;:20:::1;:81::102:0;:71::109:1;:20;:12::111;32:31:32:52:0;:20::67:1;:81::102:0;:71::117:1;:20;:12::119;35:31:35:52:0;:20::65:1;:79::100:0;:69::113:1;:20;:12::115;40::125:9:0;43:20:43:37;:41::42;:20:::1;:12::44;46:31:46:52:0;:20::59:1;:73::94:0;:63::101:1;:104::108:0;:63:::1;:20;:12::110;55:27:55:48:0;:16::61:1;56:27:56:48:0;:17::61:1;57:27:57:48:0;:17::61:1;:62::68:0;:17:::1;56:::69;55:16::70;54:12:58:14;60:31:60:52:0;:20::67:1;:::74;;:78::81:0;:20:::1;:12::83;69:56:69:77:0;:45::92:1;:99::101:0;:45::102:1;71:36:71:43:0;;:50::51;:36::52:1;:::55;72:41:72:50:0;;:53::60;;:62::64;;:20::65:1;:12::67;76:37:76:52:0;;:33::53:1;:29::54;81:47:81:68:0;:37::83:1;:90::91:0;:37::92:1;:::95;:102::104:0;:37::105:1;:::108;:33::109;:29::110;85:20:85:30:0;;:35::45;;:49::52;;:55::58;:49:::1;:35::59;:62::65:0;:34:::1;:20;:12::67;87:33:87:35:0;88:32:88:33;:21::46:1;:15::54;;:57::58:0;:15:::1;:59:90:13:0;89:31:89:35;:56::57;:45::70:1;:38::71;;:31;:16::72;;;90:18:92:13:0;91:31:91:35;:56::57;:45::70:1;:38::71;;:31;:16::72;;;90:18:92:13;94:36:94:46:0;:29::47:1;;95:35:95:51:0;94:29::52:1;96:39:96:40:0;:29::65:1;94;97:45:97:46:0;:35::61:1;94:29::62;98:45:98:46:0;:35::65:1;:::72;;94:29::73;99:39:99:40:0;:29::59:1;94;100:45:100:46:0;:35::62:1;94:29::63;101:35:101:52:0;94:29::53:1;102:46:102:47:0;:35::54:1;94:29::55;103::103:33:0;94::::1;104:46:104:47:0;:35::62:1;94:29::63;105:52:105:53:0;:41::66:1;:35::74;;94:29::75;106:46:106:47:0;:35::60:1;94:29::61;107:40:107:41:0;:29::58:1;94;108:46:108:47:0;:35::54:1;94:29::55;109::109:33:0;94::::1;110:46:110:47:0;:35::62:1;94:29::63;111:52:111:53:0;:41::66:1;:35::74;;94:29::75;112::112:41:0;;94::::1;113:40:113::0;:29::58:1;94;114:36:114:37:0;:29::38:1;;94;116:43:116:51:0;;:35::52:1;:59::61:0;:35::62:1;:::65;:31::66;:27::67;122:20:122:28:0;;:31::41;;:20:::1;:12::43;40::125:9;;;;;;;;;8:4:126:5;;",
+    "logs": [],
+    "requires": [
+      {
+        "ip": 3,
+        "line": 11
+      },
+      {
+        "ip": 6,
+        "line": 14
+      },
+      {
+        "ip": 12,
+        "line": 17
+      },
+      {
+        "ip": 18,
+        "line": 20
+      },
+      {
+        "ip": 24,
+        "line": 23
+      },
+      {
+        "ip": 36,
+        "line": 29
+      },
+      {
+        "ip": 42,
+        "line": 32
+      },
+      {
+        "ip": 48,
+        "line": 35
+      },
+      {
+        "ip": 53,
+        "line": 43
+      },
+      {
+        "ip": 61,
+        "line": 46
+      },
+      {
+        "ip": 72,
+        "line": 54
+      },
+      {
+        "ip": 79,
+        "line": 60
+      },
+      {
+        "ip": 96,
+        "line": 72
+      },
+      {
+        "ip": 123,
+        "line": 85
+      },
+      {
+        "ip": 231,
+        "line": 122
+      }
+    ]
+  },
+  "compiler": {
+    "name": "cashc",
+    "version": "0.10.5"
+  },
+  "updatedAt": "2026-07-30T17:07:30.313Z"
+}

@@ -42,7 +42,7 @@
     "dotenv": "^10.0.0"
   },
   "testPathIgnorePatterns": [
-    "dist"
+    "out"
   ],
   "sideEffects": [
     "src/rate/ExchangeRate.ts",
@@ -54,7 +54,7 @@
     "bitcoin cash",
     "wasm"
   ],
-  "author": "readcash",
+  "author": "2qx",
   "devDependencies": {
     "dotenv": "^10.0.0"
   }

@@ -1,0 +1,16 @@
+<svg width="400" height="400" version="1.1" viewBox="0 0 80 80" xmlns="http://www.w3.org/2000/svg">
+    <style>
+     tspan {
+       font-family: "Lucida Console", monospace;
+       font-weight: 900;
+       font-variant-caps: small-caps;
+       fill: white;
+     }
+    </style>
+    <rect x="2" y="2"  width="76"  height="76" rx="10" ry="10" fill="#741"/>
+    <text y="25" x="7">
+     <tspan x='10' dy='0em'>tSAFAs</tspan>
+     <tspan x='10' dy='1.2em'>Are For</tspan>
+     <tspan x='10' dy='1.2em'>ASICs🚧</tspan>
+    </text>
+</svg>

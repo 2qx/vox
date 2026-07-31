@@ -26,6 +26,24 @@
 				}
 			}
 		},
+		"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff": {
+			"2026-08-01T17:00:01.273Z": {
+				"name": "Photons",
+				"uris": {
+					"web": "https://vox.cash/photon",
+					"icon": "data:image/svg+xml,%3Csvg width='400' height='400' version='1.1' viewBox='0 0 106 106' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cdefs%3E%3CradialGradient id='a' cx='61' cy='5' r='53' gradientTransform='matrix(-.02 2 -2 -.02 63 -119)' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%230d0a75' stop-opacity='.8' offset='0'/%3E%3Cstop stop-color='%2316124d' offset='1'/%3E%3C/radialGradient%3E%3ClinearGradient id='b' x1='53' x2='13' y1='61' y2='51' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%23f6f4ca' offset='0'/%3E%3Cstop stop-color='%23fff' stop-opacity='0' offset='1'/%3E%3C/linearGradient%3E%3Cpattern id='bar' viewBox='0,0,10,10' width='10%25' height='10%25'%3E%3Crect style='opacity:0.2;fill:%23ffffff;' height='1' width='10'/%3E%3C/pattern%3E%3C/defs%3E%3Cpath d='m10 3-8 8v86l8 8h86l8-8v-86l-8-8z' fill='url(%23a)'/%3E%3Cpath d='m10 3-8 8v86l8 8h86l8-8v-86l-8-8z' fill='url(%23bar)'/%3E%3Cpath d='m24 22c26-0.8 37 72 28 72-10 0.2 0.1-59 26-85' fill='none' stroke='url(%23b)' stroke-linecap='round' stroke-width='5'/%3E%3C/svg%3E"
+				},
+				"token": {
+					"symbol": "PHOTONS",
+					"category": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+					"decimals": 0
+				},
+				"description": "A CashToken to monetize excess electrons and maintain a decentralized energy oracle.",
+				"extensions": {
+					"exchanges": "catdex"
+				}
+			}
+		},
 		"242f6ecedb404c743477e35b09733a56cacae34f3109d5cee1cbc1d5630affd7": {
 			"2024-05-09T19:45:12.865Z": {
 				"name": "HoneyBadgers",
@@ -71,7 +89,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23966424; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/v?block=1000000"
+					"web": "https://vox.cash/future/v?block=1000000"
 				},
 				"extensions": {
 					"exchanges": "catdex"
@@ -89,7 +107,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23f00; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/v?block=2000000"
+					"web": "https://vox.cash/future/v?block=2000000"
 				}
 			}
 		},
@@ -104,7 +122,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23ff7500; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/v?block=3000000"
+					"web": "https://vox.cash/future/v?block=3000000"
 				}
 			}
 		},
@@ -119,7 +137,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23cc0; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/v?block=4000000"
+					"web": "https://vox.cash/future/v?block=4000000"
 				}
 			}
 		},
@@ -134,7 +152,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%230c0; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/v?block=5000000"
+					"web": "https://vox.cash/future/v?block=5000000"
 				}
 			}
 		}

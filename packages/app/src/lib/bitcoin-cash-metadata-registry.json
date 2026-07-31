@@ -32,7 +32,7 @@
 				"description": "BitcoinCash HoneyBadgers",
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg width='160' height='160' version='1.1' viewBox='0 0 160 160' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='m145 68c-9.29-18.3-14.3-38-41.7-51.3-36-17.5-94.9 4.7-97.2 60.1-0.987 24.6 16.3 53.4 15.5 41.4-4.64-77.3 94-32 123-50.2' fill='%2315a658' stroke='%2315a658' stroke-linecap='round' stroke-linejoin='round' stroke-width='5'/%3E%3Cpath d='m90.9 14.8c0.515 0.656-0.33 14-2 11.8-12.5-16.4-33.6-7.35-31.6 9.17-19.7-5.86-39.5 11.4-37.6 14.9 7.56-4.38 15.1-3.04 19.7-1.16-10.4 4.87-17.5 15.3-20.7 23.6 5.94-4.74 14.8-7.32 23.2-4.42-14.6 8.72-40 50.9-1.64 71.9 31.4 12.9 50.8 11.7 66.3 7.72-18.8-25.5-8.72-36.9 9.97-52.5 15.6 4.58 30.4 2.6 34.4-4.28 6.68-11.4-7.51-26-7.51-26s-5.04-16.9-9.75-23.8c9.45-30.9-18.6-33-25.6-19.5-9.36-4.79-17.2-7.53-17.2-7.53zm0.0312 23.5c1.07-6.8 16.5 6.23 17.8 7.79 1.3 1.56 0.774 6.34-6.43 3.23s-8.54-3.49-11.3-11z' fill='%23fff'/%3E%3Cg stroke-linecap='round' stroke-linejoin='round' stroke-width='5'%3E%3Cpath d='m111 20.1c9.83-13.9 35.6-2.32 23.4 23.8' fill='none' stroke='%230f3b2a'/%3E%3Cpath d='m68.3 42.9c-11-14 7.91-26 16-10.4 9.16 17.7 20.6 23 22.4 15.4 11.4 10.8 20.9 29.5 22.8 33.2-8.45-3.15-20.6-13.6-31.7-19-10.3-5.08-29.8-10.9-36.1-17.6 3.16 3.89 7.37 1.33 6.68-1.6z' fill='%23103b2a' stroke='%23103b2a'/%3E%3Cpath d='m116 97.8s-32.2 17-7.48 50.2c-26.9 2.33-31.9-17.9-29.1-35.5-6.73 3.26-24 16.7-3.07 38.7-7.84 0.952-33.8-5.98-37.1-17.8-4.98-17.6-8.11-42.8 27.5-48.7 21.5-3.6 27.2 13 49.3 13.1z' fill='%23103b2a' stroke='%23103b2a'/%3E%3C/g%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='m43.5 112c7.98-16.6 21.3-21 38-19.2-18 1.34-27 8.14-38 19.2' stroke='%231ea456' stroke-linejoin='round' stroke-opacity='.995' stroke-width='4.8'/%3E%3Cg stroke-width='5'%3E%3Cpath d='m119 26.6c1.72-3.61 11.3-1.96 7.05 6.11' stroke='%230f3b2a'/%3E%3Cpath d='m89.8 12.2c16 4.26 37.4 12.9 55 55.8' stroke='%2315a658'/%3E%3Cpath d='m146 70.4c7.52 8.74 13.7 15.7 2.46 24.2-11.3 8.58-26.6 7.51-35.4-4.86' stroke='%23113a2a'/%3E%3C/g%3E%3C/g%3E%3Cpath d='m136 88c-0.0708-9.52 19.6-9.96 21-2.71 1.12 5.79-7.3 9.94-11.2 10.1s-8.69 1.75-9.8-7.36z' fill='%23113a2a'/%3E%3Cpath d='m14.1 68.4c-10.3 11.8-9.28 44.3 3.27 20.9-10.7 35.2 23 60.9 54.2 60.5' fill='none' stroke='%23113a2a' stroke-linecap='round' stroke-linejoin='round' stroke-width='5'/%3E%3Cellipse cx='110' cy='63' rx='2.66' ry='2.45' fill='%23fff'/%3E%3C/svg%3E",
-					"web": "https://badgers_cash",
+					"web": "https://badgers.cash",
 					"telegram": "https://t.me/badgers_cash"
 				},
 				"token": {
@@ -71,7 +71,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23966424; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/v?block=1000000"
+					"web": "https://vox.cash/future/v?block=1000000"
 				},
 				"extensions": {
 					"exchanges": "catdex"
@@ -89,7 +89,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23f00; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/v?block=2000000"
+					"web": "https://vox.cash/future/v?block=2000000"
 				},
 				"extensions": {
 					"exchanges": "catdex"
@@ -107,7 +107,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23ff7500; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/v?block=3000000"
+					"web": "https://vox.cash/future/v?block=3000000"
 				}
 			}
 		},
@@ -122,7 +122,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23cc0; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/v?block=4000000"
+					"web": "https://vox.cash/future/v?block=4000000"
 				}
 			}
 		},
@@ -137,7 +137,43 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%230c0; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/v?block=5000000"
+					"web": "https://vox.cash/future/v?block=5000000"
+				}
+			}
+		},
+		"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff": {
+			"2026-08-01T17:00:01.273Z": {
+				"name": "Photons",
+				"uris": {
+					"web": "https://vox.cash/energy",
+					"icon": "data:image/svg+xml,%3Csvg width='400' height='400' version='1.1' viewBox='0 0 106 106' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cdefs%3E%3CradialGradient id='a' cx='61' cy='5' r='53' gradientTransform='matrix(-.02 2 -2 -.02 63 -119)' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%230d0a75' stop-opacity='.8' offset='0'/%3E%3Cstop stop-color='%2316124d' offset='1'/%3E%3C/radialGradient%3E%3ClinearGradient id='b' x1='53' x2='13' y1='61' y2='51' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%23f6f4ca' offset='0'/%3E%3Cstop stop-color='%23fff' stop-opacity='0' offset='1'/%3E%3C/linearGradient%3E%3Cpattern id='bar' viewBox='0,0,10,10' width='10%25' height='10%25'%3E%3Crect style='opacity:0.2;fill:%23ffffff;' height='1' width='10'/%3E%3C/pattern%3E%3C/defs%3E%3Cpath d='m10 3-8 8v86l8 8h86l8-8v-86l-8-8z' fill='url(%23a)'/%3E%3Cpath d='m10 3-8 8v86l8 8h86l8-8v-86l-8-8z' fill='url(%23bar)'/%3E%3Cpath d='m24 22c26-0.8 37 72 28 72-10 0.2 0.1-59 26-85' fill='none' stroke='url(%23b)' stroke-linecap='round' stroke-width='5'/%3E%3C/svg%3E"
+				},
+				"token": {
+					"symbol": "PHOTONS",
+					"category": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+					"decimals": 0
+				},
+				"description": "A CashToken to monetize excess electrons and maintain a decentralized energy oracle.",
+				"extensions": {
+					"exchanges": "catdex"
+				}
+			}
+		},
+		"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff": {
+			"2026-08-01T17:00:01.273Z": {
+				"name": "S.A.F.A.",
+				"uris": {
+					"web": "https://vox.cash/energy",
+					"icon": "data:image/svg+xml,%3Csvg width='400' height='400' version='1.1' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cstyle%3E tspan %7B font-family: 'Lucida Console', monospace; font-weight: 900; font-variant-caps: small-caps; fill: white; %7D %3C/style%3E%3Crect x='2' y='2' width='76' height='76' rx='10' ry='10' fill='%23147'/%3E%3Ctext y='25' x='7'%3E%3Ctspan x='10' dy='0em'%3ESAFAs%3C/tspan%3E%3Ctspan x='10' dy='1.2em'%3EAre For%3C/tspan%3E%3Ctspan x='10' dy='1.2em'%3EASICs⛏️%3C/tspan%3E%3C/text%3E%3C/svg%3E"
+				},
+				"token": {
+					"symbol": "SAFA",
+					"category": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+					"decimals": 0
+				},
+				"description": "An ASIC minable CashToken to monetize excess electrons and maintain a decentralized energy oracle.",
+				"extensions": {
+					"exchanges": "catdex"
 				}
 			}
 		}

@@ -5,6 +5,7 @@ import fs from 'node:fs';
 export default {
   require: ['./_force-exit.mjs'],
   "timeout": "300s",
+  "files": ["!./packages/wallet/src/**"],
   "environmentVariables": {
     "ALICE_ID": "wif:regtest:cNfsPtqN2bMRS7vH5qd8tR8GMvgXyL5BjnGAKgZ8DYEiCrCCQcP6",
     // cspell:disable-next-line

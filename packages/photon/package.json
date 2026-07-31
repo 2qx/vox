@@ -1,7 +1,7 @@
 {
-  "name": "@unspent/tau",
-  "version": "1.0.1",
-  "description": "unspent common lib",
+  "name": "@unspent/photon",
+  "version": "1.0.0",
+  "description": "Photon: A PoW CashToken",
   "type": "module",
   "exports": {
     ".": {
@@ -16,8 +16,8 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/2qx/unspent.git",
-    "directory": "packages/common"
+    "url": "git+https://github.com/2qx/vox.git",
+    "directory": "packages/photon"
   },
   "keywords": [
     "BCH",
@@ -26,19 +26,20 @@
   "author": "2qx",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/2qx/unspent/issues"
+    "url": "https://github.com/2qx/vox/issues"
   },
-  "homepage": "https://github.com/2qx/unspent#readme",
+  "homepage": "https://github.com/2qx/vox#readme",
   "scripts": {
     "prepare": "pnpm run build",
     "build": "tsc -p tsconfig.json",
     "typedoc": "typedoc src/index.ts --out out/docs --options ../../config/typedoc.json"
   },
-  "devDependencies": {
-    "@types/node": "^20.14.10",
+  "dependencies": {
+    "@bitauth/libauth": "^3.1.0-next.8",
+    "@unspent/tau": "workspace:*",
     "@unspent/wallet": "workspace:*"
   },
-  "dependencies": {
-    "@bitauth/libauth": "3.1.0-next.8"
+  "devDependencies": {
+    "@types/node": "^20.17.24"
   }
 }

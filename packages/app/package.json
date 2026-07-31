@@ -47,6 +47,7 @@
 		"@unspent/drip": "workspace:*",
 		"@unspent/dutch": "workspace:*",
 		"@unspent/locktime": "workspace:*",
+		"@unspent/photon": "workspace:*",
 		"@unspent/small": "workspace:*",
 		"@unspent/subscription": "workspace:*",
 		"@unspent/timeout": "workspace:*",
