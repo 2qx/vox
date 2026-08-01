@@ -1,6 +1,5 @@
 <script lang="ts">
-	
-	import { CATEGORY_MAP , CATEGORY_MAP_CHIPNET } from '@fbch/lib';
+	import { CATEGORY_MAP, CATEGORY_MAP_CHIPNET } from '@fbch/lib';
 
 	let { category, isMainnet } = $props();
 
@@ -9,13 +8,13 @@
 		['7003b9e854d2abc855b2c20c9734c3dfe4ec3a4de573f7ebb9ce1be527a5bb36', 'tBADGER'],
 		['7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c', 'BPTS'],
 		['8214f234225e5f555663290e0fb7b7b607bf0778221e6da97248bf020306831b', 'tBPTS'],
+		['8cfcf13f00e8843dc4787844a1ebe85e6c97807ef40fa8adf672e6149bbf64bb', 'tPHOTON'],
 		['bb61cd7a6c8a3a3742d965dc7ac73c1117382a5c8930b68338deb881f75c0214', 'tWBCH'],
 		['ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3', 'WBCH']
 	]);
 
 	let FUTURE_MAP = isMainnet ? CATEGORY_MAP : CATEGORY_MAP_CHIPNET;
-	let baseFutureTicker = isMainnet ? "FBCH" : "tFBCH"
-
+	let baseFutureTicker = isMainnet ? 'FBCH' : 'tFBCH';
 </script>
 
 {#if FUTURE_MAP.has(category)}
@@ -23,5 +22,5 @@
 {:else if FIRST_CLASS.has(category)}
 	{FIRST_CLASS.get(category)}
 {:else}
-	{category.substring(0, 8) + '...' + category.substring(category.length-8, category.length)}
+	{category.substring(0, 8) + '...' + category.substring(category.length - 8, category.length)}
 {/if}

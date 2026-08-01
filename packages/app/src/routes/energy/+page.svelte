@@ -208,7 +208,7 @@
 		<div>
 			<img width="50" src={icon} alt={ticker} />
 			<br />
-			{(sumWalletTokens/ 100_000_000n	).toLocaleString()}
+			{(sumWalletTokens/ 100_000_000n	).toLocaleString(undefined,{maximumFractionDigits:5})}
 			{ticker}
 		</div>
 	</div>
@@ -216,7 +216,6 @@
 	<div class="mining">
 		{#if baton}
 			<button class="button" onclick={() => mine()}>mine {ticker}</button>
-			{prefix}
 		{/if}
 	</div>
 
@@ -256,7 +255,7 @@
 
 <style>
 	pre {
-		font-size: small;
+		font-size: x-small;
 	}
 
 	.status {

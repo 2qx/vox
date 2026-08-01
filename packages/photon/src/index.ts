@@ -265,7 +265,6 @@ export default class Photon {
                 sucessfulNonce = true
                 transaction = result.transaction
             }
-            if (i % 500 == 0) console.log(i, binToHex(hash256(encodeTransactionBch(result.transaction))))
         }
 
         const sourceOutputs = [this.getSourceOutput(contractUtxo)];
@@ -281,7 +280,7 @@ export default class Photon {
 
         //console.log("debug: ",unexpectedFailingIndexDebugTrace)
         //console.log(binToHex(transaction.inputs[0]?.unlockingBytecode!))
-        
+
         // let trace = stringifyDebugTraceSummary(
         //     summarizeDebugTrace(state.slice(-9)),
         // )
