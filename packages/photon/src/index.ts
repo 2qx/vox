@@ -253,7 +253,6 @@ export default class Photon {
         let transaction
         let sucessfulNonce = false
         const nextTarget = binToBigIntUint256LE(this.getNextTarget(contractUtxo, now))
-        console.log("Next Target:", nextTarget)
         for (var i = 0; i < tries && !sucessfulNonce; i++) {
 
             config.outputs = [this.getOutput(contractUtxo, rewardAmount, now, minerThrowawayKey, i)];
@@ -261,7 +260,7 @@ export default class Photon {
             let result = generateTransaction(config);
             if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
             if (binToBigIntUint256LE(hash256(encodeTransactionBch(result.transaction))) < nextTarget) {
-                console.log("SUCCESS! ", i)
+                console.log("SUCCESS! after ", i, " tries")
                 console.log(binToHex(hash256(encodeTransactionBch(result.transaction))))
                 sucessfulNonce = true
                 transaction = result.transaction
@@ -282,10 +281,11 @@ export default class Photon {
 
         //console.log("debug: ",unexpectedFailingIndexDebugTrace)
         //console.log(binToHex(transaction.inputs[0]?.unlockingBytecode!))
-        let trace = stringifyDebugTraceSummary(
-            summarizeDebugTrace(state.slice(-9)),
-        )
-        console.log(trace)
+        
+        // let trace = stringifyDebugTraceSummary(
+        //     summarizeDebugTrace(state.slice(-9)),
+        // )
+        // console.log(trace)
 
         encodeTransactionBch(transaction)
         const tokenValidationResult = verifyTransactionTokens(

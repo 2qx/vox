@@ -111,7 +111,7 @@
 			amount: BigInt(21e14), // fungible token amount
 			value: 50000000n, // Satoshi value
 			nft: {
-				capability: 'mutable',  
+				capability: 'mutable',
 				commitment: '00000000' + '000000000000000000000000000000000000000000000000000000000000ff78'
 			}
 		});
@@ -141,13 +141,12 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		console.log(response)
 		response = response.filter((u: UtxoI) => u.token_data?.category == CATEGORY);
 		if (response.length == 1) {
 			baton = response[0] as UtxoI;
 			target = swapEndianness(baton.token_data?.nft?.commitment.slice(8, 74)!);
 		}
-		unspent = response
+		unspent = response;
 		sumVault = sumUtxoValue(response, true);
 		sumVaultTokens = sumTokenAmounts(response, CATEGORY);
 	};
@@ -209,7 +208,7 @@
 		<div>
 			<img width="50" src={icon} alt={ticker} />
 			<br />
-			{sumWalletTokens.toLocaleString()}
+			{(sumWalletTokens/ 100_000_000n	).toLocaleString()}
 			{ticker}
 		</div>
 	</div>
@@ -228,9 +227,9 @@
 			<div>
 				<img width="50" src={icon} alt={ticker} />
 				<br />
-				{sumVaultTokens.toLocaleString()}
+				{(sumVaultTokens / 100_000_000n).toLocaleString()}
 				{ticker}<br />
-				{sumVault.toLocaleString()} sats {baseTicker}
+				{(sumVault/100_000_000).toLocaleString()} {baseTicker}
 				<img width="18px" src={bchIcon} alt={baseTicker} />
 			</div>
 		</div>
@@ -240,7 +239,7 @@
 		<p>Previous Target</p>
 		<pre>{swapEndianness(target)}</pre>
 		Height: {baton.height} <br />
-		Next Payout: {(BigInt(baton.token_data?.amount) / 420000n).toLocaleString()}
+		Next Payout: {(BigInt(baton.token_data?.amount!) / 420000n / 100_000_000n).toLocaleString()}
 		{ticker}<br />
 		Cash: {baton.value.toLocaleString()} sats {baseTicker}<br />
 
