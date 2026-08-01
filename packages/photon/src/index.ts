@@ -40,7 +40,7 @@ import {
 } from '@unspent/tau';
 
 export const PHOTON_CATEGORY = hexToBin('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
-export const tPHOTON_CATEGORY = hexToBin('8cfcf13f00e8843dc4787844a1ebe85e6c97807ef40fa8adf672e6149bbf64bb')
+export const tPHOTON_CATEGORY = hexToBin('8bc4c5974bb98a01d08ef9ba1b7208212b66678732519c4881d2fa924c2a159f')
 
 
 export default class Photon {

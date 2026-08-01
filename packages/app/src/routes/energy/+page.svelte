@@ -141,6 +141,7 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
+		console.log(response)
 		response = response.filter((u: UtxoI) => u.token_data?.category == CATEGORY);
 		if (response.length == 1) {
 			baton = response[0] as UtxoI;
