@@ -145,7 +145,7 @@
 		response = response.filter((u: UtxoI) => u.token_data?.category == CATEGORY);
 		if (response.length == 1) {
 			baton = response[0] as UtxoI;
-			target = swapEndianness(baton.token_data?.nft?.commitment.slice(8, 74)!);
+			target = swapEndianness(baton.token_data?.nft?.commitment.slice(8, 72)!);
 		}
 		unspent = response;
 		sumVault = sumUtxoValue(response, true);
@@ -239,7 +239,7 @@
 		<p>Previous Target</p>
 		<pre>{swapEndianness(target)}</pre>
 		Height: {baton.height} <br />
-		Next Payout: {(BigInt(baton.token_data?.amount!) / 420000n / 100_000_000n).toLocaleString()}
+		Next Payout: {(Number(BigInt(baton.token_data?.amount!) / 420000n )/100_000_000).toLocaleString(undefined,{maximumFractionDigits:5})}
 		{ticker}<br />
 		Cash: {baton.value.toLocaleString()} sats {baseTicker}<br />
 

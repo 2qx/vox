@@ -139,7 +139,7 @@ export default class Photon {
         let prevTarget = binToBigIntUint256LE(
             hexToBin(utxo.token_data?.nft?.commitment!).slice(4, 36)!
         )
-        return bigIntToBinUintLE((prevTarget * (BigInt(age) + 143n))/ 144n)
+        return bigIntToBinUint256LE((prevTarget * (BigInt(age) + 143n))/ 144n)
 
     }
 
