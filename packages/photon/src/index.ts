@@ -12,7 +12,6 @@ import {
     InputTemplate,
     OutputTemplate,
     Output,
-    stringify,
     stringifyDebugTraceSummary,
     summarizeDebugTrace,
     Transaction,
@@ -22,8 +21,10 @@ import {
     sha256,
     hash256,
     deriveHdPrivateNodeChild,
-    deriveHdPrivateNodeFromSeed,
     decodeHdPrivateKey,
+    cashAddressToLockingBytecode,
+    numberToBinUint32LE,
+    bigIntToBinUintLE
 } from '@bitauth/libauth';
 
 import {
@@ -38,8 +39,8 @@ import {
     sumSourceOutputTokenAmounts
 } from '@unspent/tau';
 
-export const PHOTON = hexToBin('7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c')
-export const tPHOTON = hexToBin('ffc9d3b3488e890ef113b1c74f40e1f5eb1147a7d4191cecac89fd515721a271')
+export const PHOTON_CATEGORY = hexToBin('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
+export const tPHOTON_CATEGORY = hexToBin('8cfcf13f00e8843dc4787844a1ebe85e6c97807ef40fa8adf672e6149bbf64bb')
 
 
 export default class Photon {
@@ -99,7 +100,7 @@ export default class Photon {
 
     }
 
-    static getInput(utxo: UtxoI, age: number, key: any): InputTemplate<CompilerBch> {
+    static getInput(utxo: UtxoI, age: number, minerKey: any): InputTemplate<CompilerBch> {
 
         return {
             outpointIndex: utxo.tx_pos,
@@ -111,9 +112,9 @@ export default class Photon {
                         "age": bigIntToVmNumber(BigInt(age)),
                     },
                     hdKeys: {
-                        addressIndex: 2,
+                        addressIndex: 0,
                         hdPrivateKeys: {
-                            'miner': key
+                            'miner': minerKey
                         },
                     }
                 },
@@ -132,24 +133,31 @@ export default class Photon {
         } as InputTemplate<CompilerBch>
     }
 
-    static getOutput(utxo: UtxoI, amount: number, age: number, key: any): OutputTemplate<CompilerBch> {
+    static getNextTarget(utxo: UtxoI, now: number) {
+        
+        let age = utxo.height <= 0 ? 0 : now - utxo.height;
         let prevTarget = binToBigIntUint256LE(
             hexToBin(utxo.token_data?.nft?.commitment!).slice(4, 36)!
         )
-        if (typeof prevTarget === "string") throw prevTarget
-        let nextTarget = (prevTarget * (BigInt(age) + 143000n)) / 144000n
+        return bigIntToBinUintLE((prevTarget * (BigInt(age) + 143n))/ 144n)
+
+    }
 
 
+    static getOutput(utxo: UtxoI, amount: number, now: number, minerKey: any, nonce: number): OutputTemplate<CompilerBch> {
+
+        let age = utxo.height <= 0 ? 0 : now - utxo.height;
+        const nextTarget = this.getNextTarget(utxo, now)
         let commitment = Uint8Array.from(
             [
-                ...hexToBin("00000000"),
-                ...bigIntToBinUint256LE(nextTarget)
+                ...numberToBinUint32LE(nonce),
+                ...nextTarget
             ])
         let msg_hash = sha256.hash(commitment)
 
-        let parentNode = decodeHdPrivateKey(key)
+        let parentNode = decodeHdPrivateKey(minerKey)
         if (typeof parentNode == "string") throw parentNode
-        let minerNodeChild = deriveHdPrivateNodeChild(parentNode.node, 2)
+        let minerNodeChild = deriveHdPrivateNodeChild(parentNode.node, 0)
         let dataSig = secp256k1.signMessageHashSchnorr(minerNodeChild.privateKey, msg_hash)
         if (typeof dataSig == "string") throw dataSig
 
@@ -160,9 +168,9 @@ export default class Photon {
                         "age": bigIntToVmNumber(BigInt(age)),
                     },
                     hdKeys: {
-                        addressIndex: 2,
+                        addressIndex: 0,
                         hdPublicKeys: {
-                            'miner': deriveHdPublicKey(key).hdPublicKey
+                            'miner': deriveHdPublicKey(minerKey).hdPublicKey
                         },
                     },
 
@@ -170,7 +178,7 @@ export default class Photon {
                 compiler: this.compiler,
                 script: 'lock'
             },
-            valueSatoshis: BigInt(utxo.value - 1200),
+            valueSatoshis: BigInt(utxo.value - 1500),
             token: {
                 category: hexToBin(utxo.token_data!.category!),
                 amount: BigInt(utxo.token_data?.amount!) - BigInt(amount),
@@ -183,23 +191,12 @@ export default class Photon {
 
     }
 
-    static getRewardOutput(amount: number, privateKey?: any, addressIndex = 0, category = PHOTON): OutputTemplate<CompilerBch> {
+    static getRewardOutput(amount: number, rewardAddress?: any, category = PHOTON_CATEGORY): OutputTemplate<CompilerBch> {
 
-        const lockingBytecode = privateKey ? {
-            compiler: this.compiler,
-            data: {
-                hdKeys: {
-                    addressIndex: addressIndex,
-                    hdPublicKeys: {
-                        'wallet': deriveHdPublicKey(privateKey).hdPublicKey
-                    },
-                },
-            },
-            script: 'wallet_lock'
-        } : Uint8Array.from(Array(33))
-
+        let lockingBytecode = cashAddressToLockingBytecode(rewardAddress)
+        if (typeof lockingBytecode == "string") throw lockingBytecode
         return {
-            lockingBytecode: lockingBytecode,
+            lockingBytecode: lockingBytecode.bytecode,
             valueSatoshis: 800n,
             token: {
                 category: category,
@@ -211,24 +208,27 @@ export default class Photon {
 
 
     /**
-     * Claim some Block Tops.
+     * Mine for photons (slow)
      *
      * @param now - The current bitcoin block height timestamp (expressed in blocks).
      * @param contractUtxo - contract outputs to use as input.
-     * @param walletUtxos - wallet outputs to use as input.
-     * @param key - private key to sign transaction wallet inputs.
+     * @param minerThrowawayKey - A private key used for signing the nonce message.
+     * @param rewardAddress - The P2PKH Cashaddress to receive payouts.
+     * @param category - The token category of the photons being mined.
      * @param fee - transaction fee to pay (per byte); default 1 sat/byte.
      *
      * @throws {Error} if transaction generation fails.
      * @returns a transaction template.
      */
 
-    static claim(
+    static slowMine(
         now: number,
         contractUtxo: UtxoI,
-        key?: string,
+        minerThrowawayKey: string,
+        rewardAddress: string,
         category?: string,
-        fee = 1
+        fee = 1,
+        tries = 500
     ): {
         transaction: Transaction,
         sourceOutputs: Output[],
@@ -238,8 +238,7 @@ export default class Photon {
         const inputs: InputTemplate<CompilerBch>[] = [];
         const outputs: OutputTemplate<CompilerBch>[] = [];
 
-        let photonCat = category ? hexToBin(category) : PHOTON
-
+        let photonCat = category ? hexToBin(category) : PHOTON_CATEGORY
 
         let age = contractUtxo.height <= 0 ? 0 : now - contractUtxo.height;
         const rewardAmount = Math.floor(Number(BigInt(contractUtxo.token_data!.amount!) / 420000n)) - 1
@@ -249,33 +248,30 @@ export default class Photon {
             inputs,
             outputs
         }
+        config.inputs.push(this.getInput(contractUtxo, age, minerThrowawayKey));
 
-        config.inputs.push(this.getInput(contractUtxo, age, key));
-        config.outputs.push(this.getOutput(contractUtxo, rewardAmount, age, key));
+        let transaction
+        let sucessfulNonce = false
+        const nextTarget = binToBigIntUint256LE(this.getNextTarget(contractUtxo, now))
+        console.log("Next Target:", nextTarget)
+        for (var i = 0; i < tries && !sucessfulNonce; i++) {
 
-
-
-        config.outputs.push(this.getRewardOutput(rewardAmount, key, 0, photonCat));
-
-        //console.log("pre gen")
-
-        let result = generateTransaction(config);
-
-        if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
-
-        //const estimatedFee = getTransactionFees(result.transaction, fee)
-
-        // subtract fees off the change output
-        // config.outputs[2]!.valueSatoshis = config.outputs[2]!.valueSatoshis - estimatedFee
-
-        // result = generateTransaction(config);
-        // if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
-
+            config.outputs = [this.getOutput(contractUtxo, rewardAmount, now, minerThrowawayKey, i)];
+            config.outputs.push(this.getRewardOutput(rewardAmount, rewardAddress, photonCat));
+            let result = generateTransaction(config);
+            if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+            if (binToBigIntUint256LE(hash256(encodeTransactionBch(result.transaction))) < nextTarget) {
+                console.log("SUCCESS! ", i)
+                console.log(binToHex(hash256(encodeTransactionBch(result.transaction))))
+                sucessfulNonce = true
+                transaction = result.transaction
+            }
+            if (i % 500 == 0) console.log(i, binToHex(hash256(encodeTransactionBch(result.transaction))))
+        }
 
         const sourceOutputs = [this.getSourceOutput(contractUtxo)];
 
-        const transaction = result.transaction
-        //console.log("transaction result:", stringify(transaction))
+        if (!sucessfulNonce || !transaction) throw (`failed to find a nonce in ${tries}`)
 
         let state = this.vm.debug({
             inputIndex: 0,

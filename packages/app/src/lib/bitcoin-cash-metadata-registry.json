@@ -151,7 +151,7 @@
 				"token": {
 					"symbol": "PHOTONS",
 					"category": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-					"decimals": 0
+					"decimals": 8
 				},
 				"description": "A CashToken to monetize excess electrons and maintain a decentralized energy oracle.",
 				"extensions": {
@@ -169,7 +169,7 @@
 				"token": {
 					"symbol": "SAFA",
 					"category": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-					"decimals": 0
+					"decimals": 8
 				},
 				"description": "An ASIC minable CashToken to monetize excess electrons and maintain a decentralized energy oracle.",
 				"extensions": {

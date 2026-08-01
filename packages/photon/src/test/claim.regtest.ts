@@ -52,10 +52,11 @@ test('test mine function', async t => {
 
   let now = await provider.getBlockHeight();
 
-  let tx = Photon.claim(
+  let tx = Photon.slowMine(
     now,
     contractUtxos[0],
     key,
+    bob.getTokenDepositAddress(),
     tokenId
   )
 

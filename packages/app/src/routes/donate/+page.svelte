@@ -6,9 +6,9 @@
 </script>
 
 <section>
-	<h1>
+	<!-- <h1>
 		<a href="https://fundme.cash/campaign/116">TL;DR: Donate to FundMe #116</a>
-	</h1>
+	</h1> -->
 
 	<Readme />
 
@@ -16,8 +16,8 @@
         Ways to give:
     </h1>
 
-	<p>This is an active FundMe campaign for Vox</p>
-	<a href="https://fundme.cash/campaign/116">Fundme Campaign #116</a>
+	<!-- <p>This is an active FundMe campaign for Vox</p>
+	<a href="https://fundme.cash/campaign/116">Fundme Campaign #116</a> -->
 
 	<p>This is a plain donation address:</p>
 	<qr-code

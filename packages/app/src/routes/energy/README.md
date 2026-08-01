@@ -1,6 +1,6 @@
 # About Photons
 
-Photon tokens are solar punk themed fairly distributed minable (sha256) CashToken creating a decentralized energy oracle. 
+Photon tokens are solar punk themed fairly distributed minable CashToken creating a decentralized energy oracle. 
 
 Anyone can utilize excess electricity hash to emit Photons (PHOTON). Photons are released from the vault when someone finds the hash of the transaction is below a certain difficulty threshold. 
 
@@ -10,7 +10,7 @@ The Photon Vault hold an output with a small amount of satoshis to facilitate pa
 
 ## What is the PoW? 
 
-The PoW algorithm for Photons Hash256(Schnorr(Sha256)). The double SHA-256 hash of a transaction (as calculated by the unlocking script). Additionally, the unlocking script requires a [Schnorr message signed (OP_CHECKDATASIG)](https://upgradespecs.bitcoincashnode.org/op_checkdatasig/) of the single SHA-256 has of a four-byte random nonce and the current difficulty target. 
+The PoW algorithm for Photons Hash256(Schnorr(Sha256)). The double SHA-256 hash of a transaction (as calculated by the unlocking script). Additionally, the unlocking script requires a [Schnorr message signed (with OP_CHECKDATASIGV)](https://upgradespecs.bitcoincashnode.org/op_checkdatasig/) of the single SHA-256 has of a four-byte random nonce and the current difficulty target. 
 
 ## A decentralized energy oracle
 

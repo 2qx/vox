@@ -2,7 +2,7 @@ import test from 'ava';
 import { getHdPrivateKey, NFTCapability, TransactionRequest } from "@unspent/tau";
 // @ts-ignore
 import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
-import { RegTestWallet } from "mainnet-js";
+import { RegTestWallet, Wallet } from "mainnet-js";
 
 import Photon from "../index.js";
 import { binToHex, encodeTransactionBch } from '@bitauth/libauth';
@@ -13,6 +13,9 @@ test.skip('test block top tx', async t => {
     //alice.provider = regTest
     const aliceBalance = await alice.getBalance()
     t.is(aliceBalance, 500000n);
+
+    let bob = await RegTestWallet.newRandom()
+    let minerKey = getHdPrivateKey(bob.mnemonic!, bob.derivationPath.slice(0, -2), bob.isTestnet)
 
     const utxo = {
         tx_pos: 0,
@@ -27,9 +30,11 @@ test.skip('test block top tx', async t => {
         }
     }
 
-    let response = Photon.claim(
+    let response = Photon.slowMine(
         0,
-        utxo
+        utxo,
+        minerKey,
+        alice.getTokenDepositAddress()
     )
 
     let tx = binToHex(encodeTransactionBch(response.transaction))
