@@ -51,7 +51,6 @@ export const binToBigIntUint256LE = (value: Uint8Array) => {
 
 export const bigIntToBinUint256LE = (value: bigint) => {
   const uint256Bytes = 32;
-  
   return binToFixedLength(bigIntToBinUintLE(value), uint256Bytes)
 }
 

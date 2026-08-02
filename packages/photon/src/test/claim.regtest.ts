@@ -52,7 +52,7 @@ test('test mine function', async t => {
 
   let now = await provider.getBlockHeight();
 
-  let tx = Photon.slowMine(
+  let tx = Photon.generateTemplate(
     now,
     contractUtxos[0],
     key,
@@ -60,12 +60,8 @@ test('test mine function', async t => {
     tokenId
   )
 
-  console.debug("tx: ", binToHex(encodeTransactionBch(tx.transaction)))
-  //console.log("tx id: ", getTransactionId(encodeTransactionBch(tx.transaction)))
+  console.debug("tx: ", tx)
 
-  //await provider.sendRawTransaction(tx_raw)
-  t.is(binToHex(encodeTransactionBch(tx.transaction)), " ")
-  t.is(getTransactionId(encodeTransactionBch(tx.transaction)), " ")
 });
 
 

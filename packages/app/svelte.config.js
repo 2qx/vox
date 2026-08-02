@@ -17,6 +17,9 @@ const config = {
 			assets: buildDir,
 			fallback: '200.html'
 		}),
+		alias:{
+	      $workers: 'src/lib/workers'
+		},
 		prerender:{
 			entries: ["*","/pop/","/future/"]
 		}

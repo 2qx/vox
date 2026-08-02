@@ -6,6 +6,7 @@
 		binToHex,
 		cashAddressToLockingBytecode,
 		encodeTransactionBch,
+		hash256,
 		hexToBin,
 		swapEndianness
 	} from '@bitauth/libauth';
@@ -33,6 +34,11 @@
 	import tBCH from '$lib/images/tBCH.svg';
 	import tPHOTON from '$lib/images/tPHOTON.svg';
 	import PHOTON from '$lib/images/PHOTON.svg';
+
+	let worker: Worker;
+	let result;
+	let workerStatus = 'STATUS_IDLE';
+	let workerMessage;
 
 	let now = $state(0);
 	let baton: UtxoI = $state();
@@ -82,18 +88,14 @@
 	};
 
 	const mine = async function () {
-		let unlockResponse = Photon.slowMine(
+		let template = Photon.generateTemplate(
 			now,
 			unspent[0],
 			minerThrowawayKey,
 			wallet.getTokenDepositAddress(),
-			CATEGORY,
-			fee,
-			5000
+			CATEGORY
 		);
-		let raw_tx = binToHex(encodeTransactionBch(unlockResponse.transaction));
-		console.log(raw_tx);
-		await broadcast(raw_tx);
+		worker.postMessage({ task: 'START', template: template, key: minerThrowawayKey });
 	};
 
 	const broadcast = async function (raw_tx: string) {
@@ -151,6 +153,49 @@
 		sumVaultTokens = sumTokenAmounts(response, CATEGORY);
 	};
 
+	async function initWebWorker() {
+		// This function initiates the web worker
+		// Check if we are in a browser
+		if (window.Worker) {
+			// Check if the browser supports web worker
+			// We reset some values we use to visualise the progress
+			workerStatus = 'STATUS_IDLE';
+			result = undefined;
+			// This is where we load the worker
+			const MyWorker = await import('$workers/photon.js?worker');
+			// And initiate the worker
+			worker = new MyWorker.default();
+
+			// The following part is called when the worker sends a message
+			worker.onmessage = function (e: any) {
+				// Let’s first get the status and the message from the event’s data
+				const { status, message } = e.data;
+				// We use these two variables on the website
+				if (message) {
+					workerMessage = message;
+				}
+				if (status) {
+					workerStatus = status;
+				}
+				// This checks what the status of the message is
+				switch (status) {
+					case 'STATUS_FINISHED':
+						// Save the result returned from the web worker
+						result = e.data.result;
+						broadcast(result);
+						break;
+					case 'STATUS_PROCESSING':
+						// Save the current step number and total number of steps
+						// step = e.data.step ?? 0; // Set to 0 instead of undefined if something went wrong
+						// total = e.data.total ?? 0;
+						break;
+				}
+			};
+		} else {
+			console.error('no worker');
+		}
+	}
+
 	onMount(async () => {
 		BaseWallet.StorageProvider = IndexedDBProvider;
 		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
@@ -180,6 +225,7 @@
 
 		updateUnspent();
 		updateWallet();
+		initWebWorker();
 	});
 
 	onDestroy(async () => {
@@ -208,7 +254,7 @@
 		<div>
 			<img width="50" src={icon} alt={ticker} />
 			<br />
-			{(sumWalletTokens/ 100_000_000n	).toLocaleString(undefined,{maximumFractionDigits:5})}
+			{(sumWalletTokens / 100_000_000n).toLocaleString(undefined, { maximumFractionDigits: 5 })}
 			{ticker}
 		</div>
 	</div>
@@ -228,7 +274,8 @@
 				<br />
 				{(sumVaultTokens / 100_000_000n).toLocaleString()}
 				{ticker}<br />
-				{(sumVault/100_000_000).toLocaleString()} {baseTicker}
+				{(sumVault / 100_000_000).toLocaleString()}
+				{baseTicker}
 				<img width="18px" src={bchIcon} alt={baseTicker} />
 			</div>
 		</div>
@@ -238,7 +285,9 @@
 		<p>Previous Target</p>
 		<pre>{swapEndianness(target)}</pre>
 		Height: {baton.height} <br />
-		Next Payout: {(Number(BigInt(baton.token_data?.amount!) / 420000n )/100_000_000).toLocaleString(undefined,{maximumFractionDigits:5})}
+		Next Payout: {(
+			Number(BigInt(baton.token_data?.amount!) / 420000n) / 100_000_000
+		).toLocaleString(undefined, { maximumFractionDigits: 5 })}
 		{ticker}<br />
 		Cash: {baton.value.toLocaleString()} sats {baseTicker}<br />
 

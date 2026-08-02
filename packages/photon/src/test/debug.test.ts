@@ -30,14 +30,13 @@ test.skip('test block top tx', async t => {
         }
     }
 
-    let response = Photon.slowMine(
+    let tx = Photon.generateTemplate(
         0,
         utxo,
         minerKey,
         alice.getTokenDepositAddress()
     )
 
-    let tx = binToHex(encodeTransactionBch(response.transaction))
     console.log(tx)
     /* cspell:disable-next-line */
     t.is("", "")
