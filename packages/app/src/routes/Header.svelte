@@ -12,6 +12,7 @@
 	<div class="dev">
 		<b>Unstable</b> dev <b>chipnet</b> version. See:
 		<a href="https://vox.cash">vox.cash</a>.
+		<p>This is a testnet; assets have no value.</p>
 	</div>
 {:else}
 	<div class="dev">
