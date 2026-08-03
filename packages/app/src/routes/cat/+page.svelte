@@ -508,12 +508,16 @@
 				</div>
 			</div>
 		{/if}
+
 		<br />
 
 		{#if balance > 0}
 			<div class="swap">
 				<label>Swap amount: </label>
-				<input type="number" bind:value={amount} onchange={() => updateSwap()} />
+				<input type="number" bind:value={amount}
+				 onkeyup={() => updateSwap()}
+				 onchange={() => updateSwap()}
+				  />
 			</div>
 		{:else}
 			<div class="swap">
@@ -522,10 +526,10 @@
 		{/if}
 		<br />
 		{#if transaction && transactionValid}
+			<Transaction {transaction} {sourceOutputs} category={selectedAsset} />
 			<div class="swap">
 				<button class="button" onclick={() => broadcast(transaction_hex)}>Broadcast</button>
 			</div>
-			<Transaction {transaction} {sourceOutputs} category={selectedAsset} />
 		{/if}
 		{transactionError}
 

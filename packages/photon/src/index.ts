@@ -297,12 +297,12 @@ export default class Photon {
 
     }
 
-    static getNextBatonUtxo(transactionHex: string): UtxoI{
+    static getNextBatonUtxo(transactionHex: string): UtxoI {
         let tx_id = swapEndianness(binToHex(hash256(hexToBin(transactionHex))))
         let tx = decodeTransactionBch(hexToBin(transactionHex))
-        if(typeof tx== "string") throw tx
+        if (typeof tx == "string") throw tx
         return {
-            tx_pos:0,
+            tx_pos: 0,
             tx_hash: tx_id,
             height: -1,
             value: Number(tx.outputs[0]!.valueSatoshis),
@@ -321,6 +321,19 @@ export default class Photon {
 
 }
 
+
+/**
+     * Get transaction template for mining photons.
+     *
+     * @param minerThrowawayKey - A private key used for signing the nonce message.
+     * @param rewardAddress - The P2PKH Cashaddress to receive payouts.
+     * @param category - The token category of the photons being mined.
+     * @param fee - transaction fee to pay (per byte); default 1 sat/byte.
+     *
+     * @throws {Error} if transaction generation fails.
+     * @returns a transaction template.
+     */
+
 export async function mine(minerThrowawayKey: string, template: string): Promise<string | undefined> {
 
     const parentPrivateNode = decodeHdPrivateKey(minerThrowawayKey)
@@ -334,11 +347,14 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
     // The index of return baton can change of the sequence (relative age) 
     // pushed has a different length
     //
-    const BATON_START = template.indexOf("6400000000")/2+1
+    let BATON_START = template.indexOf("716400000000")
+    if (BATON_START == -1) throw Error("could not locate baton in")
+    BATON_START = (BATON_START / 2) + 2
+    console.log("Baton index: ", BATON_START)
     templateBin.set(publicKey.publicKey, 45)
 
 
-    const nextTarget = templateBin.slice(BATON_START+4, BATON_START+4+32)
+    const nextTarget = templateBin.slice(BATON_START + 4, BATON_START + 4 + 32)
 
     const msg = Uint8Array.from(
         [
@@ -356,8 +372,8 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
         const dataSig = secp256k1.signMessageHashSchnorr(privateKeyChild, msg_hash)
         if (typeof dataSig == "string") throw dataSig
         templateBin.set(nonceBin, BATON_START)
-        templateBin.set(dataSig, BATON_START+36)
-        if (nonce % 10000 == 0) console.log(nonce)
+        templateBin.set(dataSig, BATON_START + 36)
+        if (nonce % 10000 == 0) console.log(nonce, binToHex(hash256(templateBin).slice(-8)))
         if (binToBigIntUintLE(hash256(templateBin).slice(-32)) < binToBigIntUintLE(nextTarget.slice(-32))) {
             return (binToHex(templateBin))
         }

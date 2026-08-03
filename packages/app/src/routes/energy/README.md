@@ -39,3 +39,15 @@ The equation is a function of the baton transaction age (in block) and the previ
     NextTarget = ( PrevTarget * (143 + age) ) / 144
 
 The NextTarget MUST match the exact value given by the DAA, it may not be arbitrarily lowered by any miner.
+
+
+## Thanks 
+
+bitcoincashautist's research provided valuable guidance on this idea & Adaptive Blocksize Limit .
+
+## See Also
+
+- bitcoincashautist's [Research: Block difficulty as a price oracle](https://bitcoincashresearch.org/t/research-block-difficulty-as-a-price-oracle/1426)
+- [An early description](https://bitcoincashresearch.org/t/block-tops-btop-a-minable-cashtoken/) of this project (formerly BlockTops) Nov '25.
+- [MIST: Mineable SLP Token - July 24, 2020 ](https://web.archive.org/web/20210128134553/https://mistcoin.org/)
+- SAFAs [forthcoming], which is a more sha256 ASIC friendly version of this contract.
