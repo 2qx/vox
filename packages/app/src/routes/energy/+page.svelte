@@ -91,8 +91,9 @@
 	const halt = async function () {
 		workerStatus = 'STATUS_HALTED';
 		worker.terminate();
+		await sleep(100);
 		await initWebWorker();
-		await sleep(1000);
+		await sleep(100);
 	};
 
 	const mine = async function () {
@@ -277,7 +278,7 @@
 		{/if}
 	</div>
 
-	<h1>Emit Photons</h1>
+	<h1>Capture Photons</h1>
 	<div class="swap">
 		<div>
 			<img width="50" src={icon} alt={ticker} />
@@ -290,9 +291,11 @@
 	<div class="mining">
 		{#if baton}
 			<button class="button" disabled={workerStatus == 'STATUS_MINING'} onclick={() => mine()}
-				>mine
+				>go
 			</button>
-			<button disabled={workerStatus=="STATUS_IDLE"} class="button" onclick={() => halt()}>stop </button>
+			<button disabled={workerStatus == 'STATUS_IDLE'} class="button" onclick={() => halt()}
+				>stop
+			</button>
 		{/if}
 		{#if hashRate > 0}
 			<p>{hashRate} Hash/s</p>
@@ -346,6 +349,10 @@
 		text-align: end;
 		color: #ffffff;
 		font-weight: 600;
+	}
+
+	.button:hover {
+		background-color: #a991af;
 	}
 
 	.mining {
