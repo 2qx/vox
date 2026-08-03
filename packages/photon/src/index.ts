@@ -373,7 +373,7 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
         if (typeof dataSig == "string") throw dataSig
         templateBin.set(nonceBin, BATON_START)
         templateBin.set(dataSig, BATON_START + 36)
-        if (nonce % 10000 == 0) console.log(nonce, binToHex(hash256(templateBin).slice(-8)))
+        if (nonce % 10000 == 0) console.log(binToHex(hash256(templateBin).slice(-8)), nonce)
         if (binToBigIntUintLE(hash256(templateBin).slice(-32)) < binToBigIntUintLE(nextTarget.slice(-32))) {
             return (binToHex(templateBin))
         }
