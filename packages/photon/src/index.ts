@@ -323,7 +323,7 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
         )
 
     // calculate an updated transaction
-    for (let nonce = 0; nonce < 655000; nonce++) {
+    for (let nonce = 0; nonce < Number.MAX_SAFE_INTEGER; nonce++) {
         const nonceBin = numberToBinUint32LE(nonce)
 
         msg.set(nonceBin,0)
@@ -333,7 +333,7 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
         templateBin.set(nonceBin, 390)
         templateBin.set(dataSig, 426)
         if (nonce % 5000 == 0) console.log(nonce)
-        if (binToBigIntUintLE(hash256(templateBin).slice(-16)) < binToBigIntUintLE(nextTarget.slice(-16))) {
+        if (binToBigIntUintLE(hash256(templateBin).slice(-32)) < binToBigIntUintLE(nextTarget.slice(-32))) {
             return (binToHex(templateBin))
         }
     }
