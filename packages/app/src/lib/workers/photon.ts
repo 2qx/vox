@@ -1,6 +1,5 @@
-const STATUS_FINISHED = 'STATUS_FINISHED';
-const STATUS_PROCESSING = 'STATUS_PROCESSING';
-const STATUS_IDLE = 'STATUS_IDLE';
+const STATUS_BROADCAST = 'STATUS_BROADCAST';
+const STATUS_MINING = 'STATUS_MINING';
 const STATUS_ERROR = 'STATUS_ERROR';
 const MESSAGE_START = 'START';
 
@@ -12,7 +11,7 @@ self.onmessage = (e) => {
   switch (e.data.task) {
     case MESSAGE_START:
       // Return a message that the task is about to start.
-      postMessage({ status: STATUS_PROCESSING, message: `Task mining ${Date.now()}` });
+      postMessage({ status: STATUS_MINING, message: `Task mining ${Date.now()}` });
       // Start the long running function.
       mineJob(e.data.key, e.data.template);
       break;
@@ -32,6 +31,6 @@ async function mineJob(key: any, template: any) {
   console.log(hashRate, "h/s")
 
 
-  postMessage({ status: STATUS_FINISHED, result: result, hashRate: hashRate, message: `Task finished` });
+  postMessage({ status: STATUS_BROADCAST, result: result, hashRate: hashRate, message: `Task finished` });
 }
 

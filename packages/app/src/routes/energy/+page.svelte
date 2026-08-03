@@ -24,7 +24,8 @@
 		getScriptHash,
 		sumUtxoValue,
 		sumTokenAmounts,
-		type UtxoI
+		type UtxoI,
+		sleep
 	} from '@unspent/tau';
 
 	import { IndexedDBProvider } from '@mainnet-cash/indexeddb-storage';
@@ -37,7 +38,7 @@
 
 	let worker: Worker;
 	let result;
-	let workerStatus = 'STATUS_IDLE';
+	let workerStatus = $state('STATUS_IDLE');
 	let workerMessage;
 
 	let now = $state(0);
@@ -51,7 +52,6 @@
 	let unspent: any[] = $state([]);
 	let minerThrowawayKey = $state('');
 
-	let balance = $state(0);
 	let hashRate = $state(0);
 	let sumWalletTokens = $state(0n);
 	let sumWallet = $state(0);
@@ -88,15 +88,26 @@
 		}
 	};
 
+	const halt = async function () {
+		workerStatus = 'STATUS_HALTED';
+		worker.terminate();
+		await initWebWorker();
+		await sleep(1000);
+	};
+
 	const mine = async function () {
 		let template = Photon.generateTemplate(
 			now,
-			unspent[0],
+			baton,
 			minerThrowawayKey,
 			wallet.getTokenDepositAddress(),
 			CATEGORY
 		);
-		worker.postMessage({ task: 'START', template: template, key: minerThrowawayKey });
+		if (window.Worker) {
+			worker.postMessage({ task: 'START', template: template, key: minerThrowawayKey });
+		} else {
+			console.log('Start mining called before worker init.');
+		}
 	};
 
 	const broadcast = async function (raw_tx: string) {
@@ -148,6 +159,10 @@
 		if (response.length == 1) {
 			baton = response[0] as UtxoI;
 			target = swapEndianness(baton.token_data?.nft?.commitment.slice(8, 72)!);
+			if (workerStatus == 'STATUS_MINING') {
+				await halt();
+				await mine();
+			}
 		}
 		unspent = response;
 		sumVault = sumUtxoValue(response, true);
@@ -163,9 +178,9 @@
 			workerStatus = 'STATUS_IDLE';
 			result = undefined;
 			// This is where we load the worker
-			const MyWorker = await import('$workers/photon.js?worker');
+			const MineWorker = await import('$workers/photon.js?worker');
 			// And initiate the worker
-			worker = new MyWorker.default();
+			worker = new MineWorker.default();
 
 			// The following part is called when the worker sends a message
 			worker.onmessage = function (e: any) {
@@ -180,14 +195,21 @@
 				}
 				// This checks what the status of the message is
 				switch (status) {
-					case 'STATUS_FINISHED':
+					case 'STATUS_BROADCAST':
 						// Save the result returned from the web worker
 						result = e.data.result;
 						hashRate = e.data.hashRate;
-						broadcast(result);
+						try {
+							broadcast(result);
+						} catch (e) {
+							console.error(e);
+						}
+						// wait for the transaction to propogate.
+						baton = Photon.getNextBatonUtxo(result);
+						mine();
 						break;
 					case 'STATUS_MINING':
-   						hashRate = e.data.hashRate;
+						//hashRate = e.data.hashRate;
 						break;
 					case 'STATUS_PROCESSING':
 						// Save the current step number and total number of steps
@@ -234,6 +256,7 @@
 	});
 
 	onDestroy(async () => {
+		worker.terminate();
 		await electrumClient.disconnect();
 	});
 </script>
@@ -266,11 +289,15 @@
 
 	<div class="mining">
 		{#if baton}
-			<button class="button" onclick={() => mine()}>mine {ticker}</button>
+			<button class="button" disabled={workerStatus == 'STATUS_MINING'} onclick={() => mine()}
+				>mine
+			</button>
+			<button disabled={workerStatus=="STATUS_IDLE"} class="button" onclick={() => halt()}>stop </button>
 		{/if}
 		{#if hashRate > 0}
 			<p>{hashRate} Hash/s</p>
 		{/if}
+		<p>{workerStatus}</p>
 	</div>
 
 	{#if baton && baton.value > 0}

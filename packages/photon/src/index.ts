@@ -14,10 +14,12 @@ import {
     Output,
     stringifyDebugTraceSummary,
     summarizeDebugTrace,
+    decodeTransactionBch,
     encodeTransactionBch,
     secp256k1,
     sha256,
     hash256,
+    swapEndianness,
     deriveHdPrivateNodeChild,
     decodeHdPrivateKey,
     cashAddressToLockingBytecode,
@@ -295,6 +297,28 @@ export default class Photon {
 
     }
 
+    static getNextBatonUtxo(transactionHex: string): UtxoI{
+        let tx_id = swapEndianness(binToHex(hash256(hexToBin(transactionHex))))
+        let tx = decodeTransactionBch(hexToBin(transactionHex))
+        if(typeof tx== "string") throw tx
+        return {
+            tx_pos:0,
+            tx_hash: tx_id,
+            height: -1,
+            value: Number(tx.outputs[0]!.valueSatoshis),
+            token_data: {
+                nft: {
+                    commitment: binToHex(tx.outputs[0]?.token?.nft?.commitment!),
+                    capability: 'mutable'
+                },
+                amount: String(tx.outputs[0]?.token?.amount!),
+                category: binToHex(tx.outputs[0]?.token?.category!)
+            }
+
+        }
+
+    }
+
 }
 
 export async function mine(minerThrowawayKey: string, template: string): Promise<string | undefined> {
@@ -333,7 +357,7 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
         if (typeof dataSig == "string") throw dataSig
         templateBin.set(nonceBin, BATON_START)
         templateBin.set(dataSig, BATON_START+36)
-        if (nonce % 5000 == 0) console.log(nonce)
+        if (nonce % 10000 == 0) console.log(nonce)
         if (binToBigIntUintLE(hash256(templateBin).slice(-32)) < binToBigIntUintLE(nextTarget.slice(-32))) {
             return (binToHex(templateBin))
         }
