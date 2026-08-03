@@ -4,6 +4,7 @@ const STATUS_IDLE = 'STATUS_IDLE';
 const STATUS_ERROR = 'STATUS_ERROR';
 const MESSAGE_START = 'START';
 
+import { hexToBin,  binToNumberUintLE } from '@bitauth/libauth';
 import { mine } from '@unspent/photon';
 
 self.onmessage = (e) => {
@@ -20,9 +21,17 @@ self.onmessage = (e) => {
   }
 };
 
-async function mineJob(key:any, template:any) {
+async function mineJob(key: any, template: any) {
+  const startTime = performance.now()
   let result = await mine(key, template);
-  console.log("mine job finished: ", result)
-  postMessage({ status: STATUS_FINISHED, result: result, message: `Task finished` });
+  const endTime = performance.now()
+
+  let nonce = binToNumberUintLE(hexToBin(result!).slice(390,393))
+  console.log(nonce, "mine job finished: ", result)
+  let hashRate = Math.round(nonce * 1000 / (endTime - startTime))
+  console.log(hashRate, "h/s")
+
+
+  postMessage({ status: STATUS_FINISHED, result: result, hashRate: hashRate, message: `Task finished` });
 }
 

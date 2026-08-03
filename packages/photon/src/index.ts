@@ -4,7 +4,6 @@ import packageInfo from '../package.json' with { type: "json" };
 import {
     binToHex,
     bigIntToVmNumber,
-    binToBigIntUint256BE,
     CompilerBch,
     createVirtualMachineBch2026,
     deriveHdPublicKey,
@@ -15,8 +14,6 @@ import {
     Output,
     stringifyDebugTraceSummary,
     summarizeDebugTrace,
-    Transaction,
-    verifyTransactionTokens,
     encodeTransactionBch,
     secp256k1,
     sha256,
@@ -27,7 +24,7 @@ import {
     numberToBinUint32LE,
     deriveHdPublicNodeChild,
     deriveHdPublicNode,
-    binToBigIntUintLE
+    binToBigIntUintLE,
 } from '@bitauth/libauth';
 
 import {
@@ -38,8 +35,6 @@ import {
     getLibauthCompiler,
     getScriptHash,
     UtxoI,
-    sumSourceOutputValue,
-    sumSourceOutputTokenAmounts
 } from '@unspent/tau';
 
 export const PHOTON_CATEGORY = hexToBin('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
@@ -199,7 +194,7 @@ export default class Photon {
         if (typeof lockingBytecode == "string") throw lockingBytecode
         return {
             lockingBytecode: lockingBytecode.bytecode,
-            valueSatoshis: 800n,
+            valueSatoshis: 700n,
             token: {
                 category: category,
                 amount: BigInt(amount)
@@ -228,7 +223,8 @@ export default class Photon {
         contractUtxo: UtxoI,
         minerThrowawayKey: string,
         rewardAddress: string,
-        category?: string
+        category?: string,
+        nonce = 0
     ): string {
 
         const inputs: InputTemplate<CompilerBch>[] = [];
@@ -247,7 +243,7 @@ export default class Photon {
             outputs
         }
         config.inputs.push(this.getInput(contractUtxo, age, minerThrowawayKey));
-        config.outputs = [this.getOutput(contractUtxo, rewardAmount, now, minerThrowawayKey, 0)];
+        config.outputs = [this.getOutput(contractUtxo, rewardAmount, now, minerThrowawayKey, nonce)];
         config.outputs.push(this.getRewardOutput(rewardAmount, rewardAddress, photonCat));
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
@@ -311,27 +307,32 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
     const publicKey = deriveHdPublicNodeChild(publicNode, 0)
     const templateBin = hexToBin(template)
 
+    // The index of return baton can change of the sequence (relative age) 
+    // pushed has a different length
+    //
+    const BATON_START = template.indexOf("6400000000")/2+1
     templateBin.set(publicKey.publicKey, 45)
 
-    const nextTarget = templateBin.slice(394, 426)
+
+    const nextTarget = templateBin.slice(BATON_START+4, BATON_START+4+32)
 
     const msg = Uint8Array.from(
-            [
-                ...numberToBinUint32LE(0),
-                ...nextTarget
-            ]
-        )
+        [
+            ...numberToBinUint32LE(0),
+            ...nextTarget
+        ]
+    )
 
     // calculate an updated transaction
     for (let nonce = 0; nonce < Number.MAX_SAFE_INTEGER; nonce++) {
         const nonceBin = numberToBinUint32LE(nonce)
 
-        msg.set(nonceBin,0)
+        msg.set(nonceBin, 0)
         const msg_hash = sha256.hash(msg)
         const dataSig = secp256k1.signMessageHashSchnorr(privateKeyChild, msg_hash)
         if (typeof dataSig == "string") throw dataSig
-        templateBin.set(nonceBin, 390)
-        templateBin.set(dataSig, 426)
+        templateBin.set(nonceBin, BATON_START)
+        templateBin.set(dataSig, BATON_START+36)
         if (nonce % 5000 == 0) console.log(nonce)
         if (binToBigIntUintLE(hash256(templateBin).slice(-32)) < binToBigIntUintLE(nextTarget.slice(-32))) {
             return (binToHex(templateBin))
@@ -340,3 +341,52 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
     return
 }
 
+
+// export async function mineSlow(minerThrowawayKey: string, template: string): Promise<string | undefined> {
+
+
+//     const parentPrivateNode = decodeHdPrivateKey(minerThrowawayKey)
+//     if (typeof parentPrivateNode == "string") throw parentPrivateNode
+//     let minerNodeChild = deriveHdPrivateNodeChild(parentPrivateNode.node, 0)
+//     const privateKeyChild = minerNodeChild.privateKey
+//     const publicNode = deriveHdPublicNode(parentPrivateNode.node)
+//     let publicKey = deriveHdPublicNodeChild(publicNode, 0)
+
+//     // overwrite the public key
+//     let templateBin = Uint8Array.from([
+//         ...hexToBin(template).slice(0, 45),
+//         ...publicKey.publicKey,
+//         ...hexToBin(template).slice(78)
+//     ])
+
+//     const nextTarget = templateBin.slice(394, 426)
+
+//     // calculate an updated transaction
+//     for (let nonce = 0; nonce < Number.MAX_SAFE_INTEGER; nonce++) {
+//         const msg = Uint8Array.from(
+//             [
+//                 ...numberToBinUint32LE(nonce),
+//                 ...nextTarget
+//             ]
+//         )
+//         const msg_hash = sha256.hash(msg)
+//         const dataSig = secp256k1.signMessageHashSchnorr(privateKeyChild, msg_hash)
+//         if (typeof dataSig == "string") throw dataSig
+//         const attempt = Uint8Array.from(
+//             [
+//                 ...templateBin.slice(0, 391),
+//                 ...msg,
+//                 ...dataSig,
+//                 ...templateBin.slice(490)
+//             ]
+//         )
+//         let targetTail = nextTarget.slice(-32)
+//         let attemptTail = hash256(attempt).slice(-32)
+//         if (nonce % 500 == 0) console.log(nonce)
+//         if (binToBigIntUintLE(attemptTail) < binToBigIntUintLE(targetTail)) {
+//             return (binToHex(attempt))
+//         }
+
+//     }
+//     return
+// }

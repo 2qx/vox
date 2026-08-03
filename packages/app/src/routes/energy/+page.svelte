@@ -52,6 +52,7 @@
 	let minerThrowawayKey = $state('');
 
 	let balance = $state(0);
+	let hashRate = $state(0);
 	let sumWalletTokens = $state(0n);
 	let sumWallet = $state(0);
 	let sumVaultTokens = $state(0n);
@@ -182,7 +183,11 @@
 					case 'STATUS_FINISHED':
 						// Save the result returned from the web worker
 						result = e.data.result;
+						hashRate = e.data.hashRate;
 						broadcast(result);
+						break;
+					case 'STATUS_MINING':
+   						hashRate = e.data.hashRate;
 						break;
 					case 'STATUS_PROCESSING':
 						// Save the current step number and total number of steps
@@ -262,6 +267,9 @@
 	<div class="mining">
 		{#if baton}
 			<button class="button" onclick={() => mine()}>mine {ticker}</button>
+		{/if}
+		{#if hashRate > 0}
+			<p>{hashRate} Hash/s</p>
 		{/if}
 	</div>
 
