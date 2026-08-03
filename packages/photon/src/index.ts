@@ -303,49 +303,39 @@ export default class Photon {
 
 export async function mine(minerThrowawayKey: string, template: string): Promise<string | undefined> {
 
-
     const parentPrivateNode = decodeHdPrivateKey(minerThrowawayKey)
     if (typeof parentPrivateNode == "string") throw parentPrivateNode
     let minerNodeChild = deriveHdPrivateNodeChild(parentPrivateNode.node, 0)
     const privateKeyChild = minerNodeChild.privateKey
     const publicNode = deriveHdPublicNode(parentPrivateNode.node)
-    let publicKey = deriveHdPublicNodeChild(publicNode, 0)
+    const publicKey = deriveHdPublicNodeChild(publicNode, 0)
+    const templateBin = hexToBin(template)
 
-    // overwrite the public key
-    let templateBin = Uint8Array.from([
-        ...hexToBin(template).slice(0, 45),
-        ...publicKey.publicKey,
-        ...hexToBin(template).slice(78)
-    ])
+    templateBin.set(publicKey.publicKey, 45)
 
     const nextTarget = templateBin.slice(394, 426)
 
-    // calculate an updated transaction
-    for (let nonce = 0; nonce < 655000; nonce++) {
-        const msg = Uint8Array.from(
+    const msg = Uint8Array.from(
             [
-                ...numberToBinUint32LE(nonce),
+                ...numberToBinUint32LE(0),
                 ...nextTarget
             ]
         )
+
+    // calculate an updated transaction
+    for (let nonce = 0; nonce < 655000; nonce++) {
+        const nonceBin = numberToBinUint32LE(nonce)
+
+        msg.set(nonceBin,0)
         const msg_hash = sha256.hash(msg)
         const dataSig = secp256k1.signMessageHashSchnorr(privateKeyChild, msg_hash)
         if (typeof dataSig == "string") throw dataSig
-        const attempt = Uint8Array.from(
-            [
-                ...templateBin.slice(0, 390),
-                ...msg,
-                ...dataSig,
-                ...templateBin.slice(490)
-            ]
-        )
-        let targetTail = nextTarget.slice(-16)
-        let attemptTail = hash256(attempt).slice(-16)
-        if (nonce % 500 == 0) console.log(nonce)
-        if (binToBigIntUintLE(attemptTail) < binToBigIntUintLE(targetTail)) {
-            return (binToHex(attempt))
+        templateBin.set(nonceBin, 390)
+        templateBin.set(dataSig, 426)
+        if (nonce % 5000 == 0) console.log(nonce)
+        if (binToBigIntUintLE(hash256(templateBin).slice(-16)) < binToBigIntUintLE(nextTarget.slice(-16))) {
+            return (binToHex(templateBin))
         }
-
     }
     return
 }
