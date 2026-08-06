@@ -5,8 +5,16 @@
 		"minor": 1,
 		"patch": 0
 	},
-	"latestRevision": "2025-08-13T17:00:13.273Z",
-	"registryIdentity": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+	"latestRevision": "2026-08-06T00:00:13.273Z",
+	"registryIdentity": {
+		"name": "VOX•CASH Token Registry",
+		"description": "A registry for tokens supported on vox.cash",
+		"uris": {
+			"icon": "https://vox.cash/favicon.svg",
+			"web": "https://vox.cash/",
+			"registry": "https://vox.cash/.well-known/bitcoin-cash-metadata-registry.json"
+		}
+	},
 	"identities": {
 		"7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c": {
 			"2025-08-13T17:00:13.273Z": {
@@ -27,7 +35,7 @@
 			}
 		},
 		"29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef": {
-			"2026-08-06T17:00:01.273Z": {
+			"2026-08-06T00:00:01.273Z": {
 				"name": "Photons",
 				"uris": {
 					"web": "https://vox.cash/photon",
