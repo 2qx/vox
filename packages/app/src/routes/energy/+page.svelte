@@ -8,7 +8,11 @@
 		encodeTransactionBch,
 		hash256,
 		hexToBin,
-		swapEndianness
+		sha256,
+		swapEndianness,
+
+		utf8ToBin
+
 	} from '@bitauth/libauth';
 
 	import Photon, { PHOTON_CATEGORY, tPHOTON_CATEGORY } from '@unspent/photon';
@@ -121,15 +125,24 @@
 	};
 
 	const fundVault = async function () {
+		let bcmr_data  = [
+			'OP_RETURN', 
+			'BCMR',
+			sha256.hash(utf8ToBin('vox.cash/.well-known/bitcoin-cash-metadata-registry.json')),
+			'vox.cash/.well-known/bitcoin-cash-metadata-registry.json'
+		];
 		wallet.tokenGenesis({
 			cashaddr: Photon.getAddress(prefix), // token UTXO recipient, if not specified will default to sender's address
 			amount: BigInt(21e14), // fungible token amount
 			value: 50000000n, // Satoshi value
 			nft: {
-				capability: 'mutable',
-				commitment: '00000000' + '000000000000000000000000000000000000000000000000000000000000ff78'
-			}
+				capability: 'mutable',   
+				commitment: '00000000fffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000'
+			},
+			bcmr_data
 		});
+		
+		// 
 	};
 
 	const updateWallet = async function () {

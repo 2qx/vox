@@ -26,8 +26,8 @@
 				}
 			}
 		},
-		"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff": {
-			"2026-08-01T17:00:01.273Z": {
+		"29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef": {
+			"2026-08-06T17:00:01.273Z": {
 				"name": "Photons",
 				"uris": {
 					"web": "https://vox.cash/photon",
@@ -35,7 +35,7 @@
 				},
 				"token": {
 					"symbol": "PHOTONS",
-					"category": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+					"category": "29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef",
 					"decimals": 8
 				},
 				"description": "A CashToken to monetize excess electrons and maintain a decentralized energy oracle.",

@@ -39,7 +39,7 @@ import {
     UtxoI,
 } from '@unspent/tau';
 
-export const PHOTON_CATEGORY = hexToBin('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
+export const PHOTON_CATEGORY = hexToBin('29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef')
 export const tPHOTON_CATEGORY = hexToBin('8bc4c5974bb98a01d08ef9ba1b7208212b66678732519c4881d2fa924c2a159f')
 
 
