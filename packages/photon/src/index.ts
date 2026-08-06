@@ -27,6 +27,7 @@ import {
     deriveHdPublicNodeChild,
     deriveHdPublicNode,
     binToBigIntUintLE,
+    verifyTransactionTokens,
 } from '@bitauth/libauth';
 
 import {
@@ -34,13 +35,19 @@ import {
     type CashAddressNetworkPrefix,
     binToBigIntUint256LE,
     bigIntToBinUint256LE,
+    getChangeOutput,
     getLibauthCompiler,
     getScriptHash,
+    getTransactionFees,
+    getWalletInputs,
+    sumSourceOutputTokenAmounts,
+    sumSourceOutputValue,
+    sumOutputValue,
     UtxoI,
 } from '@unspent/tau';
 
 export const PHOTON_CATEGORY = hexToBin('29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef')
-export const tPHOTON_CATEGORY = hexToBin('8bc4c5974bb98a01d08ef9ba1b7208212b66678732519c4881d2fa924c2a159f')
+export const tPHOTON_CATEGORY = hexToBin('3cfdc81075ec7ea97c8c7438378fbd6a7a4a0bf98bcc2c7031b3581a59d6db5a')
 
 
 export default class Photon {
@@ -98,6 +105,29 @@ export default class Photon {
             } : undefined
         }
 
+    }
+
+    static getOracleInput(utxo: UtxoI): InputTemplate<CompilerBch> {
+
+        return {
+            outpointIndex: utxo.tx_pos,
+            outpointTransactionHash: hexToBin(utxo.tx_hash),
+            sequenceNumber: 0,
+            unlockingBytecode: {
+                data: {},
+                compiler: this.compiler,
+                script: 'oracle',
+                valueSatoshis: BigInt(utxo.value),
+                token: utxo.token_data ? {
+                    category: hexToBin(utxo.token_data!.category!),
+                    amount: BigInt(utxo.token_data!.amount),
+                    nft: utxo.token_data.nft ? {
+                        commitment: hexToBin(utxo.token_data.nft.commitment!),
+                        capability: utxo.token_data.nft.capability,
+                    } : undefined
+                } : undefined
+            },
+        } as InputTemplate<CompilerBch>
     }
 
     static getInput(utxo: UtxoI, age: number, minerKey: any): InputTemplate<CompilerBch> {
@@ -190,6 +220,38 @@ export default class Photon {
 
     }
 
+    static getOracleOutput(utxo: UtxoI, amount: number): OutputTemplate<CompilerBch> {
+
+        return {
+            lockingBytecode: {
+                data: {
+                    // "bytecode": {
+                    //     "age": bigIntToVmNumber(BigInt(0)),
+                    // },
+                    // hdKeys: {
+                    //     addressIndex: 0,
+                    //     hdPublicKeys: {
+                    //         'miner': deriveHdPublicKey(minerKey).hdPublicKey
+                    //     },
+                    // },
+
+                },
+                compiler: this.compiler,
+                script: 'lock'
+            },
+            valueSatoshis: BigInt(utxo.value + amount),
+            token: {
+                category: hexToBin(utxo.token_data!.category!),
+                amount: BigInt(utxo.token_data?.amount!),
+                nft: {
+                    capability: "mutable",
+                    commitment: hexToBin(utxo.token_data?.nft?.commitment!)
+                }
+            }
+        }
+
+    }
+
     static getRewardOutput(amount: number, rewardAddress?: any, category = PHOTON_CATEGORY): OutputTemplate<CompilerBch> {
 
         let lockingBytecode = cashAddressToLockingBytecode(rewardAddress)
@@ -206,8 +268,83 @@ export default class Photon {
     }
 
 
+    static topUp( amount: number, contractUtxo: UtxoI, walletUtxos: UtxoI[], privateKey: string, addressIndex = 0, category?: string, fee = 1) {
+
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
+
+        
+        let config = {
+            locktime: 0,
+            version: 2,
+            inputs,
+            outputs
+        }
+
+
+        config.inputs.push(this.getOracleInput(contractUtxo));
+        config.outputs = [this.getOracleOutput(contractUtxo, amount)];
+        const sourceOutputs = [this.getSourceOutput(contractUtxo)];
+
+        const satsIn = getWalletInputs(walletUtxos, BigInt(amount), undefined, privateKey, addressIndex)
+        config.inputs.push(...satsIn.inputs);
+        sourceOutputs.push(...satsIn.sourceOutputs);
+         // Calculate excess cash and tokens to be returned as change
+        let sumSatsOut = sumOutputValue(config.outputs)
+        let sumSatsIn = sumSourceOutputValue(sourceOutputs)
+        let cashChange = sumSatsIn - sumSatsOut
+        config.outputs.push(getChangeOutput(cashChange, 0n, undefined, privateKey))
+
+
+
+        let result = generateTransaction(config);
+        if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+        const estimatedFee = getTransactionFees(result.transaction, fee)
+        const lastIdx = config.outputs.length - 1
+        config.outputs[lastIdx]!.valueSatoshis = config.outputs[lastIdx]!.valueSatoshis - estimatedFee
+        result = generateTransaction(config);
+
+        if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+        let transaction = result.transaction
+        
+        
+        const tokenValidationResult = verifyTransactionTokens(
+            transaction,
+            sourceOutputs,
+            { maximumTokenCommitmentLength: 128 }
+        );
+
+        if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
+
+        // Skip verification
+        // let verify = this.vm.verify({
+        //     sourceOutputs: sourceOutputs,
+        //     transaction: transaction,
+        // })
+
+        let state = this.vm.debug({
+            inputIndex: 0,
+            sourceOutputs,
+            transaction,
+        })
+
+        let trace = stringifyDebugTraceSummary(
+            summarizeDebugTrace(state.slice(-9)),
+        )
+        console.log(trace)
+        
+        let tokenDiff = sumSourceOutputTokenAmounts(sourceOutputs, category) -
+            sumSourceOutputTokenAmounts(transaction.outputs, category)
+        if (tokenDiff !== 0n) throw Error(`Claiming should not create or destroy tokens, token difference: ${tokenDiff}`)
+        return {
+            sourceOutputs: sourceOutputs,
+            transaction: transaction,
+            verify: false
+        }
+    }
+
     /**
-     * Get transaction template for mining photons.
+     * Get transaction template for mining photons. A template is a mining transaction with a zero nonce. 
      *
      * @param now - The current bitcoin block height timestamp (expressed in blocks).
      * @param contractUtxo - contract outputs to use as input.
@@ -253,15 +390,11 @@ export default class Photon {
         const sourceOutputs = [this.getSourceOutput(contractUtxo)];
 
 
-        let state = this.vm.debug({
-            inputIndex: 0,
-            sourceOutputs,
-            transaction,
-        })
-
-
-        //console.log("debug: ",unexpectedFailingIndexDebugTrace)
-        //console.log(binToHex(transaction.inputs[0]?.unlockingBytecode!))
+        // let state = this.vm.debug({
+        //     inputIndex: 0,
+        //     sourceOutputs,
+        //     transaction,
+        // })
 
         // let trace = stringifyDebugTraceSummary(
         //     summarizeDebugTrace(state.slice(-9)),
@@ -269,31 +402,6 @@ export default class Photon {
         // console.log(trace)
 
         return binToHex(encodeTransactionBch(transaction))
-        // const tokenValidationResult = verifyTransactionTokens(
-        //     transaction,
-        //     sourceOutputs,
-        //     { maximumTokenCommitmentLength: 128 }
-        // );
-
-        // if (tokenValidationResult !== true && fee > 0) throw tokenValidationResult;
-
-        // // Skip verification
-        // // let verify = this.vm.verify({
-        // //     sourceOutputs: sourceOutputs,
-        // //     transaction: transaction,
-        // // })
-
-        // // let feeEstimate = sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
-        // // if (feeEstimate > 5000) verify = `Excessive fees ${feeEstimate}`
-        // // if (sumSourceOutputTokenAmounts(sourceOutputs, category) == 0n) verify = `Error checking token input`
-        // let tokenDiff = sumSourceOutputTokenAmounts(sourceOutputs, category) -
-        //     sumSourceOutputTokenAmounts(transaction.outputs, category)
-        // if (tokenDiff !== 0n) throw Error(`Claiming should not create or destroy tokens, token difference: ${tokenDiff}`)
-        // return {
-        //     sourceOutputs: sourceOutputs,
-        //     transaction: transaction,
-        //     verify: false
-        // }
 
     }
 
@@ -348,9 +456,8 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
     // pushed has a different length
     //
     let BATON_START = template.indexOf("716400000000")
-    if (BATON_START == -1) throw Error("could not locate baton in")
+    if (BATON_START == -1) throw Error("could not locate baton in template")
     BATON_START = (BATON_START / 2) + 2
-    console.log("Baton index: ", BATON_START)
     templateBin.set(publicKey.publicKey, 45)
 
 
@@ -380,53 +487,3 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
     }
     return
 }
-
-
-// export async function mineSlow(minerThrowawayKey: string, template: string): Promise<string | undefined> {
-
-
-//     const parentPrivateNode = decodeHdPrivateKey(minerThrowawayKey)
-//     if (typeof parentPrivateNode == "string") throw parentPrivateNode
-//     let minerNodeChild = deriveHdPrivateNodeChild(parentPrivateNode.node, 0)
-//     const privateKeyChild = minerNodeChild.privateKey
-//     const publicNode = deriveHdPublicNode(parentPrivateNode.node)
-//     let publicKey = deriveHdPublicNodeChild(publicNode, 0)
-
-//     // overwrite the public key
-//     let templateBin = Uint8Array.from([
-//         ...hexToBin(template).slice(0, 45),
-//         ...publicKey.publicKey,
-//         ...hexToBin(template).slice(78)
-//     ])
-
-//     const nextTarget = templateBin.slice(394, 426)
-
-//     // calculate an updated transaction
-//     for (let nonce = 0; nonce < Number.MAX_SAFE_INTEGER; nonce++) {
-//         const msg = Uint8Array.from(
-//             [
-//                 ...numberToBinUint32LE(nonce),
-//                 ...nextTarget
-//             ]
-//         )
-//         const msg_hash = sha256.hash(msg)
-//         const dataSig = secp256k1.signMessageHashSchnorr(privateKeyChild, msg_hash)
-//         if (typeof dataSig == "string") throw dataSig
-//         const attempt = Uint8Array.from(
-//             [
-//                 ...templateBin.slice(0, 391),
-//                 ...msg,
-//                 ...dataSig,
-//                 ...templateBin.slice(490)
-//             ]
-//         )
-//         let targetTail = nextTarget.slice(-32)
-//         let attemptTail = hash256(attempt).slice(-32)
-//         if (nonce % 500 == 0) console.log(nonce)
-//         if (binToBigIntUintLE(attemptTail) < binToBigIntUintLE(targetTail)) {
-//             return (binToHex(attempt))
-//         }
-
-//     }
-//     return
-// }

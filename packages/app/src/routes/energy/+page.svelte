@@ -10,9 +10,7 @@
 		hexToBin,
 		sha256,
 		swapEndianness,
-
 		utf8ToBin
-
 	} from '@bitauth/libauth';
 
 	import Photon, { PHOTON_CATEGORY, tPHOTON_CATEGORY } from '@unspent/photon';
@@ -22,6 +20,7 @@
 	import BitauthLink from '$lib/BitauthLink.svelte';
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
+	import Countdown from '$lib/Countdown.svelte';
 	import {
 		binToBigIntUint256LE,
 		getHdPrivateKey,
@@ -44,6 +43,7 @@
 	let result;
 	let workerStatus = $state('STATUS_IDLE');
 	let workerMessage;
+	let showSettings = $state(false);
 
 	let now = $state(0);
 	let baton: UtxoI = $state();
@@ -55,6 +55,7 @@
 	let walletUnspent: any[] = $state([]);
 	let unspent: any[] = $state([]);
 	let minerThrowawayKey = $state('');
+	let walletKey = $state('');
 
 	let hashRate = $state(0);
 	let sumWalletTokens = $state(0n);
@@ -115,6 +116,12 @@
 		}
 	};
 
+	const topUp1M = async function () {
+		let tx = Photon.topUp(1_000_000, baton, walletUnspent, walletKey);
+		let transaction_hex = binToHex(encodeTransactionBch(tx.transaction));
+		let response = await broadcast(transaction_hex);
+	};
+
 	const broadcast = async function (raw_tx: string) {
 		let response = await electrumClient.request('blockchain.transaction.broadcast', raw_tx);
 		if (response instanceof Error) {
@@ -125,24 +132,19 @@
 	};
 
 	const fundVault = async function () {
-		let bcmr_data  = [
-			'OP_RETURN', 
-			'BCMR',
-			sha256.hash(utf8ToBin('vox.cash/.well-known/bitcoin-cash-metadata-registry.json')),
-			'vox.cash/.well-known/bitcoin-cash-metadata-registry.json'
-		];
-		wallet.tokenGenesis({
+		await wallet.sendMax(wallet.getDepositAddress());
+		let id = await wallet.tokenGenesis({
 			cashaddr: Photon.getAddress(prefix), // token UTXO recipient, if not specified will default to sender's address
 			amount: BigInt(21e14), // fungible token amount
 			value: 50000000n, // Satoshi value
 			nft: {
-				capability: 'mutable',   
-				commitment: '00000000fffffffffffffffffffffffffffffffffffffffffffffffffffff00000000000'
-			},
-			bcmr_data
+				capability: 'mutable',
+				commitment: '00000000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff000'
+			}
 		});
-		
-		// 
+		console.log(id);
+
+		//
 	};
 
 	const updateWallet = async function () {
@@ -157,11 +159,8 @@
 		sumWallet = sumUtxoValue(walletUnspent, true);
 		sumWalletTokens = sumTokenAmounts(walletUnspent, CATEGORY);
 
-		walletUnspent = walletUnspent
-			.filter((u: UtxoI) => !u.token_data)
-			.filter((u: UtxoI) => u.height > 0);
+		walletUnspent = walletUnspent.filter((u: UtxoI) => !u.token_data);
 	};
-
 	const updateUnspent = async function () {
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
@@ -169,14 +168,22 @@
 			'include_tokens'
 		);
 		if (response instanceof Error) throw response;
-		response = response.filter((u: UtxoI) => u.token_data?.category == CATEGORY);
+		response = response
+			.filter((u: UtxoI) => u.token_data?.category == CATEGORY)
+			.filter((u: UtxoI) => u.token_data?.nft?.capability == 'mutable');
 		if (response.length == 1) {
-			baton = response[0] as UtxoI;
-			target = swapEndianness(baton.token_data?.nft?.commitment.slice(8, 72)!);
-			if (workerStatus == 'STATUS_MINING') {
-				await halt();
-				await mine();
+			let nextBaton = response[0] as UtxoI;
+			if (!baton) baton = nextBaton;
+			if (nextBaton && nextBaton.token_data) {
+				if (nextBaton.token_data?.nft?.commitment !== baton.token_data?.nft?.commitment) {
+					baton = nextBaton;
+					if (workerStatus == 'STATUS_MINING') {
+						await halt();
+						await mine();
+					}
+				}
 			}
+			target = swapEndianness(baton.token_data?.nft?.commitment.slice(8, 72)!);
 		}
 		unspent = response;
 		sumVault = sumUtxoValue(response, true);
@@ -241,6 +248,11 @@
 		BaseWallet.StorageProvider = IndexedDBProvider;
 		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 		miner = isMainnet ? await Wallet.named(`miner`) : await TestNetWallet.named(`miner`);
+		walletKey = getHdPrivateKey(
+			wallet.mnemonic!,
+			wallet.derivationPath.slice(0, -2),
+			wallet.isTestnet
+		);
 		minerThrowawayKey = getHdPrivateKey(
 			miner.mnemonic!,
 			miner.derivationPath.slice(0, -2),
@@ -262,6 +274,7 @@
 
 		// Set up a subscription for new block headers.
 		await electrumClient.subscribe('blockchain.scripthash.subscribe', scripthash);
+		await electrumClient.subscribe('blockchain.scripthash.subscribe', walletScriptHash);
 		await electrumClient.subscribe('blockchain.headers.subscribe');
 
 		updateUnspent();
@@ -344,10 +357,24 @@
 
 		<p>{ticker} category:</p>
 		<pre>{baton.token_data?.category}</pre>
+
+		<h3>Advanced</h3>
+
+		<label class="switch">
+			<input type="checkbox" bind:checked={showSettings} />
+			<span class="slider round"></span>
+		</label>
+		<br />
 	{:else if !isMainnet}
 		<button class="button" onclick={() => fundVault()}>Mint Genesis Tx (0.5 {baseTicker})</button>
 	{:else}
-		No tokens in vault
+		<div class="swap">
+			<Countdown end={1786209657000} />
+		</div>
+	{/if}
+
+	{#if showSettings}
+		<button class="button" onclick={() => topUp1M()}>Donate 1M sats to mining baton. </button>
 	{/if}
 
 	<Readme />
