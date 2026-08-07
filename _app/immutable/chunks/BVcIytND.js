@@ -1,0 +1,2 @@
+const a=()=>performance.now(),t={tick:e=>requestAnimationFrame(e),now:()=>a(),tasks:new Set};function o(){const e=t.now();t.tasks.forEach(s=>{s.c(e)||(t.tasks.delete(s),s.f())}),t.tasks.size!==0&&t.tick(o)}function i(e){let s;return t.tasks.size===0&&t.tick(o),{promise:new Promise(n=>{t.tasks.add(s={c:e,f:n})}),abort(){t.tasks.delete(s)}}}function r(e){return Object.prototype.toString.call(e)==="[object Date]"}export{r as i,i as l,t as r};
+//# sourceMappingURL=BVcIytND.js.map

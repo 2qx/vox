@@ -1,0 +1,18 @@
+<svg width="400" height="400" version="1.1" viewBox="0 0 106 106" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+ <defs>
+  <radialGradient id="a" cx="61" cy="5" r="53" gradientTransform="matrix(-.02 2 -2 -.02 63 -119)" gradientUnits="userSpaceOnUse">
+   <stop stop-color="#753e0a" stop-opacity=".8" offset="0"/>
+   <stop stop-color="#16124d" offset="1"/>
+  </radialGradient>
+  <linearGradient id="b" x1="53" x2="13" y1="61" y2="51" gradientUnits="userSpaceOnUse">
+   <stop stop-color="#f6f4ca" offset="0"/>
+   <stop stop-color="#fff" stop-opacity="0" offset="1"/>
+  </linearGradient>
+  <pattern  id="bar" viewBox="0,0,10,10" width="10%" height="10%">
+      <polygon style="opacity:0.2;fill:#fff;" points="0,5 0,6 10,6 10,5"/>
+    </pattern>
+ </defs>
+ <path d="m10 3-8 8v86l8 8h86l8-8v-86l-8-8z" fill="url(#a)"/>
+  <path d="m10 3-8 8v86l8 8h86l8-8v-86l-8-8z" fill="url(#bar)"/>
+ <path d="m24 22c26-0.8 37 72 28 72-10 0.2 0.1-59 26-85" fill="none" stroke="url(#b)" stroke-linecap="round" stroke-width="5"/>
+</svg>
