@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { tweened } from 'svelte/motion';
+	import { Tween } from 'svelte/motion';
 	import { linear as easing } from 'svelte/easing';
 	import { fly } from 'svelte/transition';
 
@@ -19,11 +19,18 @@
 		now = Date.now();
 	}
 
+
 	let interval = setInterval(updateTimer, 1000);
 	$: if (count === 0) clearInterval(interval);
 
-	let offset = tweened(1, { duration, easing });
-	let rotation = tweened(360, { duration, easing });
+    let offset = new Tween(0, {
+		duration: duration,
+        easing: easing
+	});
+	let rotation = new Tween(360, {
+		duration: duration,
+        easing: easing
+	});
 
 	$: offset.set(Math.max(count - 1, 0) / countdown);
 	$: rotation.set((Math.max(count - 1, 0) / countdown) * 360);
@@ -41,22 +48,22 @@
 		<g fill="none" stroke="currentColor" stroke-width="2">
 			<circle stroke="currentColor" r="46" />
 			<path
-				stroke="hsl(208, 100%, 50%)"
+				stroke="hsl(300, 90%, 50%)"
 				d="M 0 -46 a 46 46 0 0 0 0 92 46 46 0 0 0 0 -92"
 				pathLength="1"
 				stroke-dasharray="1"
-				stroke-dashoffset={$offset}
+				stroke-dashoffset={offset.current}
 			/>
 		</g>
-		<g fill="hsl(208, 100%, 50%)" stroke="none">
-			<g transform="rotate({$rotation})">
+		<g fill="hsl(300, 90%, 50%)" stroke="none">
+			<g transform="rotate({rotation.current})">
 				<g transform="translate(0 -46)">
 					<circle r="4" />
 				</g>
 			</g>
 		</g>
 
-		<g fill="currentColor" text-anchor="middle" dominant-baseline="baseline" font-size="13">
+		<g fill="currentColor" text-anchor="middle" dominant-baseline="baseline" font-size="18">
 			<text x="-3" y="6.5">
 				{#each Object.entries({ h, m, s }) as [key, value], i}
 					{#if countdown >= 60 ** (2 - i)}
