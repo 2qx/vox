@@ -68,7 +68,7 @@
 	let electrumClient: any;
 	let scripthash = '';
 	scripthash = Photon.getScriptHash();
-	const isMainnet = true; // page.url.hostname == 'vox.cash';
+	const isMainnet =  page.url.hostname == 'vox.cash';
 	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
 	const icon = isMainnet ? PHOTON : tPHOTON;
 	const CATEGORY = isMainnet ? binToHex(PHOTON_CATEGORY) : binToHex(tPHOTON_CATEGORY);
