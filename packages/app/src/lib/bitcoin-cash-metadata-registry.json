@@ -5,8 +5,16 @@
 		"minor": 1,
 		"patch": 0
 	},
-	"latestRevision": "2025-08-13T17:00:13.273Z",
-	"registryIdentity": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+	"latestRevision": "2026-08-06T00:00:13.273Z",
+	"registryIdentity": {
+		"name": "VOX•CASH Token Registry",
+		"description": "A registry for tokens supported on vox.cash",
+		"uris": {
+			"icon": "https://vox.cash/favicon.svg",
+			"web": "https://vox.cash/",
+			"registry": "https://vox.cash/.well-known/bitcoin-cash-metadata-registry.json"
+		}
+	},
 	"identities": {
 		"7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c": {
 			"2025-08-13T17:00:13.273Z": {
@@ -40,6 +48,24 @@
 					"decimals": 0,
 					"symbol": "BADGER"
 				},
+				"extensions": {
+					"exchanges": "catdex"
+				}
+			}
+		},
+		"29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef": {
+			"2026-08-06T00:00:01.273Z": {
+				"name": "Photons",
+				"uris": {
+					"web": "https://vox.cash/photon",
+					"icon": "data:image/svg+xml,%3Csvg width='400' height='400' version='1.1' viewBox='0 0 106 106' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cdefs%3E%3CradialGradient id='a' cx='61' cy='5' r='53' gradientTransform='matrix(-.02 2 -2 -.02 63 -119)' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%230d0a75' stop-opacity='.8' offset='0'/%3E%3Cstop stop-color='%2316124d' offset='1'/%3E%3C/radialGradient%3E%3ClinearGradient id='b' x1='53' x2='13' y1='61' y2='51' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%23f6f4ca' offset='0'/%3E%3Cstop stop-color='%23fff' stop-opacity='0' offset='1'/%3E%3C/linearGradient%3E%3Cpattern id='bar' viewBox='0,0,10,10' width='10%25' height='10%25'%3E%3Crect style='opacity:0.2;fill:%23ffffff;' height='1' width='10'/%3E%3C/pattern%3E%3C/defs%3E%3Cpath d='m10 3-8 8v86l8 8h86l8-8v-86l-8-8z' fill='url(%23a)'/%3E%3Cpath d='m10 3-8 8v86l8 8h86l8-8v-86l-8-8z' fill='url(%23bar)'/%3E%3Cpath d='m24 22c26-0.8 37 72 28 72-10 0.2 0.1-59 26-85' fill='none' stroke='url(%23b)' stroke-linecap='round' stroke-width='5'/%3E%3C/svg%3E"
+				},
+				"token": {
+					"symbol": "PHOTONS",
+					"category": "29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef",
+					"decimals": 8
+				},
+				"description": "A CashToken to monetize excess electrons and maintain a decentralized energy oracle.",
 				"extensions": {
 					"exchanges": "catdex"
 				}

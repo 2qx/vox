@@ -5,8 +5,16 @@
 		"minor": 1,
 		"patch": 0
 	},
-	"latestRevision": "2025-08-13T17:00:13.273Z",
-	"registryIdentity": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+	"latestRevision": "2026-08-06T00:00:13.273Z",
+	"registryIdentity": {
+		"name": "VOX•CASH Token Registry",
+		"description": "A registry for tokens supported on vox.cash",
+		"uris": {
+			"icon": "https://vox.cash/favicon.svg",
+			"web": "https://vox.cash/",
+			"registry": "https://vox.cash/.well-known/bitcoin-cash-metadata-registry.json"
+		}
+	},
 	"identities": {
 		"7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c": {
 			"2025-08-13T17:00:13.273Z": {
@@ -27,7 +35,7 @@
 			}
 		},
 		"29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef": {
-			"2026-08-06T17:00:01.273Z": {
+			"2026-08-06T00:00:01.273Z": {
 				"name": "Photons",
 				"uris": {
 					"web": "https://vox.cash/photon",
@@ -89,7 +97,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23966424; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/future/v?block=1000000"
+					"web": "https://vox.cash/v?block=1000000"
 				},
 				"extensions": {
 					"exchanges": "catdex"
@@ -107,7 +115,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23f00; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/future/v?block=2000000"
+					"web": "https://vox.cash/v?block=2000000"
 				}
 			}
 		},
@@ -122,7 +130,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23ff7500; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/future/v?block=3000000"
+					"web": "https://vox.cash/v?block=3000000"
 				}
 			}
 		},
@@ -137,7 +145,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%23cc0; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/future/v?block=4000000"
+					"web": "https://vox.cash/v?block=4000000"
 				}
 			}
 		},
@@ -152,7 +160,7 @@
 				},
 				"uris": {
 					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height: 400px;'%3E%3Cpath d='M 1 1 L 1 15 15 15 15 1 Z' style='stroke-width: 2px; stroke-linejoin: miter; stroke-linecap: butt; stroke: %23fff; fill:%230c0; paint-order:stroke'%3E%3C/path%3E%3Cpath d='M 2 2 L 5 2 5 3 3 3 3 4 4 4 4 5 3 5 3 7 2 7 Z' style='fill: %23fff;'%3E%3C/path%3E%3Cpath d='M 2 8 L 2 15 5 15 5 8 Z' style='fill: %23000;'%3E%3C/path%3E%3Cpath d='M 6 7 L 6 15 14 15 14 7 Z' style='fill:%23000;'%3E%3C/path%3E%3Cpath d='M 6 2 L 6 6 14 6 14 2 Z' style='fill:%23000;'%3E%3C/path%3E%3C/svg%3E",
-					"web": "https://vox.cash/future/v?block=5000000"
+					"web": "https://vox.cash/v?block=5000000"
 				}
 			}
 		}
