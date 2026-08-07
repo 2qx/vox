@@ -1,0 +1,132 @@
+{
+  "$schema": "https://libauth.org/schemas/wallet-template-v0.schema.json",
+  "description": "PAFAs: An ASIC minable CashToken and decentralized energy oracle",
+  "name": "P.A.F.A.s ARE FOR ASICS",
+  "entities": {
+    "covenant": {
+      "description": "Emit tokens if a transaction hash is low enough. Or, alternatively, allow anyone to use the vault thread as an oracle for a fee.",
+      "name": "PAFAs Vault",
+      "scripts": [
+        "lock",
+        "unlock"
+      ],
+      "variables": {
+        "age": {
+          "description": "The input age (as a number of blocks) claimed to withdraw tokens. The maximum age that can be used to claim tokens is the lessor of covenant thread age or user coins age being used to release tokens.",
+          "name": "Age",
+          "type": "WalletData"
+        }
+      }
+    },
+    "wallet": {
+      "description": "",
+      "name": "Unnamed Entity",
+      "scripts": [
+        "wallet_unlock",
+        "wallet_lock"
+      ],
+      "variables": {
+        "key": {
+          "description": "The private key that controls this wallet.",
+          "name": "Key",
+          "type": "HdKey"
+        }
+      }
+    }
+  },
+  "scenarios": {
+    "release": {
+      "data": {
+        "bytecode": {
+          "age": "1"
+        }
+      },
+      "description": "",
+      "name": "Release Tokens",
+      "transaction": {
+        "inputs": [
+          {
+            "outpointTransactionHash": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+            "outpointIndex": 0,
+            "unlockingBytecode": [
+              "slot"
+            ],
+            "sequenceNumber": 10
+          }
+        ],
+        "outputs": [
+          {
+            "lockingBytecode": {
+              "script": "lock"
+            },
+            "valueSatoshis": 900,
+            "token": {
+              "amount": "922337203685477480",
+              "category": "deaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead",
+              "nft": {
+                "capability": "mutable",
+                "commitment": "04000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffb0e17d7da54b9ebef6e71ad4d824c19713f6ec382bdf13acc60ea818f58ef58e000000003f00000100000000"
+              }
+            }
+          },
+          {
+            "lockingBytecode": {
+              "script": "wallet_lock"
+            },
+            "valueSatoshis": 800,
+            "token": {
+              "amount": "100",
+              "category": "deaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead"
+            }
+          }
+        ],
+        "locktime": 0,
+        "version": 2
+      },
+      "sourceOutputs": [
+        {
+          "lockingBytecode": [
+            "slot"
+          ],
+          "valueSatoshis": 1700,
+          "token": {
+            "amount": "922337203685477580",
+            "category": "deaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead",
+            "nft": {
+              "capability": "mutable",
+              "commitment": "04000000beefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefbeefdeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddeaddead000000003f00001100000000"
+            }
+          }
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "unlock": {
+      "passes": [
+        "release"
+      ],
+      "name": "Unlock Tokens",
+      "script": "<age> //\n",
+      "unlocks": "lock"
+    },
+    "wallet_unlock": {
+      "name": "Wallet Unlock",
+      "script": "<key.schnorr_signature.all_outputs> <key.public_key>",
+      "unlocks": "wallet_lock"
+    },
+    "lock": {
+      "lockingType": "p2sh32",
+      "name": "PAFAs Script",
+      "script": "  // pragma cashscript >= 0.10.0;\n\n  // v20260729\n  \n  // A token faucet with proof of work.\n  // contract PAFAsVault() {\n\n    // function emit(int age) {\n    // Force a version two transaction\n\n        // Force v2 for BIP68 rolling locktimes\n        OP_TXVERSION OP_2 OP_NUMEQUALVERIFY \n        // require(tx.version == 2);\n        \n        // Check the purported time has passed and that time locks are enabled\n        OP_DUP OP_CHECKSEQUENCEVERIFY OP_DROP \n        // require(this.age >= age);\n\n        // require the age passed be block based\n        OP_DUP <65535> OP_LESSTHAN OP_VERIFY \n        // require(age < 65535);\n\n        // Require the thread lives on\n        OP_INPUTINDEX OP_OUTPUTBYTECODE \n        OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY \n        // require(tx.outputs[this.activeInputIndex].lockingBytecode == tx.inputs[this.activeInputIndex].lockingBytecode);\n\n        // Require the same token category continues on this thread\n        OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY \n        OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY \n        // require(tx.outputs[this.activeInputIndex].tokenCategory == tx.inputs[this.activeInputIndex].tokenCategory);\n\n        // If the baton is being used as an oracle ...\n        OP_TXINPUTCOUNT OP_1 OP_GREATERTHAN OP_IF \n        // if(tx.inputs.length > 1){\n\n            // Require the oracle user pays an 10000 sat fee \n            OP_INPUTINDEX OP_OUTPUTVALUE <10000> OP_ADD OP_INPUTINDEX OP_UTXOVALUE OP_GREATERTHANOREQUAL OP_VERIFY \n            // require(tx.outputs[this.activeInputIndex].value + 10000 >= tx.inputs[this.activeInputIndex].value);\n\n            // The NFT commitment (difficulty+nonce) must not change\n            OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_EQUALVERIFY \n            // require(tx.outputs[this.activeInputIndex].nftCommitment == tx.inputs[this.activeInputIndex].nftCommitment);\n\n            // The number of fungible tokens must not changed\n            OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_NUMEQUALVERIFY \n            // require(tx.outputs[this.activeInputIndex].tokenAmount == tx.inputs[this.activeInputIndex].tokenAmount);\n\n        // } \n\n        // else (tx.inputs.length == 1)\n        OP_ELSE \n        // else{\n\n            // Allow miner to take 900 token dust, plus 600 network fee allowance \n            OP_INPUTINDEX OP_OUTPUTVALUE \n            OP_INPUTINDEX OP_UTXOVALUE <1500> OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY \n            // require(tx.outputs[this.activeInputIndex].value >= tx.inputs[this.activeInputIndex].value - 1500);\n\n            // Emission schedule\n            // Allow a fraction of running token balance (plus one) to be withdrawn.\n            // Target a four year half life. \n            OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT \n            OP_INPUTINDEX OP_UTXOTOKENAMOUNT \n            OP_INPUTINDEX OP_UTXOTOKENAMOUNT <420000> OP_DIV OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY \n            // require(\n            //     tx.outputs[this.activeInputIndex].tokenAmount >= \n            //     (tx.inputs[this.activeInputIndex].tokenAmount - \n            //     (tx.inputs[this.activeInputIndex].tokenAmount/420000))\n            // );\n\n            // Require an 80-byte NFT commitment\n            OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_SIZE OP_NIP <80> OP_NUMEQUALVERIFY \n            // require(tx.outputs[this.activeInputIndex].nftCommitment.length == 80);\n\n            // Get the previous compressed target\n            OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT <72> OP_SPLIT OP_NIP OP_4 OP_SPLIT OP_DROP \n            // bytes prevCompressedTarget = tx.inputs[this.activeInputIndex].nftCommitment.split(72)[1].split(4)[0];\n            OP_DUP OP_1 OP_SPLIT \n            // bytes1 prevExponent, bytes prevSignificand = prevCompressedTarget.split(1);\n            OP_DUP OP_BIN2NUM OP_2 OP_MUL OP_2 OP_PICK OP_BIN2NUM OP_3 OP_SUB OP_LSHIFTNUM \n            // int prevTarget = int(prevSignificand) * 2 << (int(prevExponent) - 3);\n\n            OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT <72> OP_SPLIT \n            OP_OVER <0x04000000> OP_INPUTINDEX OP_OUTPOINTTXHASH OP_CAT \n            OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_HASH256 OP_CAT \n            <0x00000000> OP_CAT OP_EQUALVERIFY \n            // bytes nextHead, bytes nextTail = tx.outputs[this.activeInputIndex].nftCommitment.split(72);\n            // require(nextHead == 0x04000000 + \n            //                      tx.inputs[this.activeInputIndex].outpointTransactionHash +\n            //                      hash256(tx.inputs[this.activeInputIndex].nftCommitment) + \n            //                      0x00000000);\n\n            OP_DUP OP_4 OP_SPLIT OP_DROP \n            // bytes nextCompressedTarget = nextTail.split(4)[0];\n            OP_DUP OP_1 OP_SPLIT \n            // bytes1 nextExponent, bytes nextSignificand = nextCompressedTarget.split(1);\n            OP_DUP OP_BIN2NUM OP_2 OP_MUL OP_2 OP_PICK OP_BIN2NUM OP_3 OP_SUB OP_LSHIFTNUM \n            // int nextTarget = int(nextSignificand) * 2 << (int(nextExponent) - 3);\n\n            // // The set the next target as a function of the previous target and age.\n            // // Equality prevents setting next target to zero.\n            OP_DUP OP_7 OP_PICK OP_12 OP_PICK <143> OP_ADD <144> OP_DIV OP_MUL OP_LESSTHAN OP_VERIFY \n            // require(nextTarget < prevTarget * ((age + 143) /144));\n            \n            OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_HASH256 OP_BIN2NUM OP_ABS\n            // int nextHash = abs(int(hash256(tx.outputs[this.activeInputIndex].nftCommitment)));\n            OP_2DUP OP_GREATERTHAN OP_VERIFY \n            // require(nextHash < nextTarget);\n\n    //    }\n    OP_2DROP OP_2DROP OP_2DROP OP_2DROP OP_2DROP OP_DROP \n               \n  //  }\n  OP_ENDIF \n  OP_DROP OP_1 \n    \n    \n//}\n"
+    },
+    "wallet_lock": {
+      "lockingType": "standard",
+      "name": "Wallet Lock",
+      "script": "OP_DUP OP_HASH160 <$(<key.public_key> OP_HASH160)>  OP_EQUALVERIFY OP_CHECKSIG"
+    }
+  },
+  "supported": [
+    "BCH_2026_05"
+  ]
+}

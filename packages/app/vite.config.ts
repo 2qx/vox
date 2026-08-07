@@ -16,14 +16,14 @@ export default defineConfig({
 			transformMixedEsModules: true,
 			// linked modules in a monorepo must be explicitly included
 			include: [
-				/@fbch\/lib/, 
-				/@unspent\/drip/, 
-				/@unspent\/wallet/, 
-				/@unspent\/wrap/, 
+				/@fbch\/lib/,
+				/@unspent\/drip/,
+				/@unspent\/wallet/,
+				/@unspent\/wrap/,
 				/node_modules/
 			]
 		},
-		
+
 		sourcemap: true,
 		rollupOptions: {
 			output: {
@@ -35,6 +35,9 @@ export default defineConfig({
 			},
 			context: 'window'
 		}
+	},
+	worker: {
+		format: 'es'
 	}
-	
+
 });

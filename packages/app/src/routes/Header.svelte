@@ -11,7 +11,8 @@
 {:else if page.url.hostname.includes('unspent.dev')}
 	<div class="dev">
 		<b>Unstable</b> dev <b>chipnet</b> version. See:
-		<a href="https://vox.cash">vox.cash</a>.
+		<a href="https://vox.cash">vox.cash</a>.<br/>
+		This is a testnet; assets have no value.
 	</div>
 {:else}
 	<div class="dev">

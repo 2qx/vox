@@ -1,6 +1,7 @@
 export enum RuntimePlatform {
   browser = "browser",
   webworker = "webworker",
+  other = "other"
 }
 
 export function getRuntimePlatform(): RuntimePlatform {
@@ -18,6 +19,6 @@ export function getRuntimePlatform(): RuntimePlatform {
     ) {
       return RuntimePlatform.browser;
     } else {
-      throw Error("Could not determine runtime platform");
+      return RuntimePlatform.other;
     }
 }

@@ -1,7 +1,6 @@
 packages:
   - 'packages/badgers'
   - 'packages/blockpoint'
-# - 'packages/blocktop'
   - 'packages/catdex'
   - 'packages/common'
   - 'packages/drip'
@@ -9,6 +8,7 @@ packages:
 # - 'packages/flash'
   - 'packages/future'
   - 'packages/locktime'
+  - 'packages/photon'
   - 'packages/small'
   - 'packages/subscription'
   - 'packages/timeout'

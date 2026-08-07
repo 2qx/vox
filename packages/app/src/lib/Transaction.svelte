@@ -4,9 +4,9 @@
 	let { transaction, sourceOutputs, category } = $props();
 </script>
 
-Locktime: {transaction.locktime}<br />
-Version: {transaction.version}
-<div class="twoUp">
+<!-- Locktime: {transaction.locktime}<br />
+Version: {transaction.version} -->
+<!-- <div class="twoUp">
 	<div>
 		<h4>Inputs</h4>
 		<table>
@@ -86,26 +86,25 @@ Version: {transaction.version}
 			</tfoot>
 		</table>
 	</div>
-</div>
+</div> -->
 
-<h4>Difference</h4>
 <table>
-	<thead class="r">
+	<!-- <thead class="r">
 		<tr>
 			<td>Sats </td>
 			<td> Tokens </td>
 		</tr>
-	</thead>
+	</thead> -->
 
 	<tfoot>
 		<tr>
-			<td class="r">
+			<td >
 				Fee:
 				{(
 					sumSourceOutputValue(sourceOutputs) - sumSourceOutputValue(transaction.outputs)
 				).toLocaleString()}
 			</td>
-			<td class="r">
+			<td >
 				<i
 					>Burned:
 					{(

@@ -196,12 +196,12 @@
 		position-ring-color="#0052ef"
 		position-center-color="#b7ffff"
 		mask-x-to-y-ratio="1.2"
-		style="width: 150px;
-									height: 150px;
+		style="width: 250px;
+									height: 250px;
 									margin: 0.5em auto;
 									background-color: #fff;"
 	>
-		<img src={dripIcon} width=50px slot="icon" alt="drip MEV icon" />
+		<img src={dripIcon} width="100%" slot="icon" alt="drip MEV icon" />
 	</qr-code>
 	<pre id="deposit">{Drip.getAddress(prefix)}</pre>
 </section>

@@ -16,6 +16,9 @@ import {
   hash256,
   swapEndianness,
   Transaction,
+  binToFixedLength,
+  bigIntToBinUintLE,
+  binToBigIntUintLE,
 } from '@bitauth/libauth';
 
 import {
@@ -40,6 +43,16 @@ export function getTransactionId(txn: Uint8Array): string {
   return swapEndianness(binToHex(hash256(txn)))
 }
 
+export const binToBigIntUint256LE = (value: Uint8Array) => {
+  const uint256Bytes = 32;
+  return binToBigIntUintLE(binToFixedLength(value, uint256Bytes), uint256Bytes)
+}
+
+
+export const bigIntToBinUint256LE = (value: bigint) => {
+  const uint256Bytes = 32;
+  return binToFixedLength(bigIntToBinUintLE(value), uint256Bytes)
+}
 
 export function isTokenaddr(address: string): boolean {
   let result:
