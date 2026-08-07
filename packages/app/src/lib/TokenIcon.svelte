@@ -11,7 +11,7 @@
 		['7003b9e854d2abc855b2c20c9734c3dfe4ec3a4de573f7ebb9ce1be527a5bb36', '/tBADGER.svg'],
 		['7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c', '/BPTS.svg'],
 		['8214f234225e5f555663290e0fb7b7b607bf0778221e6da97248bf020306831b', '/tBPTS.svg'],
-		['29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef', '/PHOTON.svg'],
+		['29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef', '/photon.svg'],
 		['3cfdc81075ec7ea97c8c7438378fbd6a7a4a0bf98bcc2c7031b3581a59d6db5a', '/tPHOTON.svg'],
 		['bb61cd7a6c8a3a3742d965dc7ac73c1117382a5c8930b68338deb881f75c0214', '/tWBCH.svg'],
 		['ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3', '/WBCH.svg']
