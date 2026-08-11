@@ -268,12 +268,12 @@ export default class Photon {
     }
 
 
-    static topUp( amount: number, contractUtxo: UtxoI, walletUtxos: UtxoI[], privateKey: string, addressIndex = 0, category?: string, fee = 1) {
+    static topUp(amount: number, contractUtxo: UtxoI, walletUtxos: UtxoI[], privateKey: string, addressIndex = 0, category?: string, fee = 1) {
 
         const inputs: InputTemplate<CompilerBch>[] = [];
         const outputs: OutputTemplate<CompilerBch>[] = [];
 
-        
+
         let config = {
             locktime: 0,
             version: 2,
@@ -289,7 +289,7 @@ export default class Photon {
         const satsIn = getWalletInputs(walletUtxos, BigInt(amount), undefined, privateKey, addressIndex)
         config.inputs.push(...satsIn.inputs);
         sourceOutputs.push(...satsIn.sourceOutputs);
-         // Calculate excess cash and tokens to be returned as change
+        // Calculate excess cash and tokens to be returned as change
         let sumSatsOut = sumOutputValue(config.outputs)
         let sumSatsIn = sumSourceOutputValue(sourceOutputs)
         let cashChange = sumSatsIn - sumSatsOut
@@ -306,8 +306,8 @@ export default class Photon {
 
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
         let transaction = result.transaction
-        
-        
+
+
         const tokenValidationResult = verifyTransactionTokens(
             transaction,
             sourceOutputs,
@@ -332,7 +332,7 @@ export default class Photon {
             summarizeDebugTrace(state.slice(-9)),
         )
         console.log(trace)
-        
+
         let tokenDiff = sumSourceOutputTokenAmounts(sourceOutputs, category) -
             sumSourceOutputTokenAmounts(transaction.outputs, category)
         if (tokenDiff !== 0n) throw Error(`Claiming should not create or destroy tokens, token difference: ${tokenDiff}`)
@@ -430,6 +430,18 @@ export default class Photon {
 }
 
 
+function incrementLEsubArray(arr: Uint8Array) :Uint8Array{
+    for (let i = 0; i < arr.length; i++) {
+        if (arr[i] === 255) {
+            arr[i] = 0;
+        } else {
+            arr[i]!++;
+            break;
+        }
+    }
+    return arr
+}
+
 /**
      * Get transaction template for mining photons.
      *
@@ -460,30 +472,44 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
     BATON_START = (BATON_START / 2) + 2
     templateBin.set(publicKey.publicKey, 45)
 
-
+    const HEARTBEAT_FREQ = 10000
     const nextTarget = templateBin.slice(BATON_START + 4, BATON_START + 4 + 32)
-
-    const msg = Uint8Array.from(
-        [
-            ...numberToBinUint32LE(0),
-            ...nextTarget
-        ]
-    )
+    const nextTargetTail = binToBigIntUintLE(nextTarget.slice(-16))
+    const initialJobStartNonce = Math.floor((Math.random() * (2 ** 31)))
+    let oldNonce = initialJobStartNonce;
+    let prevTime = performance.now()
+    const nonceBin = numberToBinUint32LE(initialJobStartNonce)
+    templateBin.set(nonceBin, BATON_START)
 
     // calculate an updated transaction
-    for (let nonce = 0; nonce < Number.MAX_SAFE_INTEGER; nonce++) {
-        const nonceBin = numberToBinUint32LE(nonce)
-
-        msg.set(nonceBin, 0)
-        const msg_hash = sha256.hash(msg)
-        const dataSig = secp256k1.signMessageHashSchnorr(privateKeyChild, msg_hash)
-        if (typeof dataSig == "string") throw dataSig
-        templateBin.set(nonceBin, BATON_START)
-        templateBin.set(dataSig, BATON_START + 36)
-        if (nonce % 10000 == 0) console.log(binToHex(hash256(templateBin).slice(-8)), nonce)
-        if (binToBigIntUintLE(hash256(templateBin).slice(-32)) < binToBigIntUintLE(nextTarget.slice(-32))) {
+    for (let nonce = initialJobStartNonce; true; nonce++) {
+        templateBin.set(
+            incrementLEsubArray(templateBin.slice(BATON_START, BATON_START+4)),
+            BATON_START
+        )
+        templateBin.set(
+            secp256k1.signMessageHashSchnorr(
+                privateKeyChild,
+                sha256.hash(
+                    templateBin.slice(BATON_START, BATON_START + (4 + 32))
+                )
+            ) as Uint8Array,
+            BATON_START + 36
+        )
+        if (nonce % HEARTBEAT_FREQ == 0) {
+            postMessage({
+                status: "STATUS_HEARTBEAT",
+                timestamp: Date.now(),
+                nonce: binToHex(templateBin.slice(BATON_START, BATON_START + 4)),
+                target: binToHex(nextTarget),
+                hashrate: Math.floor(HEARTBEAT_FREQ / ((performance.now() - prevTime) / 1000)),
+                message: "still mining"
+            });
+            oldNonce = nonce;
+            prevTime = performance.now()
+        }
+        if (binToBigIntUintLE(hash256(templateBin).slice(-16)) < nextTargetTail) {
             return (binToHex(templateBin))
         }
     }
-    return
 }

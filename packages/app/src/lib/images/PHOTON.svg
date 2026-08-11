@@ -1,7 +1,7 @@
 <svg width="400" height="400" version="1.1" viewBox="0 0 106 106" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
  <defs>
   <radialGradient id="a" cx="61" cy="5" r="53" gradientTransform="matrix(-.02 2 -2 -.02 63 -119)" gradientUnits="userSpaceOnUse">
-   <stop stop-color="#0d0a75" stop-opacity=".8" offset="0"/>
+   <stop stop-color="#4d4ab5" stop-opacity=".8" offset="0"/>
    <stop stop-color="#16124d" offset="1"/>
   </radialGradient>
   <linearGradient id="b" x1="53" x2="13" y1="61" y2="51" gradientUnits="userSpaceOnUse">

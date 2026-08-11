@@ -40,7 +40,7 @@
 	import tPHOTON from '$lib/images/tPHOTON.svg';
 	import PHOTON from '$lib/images/PHOTON.svg';
 
-	let worker: Worker;
+	let workers: Worker[] = $state([]);
 	let result;
 	let workerStatus = $state('STATUS_IDLE');
 	let workerMessage;
@@ -78,10 +78,16 @@
 	const bchIcon = isMainnet ? BCH : tBCH;
 	const fee = isMainnet ? 1 : 50;
 
-	const handleNotifications = function (data: any) {
+	const handleNotifications = async function (data: any) {
 		if (data.method === 'blockchain.headers.subscribe') {
 			let d = data.params[0];
 			now = d.height;
+			if (workerStatus == 'STATUS_MINING') {
+				console.log("halting to update age")
+				await halt();
+				await sleep(1000);
+				await mine();
+			}
 		} else if (data.method === 'blockchain.scripthash.subscribe') {
 			if (data.params[1] !== contractState) {
 				contractState = data.params[1];
@@ -96,10 +102,10 @@
 
 	const halt = async function () {
 		workerStatus = 'STATUS_HALTED';
-		worker.terminate();
-		await sleep(100);
+		workers.map((w) => w.terminate());
+		await sleep(500);
 		await initWebWorker();
-		await sleep(100);
+		await sleep(100)
 	};
 
 	const mine = async function () {
@@ -111,7 +117,10 @@
 			CATEGORY
 		);
 		if (window.Worker) {
-			worker.postMessage({ task: 'START', template: template, key: minerThrowawayKey });
+			workerStatus = 'STATUS_MINING';
+			workers.map((w) =>
+				w.postMessage({ task: 'START', template: template, key: minerThrowawayKey })
+			);
 		} else {
 			console.log('Start mining called before worker init.');
 		}
@@ -179,7 +188,9 @@
 				if (nextBaton.token_data?.nft?.commitment !== baton.token_data?.nft?.commitment) {
 					baton = nextBaton;
 					if (workerStatus == 'STATUS_MINING') {
+						console.log("halting to update contract state")
 						await halt();
+						await sleep(1000);
 						await mine();
 					}
 				}
@@ -202,44 +213,50 @@
 			// This is where we load the worker
 			const MineWorker = await import('$workers/photon.js?worker');
 			// And initiate the worker
-			worker = new MineWorker.default();
-
-			// The following part is called when the worker sends a message
-			worker.onmessage = function (e: any) {
-				// Let’s first get the status and the message from the event’s data
-				const { status, message } = e.data;
-				// We use these two variables on the website
-				if (message) {
-					workerMessage = message;
-				}
-				if (status) {
-					workerStatus = status;
-				}
-				// This checks what the status of the message is
-				switch (status) {
-					case 'STATUS_BROADCAST':
-						// Save the result returned from the web worker
-						result = e.data.result;
-						hashRate = e.data.hashRate;
-						try {
-							broadcast(result);
-						} catch (e) {
-							console.error(e);
-						}
-						// wait for the transaction to propogate.
-						baton = Photon.getNextBatonUtxo(result);
-						mine();
-						break;
-					case 'STATUS_MINING':
-						//hashRate = e.data.hashRate;
-						break;
-					case 'STATUS_PROCESSING':
-						// Save the current step number and total number of steps
-						// step = e.data.step ?? 0; // Set to 0 instead of undefined if something went wrong
-						// total = e.data.total ?? 0;
-						break;
-				}
-			};
+			const CONNCURRENCY = navigator.hardwareConcurrency-1
+			for (let i = 0; i < CONNCURRENCY ; i++) {
+				workers[i] = new MineWorker.default();
+				// The following part is called when the worker sends a message
+				workers[i].onmessage = function (e: any) {
+					// Let’s first get the status and the message from the event’s data
+					const { status, message } = e.data;
+					// We use these two variables on the website
+					if (message) {
+						workerMessage = message;
+					}
+					// if (status) {
+					// 	workerStatus = status;
+					// }
+					// This checks what the status of the message is
+					switch (status) {
+						case 'STATUS_BROADCAST':
+							// Broadcast the result returned from the web worker
+							result = e.data.result;
+							try {
+								broadcast(result);
+							} catch (e) {
+								console.error(e);
+							}
+							// wait for the transaction to propogate.
+							baton = Photon.getNextBatonUtxo(result);
+							mine();
+							break;
+						case 'STATUS_HEARTBEAT':
+							console.log(e.data);
+							if (hashRate == 0) {
+								hashRate = e.data.hashrate*CONNCURRENCY;
+							} else {
+								hashRate = Math.round((1 * hashRate / 2)  + (e.data.hashrate*(CONNCURRENCY) / 2));
+							}
+							break;
+						case 'STATUS_MINING':
+							console.log(e.data.message);
+							break;
+						default:
+							console.log('default:', e);
+					}
+				};
+			}
 		} else {
 			console.error('no worker');
 		}
@@ -284,7 +301,9 @@
 	});
 
 	onDestroy(async () => {
-		worker.terminate();
+		workers.map((w) => {
+			w.terminate();
+		});
 		await electrumClient.disconnect();
 	});
 </script>
@@ -324,7 +343,7 @@
 				>stop
 			</button>
 		{/if}
-		{#if hashRate > 0}
+		{#if hashRate}
 			<p>{hashRate} Hash/s</p>
 		{/if}
 		<p>{workerStatus}</p>
@@ -376,7 +395,7 @@
 	{:else}
 		<div class="swap">
 			<Loading />
-			<p> awaiting baton</p>
+			<p>awaiting baton</p>
 		</div>
 	{/if}
 

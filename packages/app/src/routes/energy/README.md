@@ -40,6 +40,13 @@ The equation is a function of the baton transaction age (in block) and the previ
 
 The NextTarget MUST match the exact value given by the DAA, it may not be arbitrarily lowered by any miner.
 
+## Mining Tips
+
+  - Firefox Mining Settings: 
+    - Disable background process throttling:
+        - navigate to <b><a href="about:config" target="_blank">about:config</a></b>
+        - dom.ipc.processPriorityManager.enabled == false 
+        - (restart browser)
 
 ## Thanks 
 
