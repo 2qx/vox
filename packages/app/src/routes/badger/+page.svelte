@@ -2,11 +2,6 @@
 	import { onMount, onDestroy } from 'svelte';
 	import { page } from '$app/state';
 
-	import { ELECTRUM_WSS, TEST_ELECTRUM_WSS } from '$env/static/public';
-	import { localStore } from '$lib/storage.ts';
-  
-	let count = localStore('count', 0);
-
 	import {
 		binToHex,
 		cashAddressToLockingBytecode,
