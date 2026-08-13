@@ -197,10 +197,7 @@
 					"category": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
 					"decimals": 8
 				},
-				"description": "An ASIC minable CashToken to monetize excess electrons and maintain a decentralized energy oracle.",
-				"extensions": {
-					"exchanges": "catdex"
-				}
+				"description": "An ASIC minable CashToken to monetize excess electrons and maintain a decentralized energy oracle."
 			}
 		}
 	}

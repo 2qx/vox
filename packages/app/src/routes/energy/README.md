@@ -42,11 +42,11 @@ The NextTarget MUST match the exact value given by the DAA, it may not be arbitr
 
 ## Mining Tips
 
-  - Firefox Mining Settings: 
-    - Disable background process throttling:
-        - navigate to <b><a href="about:config" target="_blank">about:config</a></b>
-        - dom.ipc.processPriorityManager.enabled == false 
-        - (restart browser)
+Firefox automatically throttles background process. To disable: 
+
+ 1. navigate to <b><a href="about:config" target="_blank">about:config</a></b>
+ 2. *dom.ipc.processPriorityManager.enabled* to `false` 
+ 3. (restart browser)
 
 ## Thanks 
 
