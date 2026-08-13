@@ -36,7 +36,7 @@
 	import FutureUtxo from '$lib/FutureUtxo.svelte';
 
 	const isMainnet = page.url.hostname == 'vox.cash';
-	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.imaginary.cash';
+	let server = isMainnet ? 'electrum.imaginary.cash' : 'chipnet.imaginary.cash';
 	const metadata = isMainnet ? BCMR : tBCMR;
 	const SERIES_MAP = isMainnet ? CATEGORY_MAP : CATEGORY_MAP_CHIPNET;
 
@@ -200,7 +200,7 @@
 			BaseWallet.StorageProvider = IndexedDBProvider;
 			wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 			if (isMainnet) {
-				let conn = new Connection('mainnet', 'wss://bch.imaginary.cash:50004');
+				let conn = new Connection('mainnet', 'wss://electrum.imaginary.cash:50004');
 				wallet.provider = conn.networkProvider;
 				globalThis.BCH = conn.networkProvider;
 			} else {

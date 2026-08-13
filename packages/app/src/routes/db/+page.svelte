@@ -44,7 +44,7 @@
 
 	const isMainnet = page.url.hostname == 'vox.cash';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
-	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const server = isMainnet ? 'electrum.imaginary.cash' : 'chipnet.bch.ninja';
 
 	async function updateUnspent() {
 		goto(`?key=${key}`, { keepFocus: true });

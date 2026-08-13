@@ -52,7 +52,7 @@
 	const prefix = isMainnet ? 'bitcoincash' : ('bchtest' as CashAddressNetworkPrefix);
 	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
 	const baseSeries = isMainnet ? 'FBCH' : 'tFBCH';
-	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const server = isMainnet ? 'electrum.imaginary.cash' : 'chipnet.bch.ninja';
 	const bchIcon = isMainnet ? BCH : tBCH;
 	const explorer = isMainnet ? 'explorer.bch.ninja' : 'chipnet.bch.ninja';
 	const SERIES_MAP = isMainnet ? TIMELOCK_MAP : TIMELOCK_MAP_CHIPNET;

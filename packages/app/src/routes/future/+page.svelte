@@ -54,7 +54,7 @@
 	const ticker = isMainnet ? 'BCH' : 'tBCH';
 	const baseTicker = isMainnet ? 'FBCH' : 'tFBCH';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
-	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const server = isMainnet ? 'electrum.imaginary.cash' : 'chipnet.bch.ninja';
 	const SERIES_MAP = isMainnet ? TIMELOCK_MAP : TIMELOCK_MAP_CHIPNET;
 	const bchIcon = isMainnet ? BCH : tBCH;
 

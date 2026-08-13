@@ -29,7 +29,7 @@
 
 	const isMainnet = page.url.hostname == 'vox.cash';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
-	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const server = isMainnet ? 'electrum.imaginary.cash' : 'chipnet.bch.ninja';
 	const explorer = isMainnet
 		? 'https://explorer.salemkode.com/address/'
 		: 'https://cbch.loping.net/address/';

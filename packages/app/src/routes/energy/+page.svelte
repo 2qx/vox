@@ -69,7 +69,7 @@
 	let scripthash = '';
 	scripthash = Photon.getScriptHash();
 	const isMainnet =  page.url.hostname == 'vox.cash';
-	let server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	let server = isMainnet ? 'electrum.imaginary.cash' : 'chipnet.bch.ninja';
 	const icon = isMainnet ? PHOTON : tPHOTON;
 	const CATEGORY = isMainnet ? binToHex(PHOTON_CATEGORY) : binToHex(tPHOTON_CATEGORY);
 	const baseTicker = isMainnet ? 'BCH' : 'tBCH';

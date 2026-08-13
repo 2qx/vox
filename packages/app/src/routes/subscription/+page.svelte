@@ -33,7 +33,7 @@
 	const category = isMainnet ? binToHex(bptCat) : binToHex(tbptCat);
 	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
-	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const server = isMainnet ? 'electrum.imaginary.cash' : 'chipnet.bch.ninja';
 	const bchIcon = isMainnet ? BCH : tBCH;
 
 	let now = $state(0);

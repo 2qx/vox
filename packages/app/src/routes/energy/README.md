@@ -10,7 +10,7 @@ The Photon Vault keeps a cash balance to facilitate payments to miners. Each pay
 
 ## What is the PoW? 
 
-The PoW algorithm for Photons is Hash256(Secp256k1(Sha256)). Specifically, each transaction taking photons from the vault must return the mutable NFT baton with the following data updated:
+The Proof of Work (PoW) algorithm for Photons is Hash256(Secp256k1(Sha256)). Specifically, each transaction taking photons from the vault must return the mutable NFT baton with the following data updated:
 
 | Data                                                             | Size                     |
 | :--------------------------------------------------------------- | :----------------------- |

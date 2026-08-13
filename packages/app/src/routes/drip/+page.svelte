@@ -32,7 +32,7 @@
 	let timer: any;
 
 	let prefix = page.url.hostname == 'vox.cash' ? 'bitcoincash' : 'bchtest';
-	let server = page.url.hostname == 'vox.cash' ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	let server = page.url.hostname == 'vox.cash' ? 'electrum.imaginary.cash' : 'chipnet.bch.ninja';
 
 	const debounceClearSpent = () => {
 		clearTimeout(timer);

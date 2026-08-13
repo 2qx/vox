@@ -36,7 +36,7 @@
 
 	const isMainnet = page.url.hostname == 'vox.cash';
 	const prefix = isMainnet ? 'bitcoincash' : 'bchtest';
-	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const server = isMainnet ? 'electrum.imaginary.cash' : 'chipnet.bch.ninja';
 	const fee = isMainnet ? 1 : 10;
 	const explorer = isMainnet
 		? 'https://explorer.salemkode.com/address/'
@@ -337,7 +337,7 @@
 		BaseWallet.StorageProvider = IndexedDBProvider;
 		wallet = isMainnet ? await Wallet.named(`vox`) : await TestNetWallet.named(`vox`);
 		if (isMainnet) {
-			let conn = new Connection('mainnet', 'wss://bch.imaginary.cash:50004');
+			let conn = new Connection('mainnet', 'wss://electrum.imaginary.cash:50004');
 			wallet.provider = conn.networkProvider;
 			globalThis.BCH = conn.networkProvider
 		} else {

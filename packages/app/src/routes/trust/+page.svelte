@@ -60,7 +60,7 @@
 	let stakeValue = $state(0);
 
 	const isMainnet = page.url.hostname == 'vox.cash';
-	const server = isMainnet ? 'bch.imaginary.cash' : 'chipnet.bch.ninja';
+	const server = isMainnet ? 'electrum.imaginary.cash' : 'chipnet.bch.ninja';
 	const baseTicker = isMainnet ? 'BCH' : 'tBCH';
 	const bchIcon = isMainnet ? BCH : tBCH;
 	const relayFee = isMainnet ? 1 : 10;
