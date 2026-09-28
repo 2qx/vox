@@ -280,7 +280,7 @@
 													>{Number(unspent[i].value).toLocaleString(undefined, {})} sats</span
 												>
 												<br />
-												{#if unspent[i].height > 0 && (unspent[i].height - now) >= Trust.PERIOD}
+												{#if unspent[i].height > 0 && (now - unspent[i].height ) >= Trust.PERIOD}
 													<button class="action" onclick={() => unlock(now, unspent[i])}
 														>{t.value / 100_000_000}
 														{baseTicker}
