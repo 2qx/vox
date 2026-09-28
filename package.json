@@ -34,14 +34,5 @@
     "exclude": [
       "**/test/*.js"
     ]
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ],
-    "patchedDependencies": {
-      "@electrum-cash/network": "patches/@electrum-cash__network.patch",
-      "mainnet-js": "patches/mainnet-js.patch"
-    }
   }
 }

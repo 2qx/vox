@@ -7,10 +7,12 @@
 		{#if isMainnet}
 			<a target="_blank" href="https://explorer.salemkode.com/address/{address}">salemkode</a>
 			<a target="_blank" href="https://explorer.bch.ninja/address/{address}">bch.ninja</a>
+			<a target="_blank" href="https://bchexplorer.cash/address/{address}">bch explorer</a>
+
 		{:else}
-			<a target="_blank" href="https://chipnet.bch.ninja/address/{address}">bch.ninja</a>
+			<a target="_blank" href="https://bchexplorer.cash/chipnet/address/{address}">bch explorer</a>
+     		<a target="_blank" href="https://chipnet.bch.ninja/address/{address}">bch.ninja</a>
 			<a target="_blank" href="https://chipnet.chaingraph.cash/address/{address}">chaingraph.cash</a>
-			<a target="_blank" href="https://chipnet.imaginary.cash/address/{address}">imaginary.cash</a>
 		{/if}
 	{/if}
 </div>

@@ -1,0 +1,157 @@
+pragma cashscript ^0.14.0;
+
+
+contract SAFA() {
+
+    // 
+    function execute(int age) {
+
+        // Force a version two transaction
+        require(tx.version == 2);
+
+        // Thread lives on
+        require(
+            tx.outputs[this.activeInputIndex].lockingBytecode == 
+            tx.inputs[this.activeInputIndex].lockingBytecode
+        );
+
+        // Token category must not change
+        require(
+            tx.outputs[this.activeInputIndex].tokenCategory == 
+            tx.inputs[this.activeInputIndex].tokenCategory
+        );
+
+        // if the mining baton is returned unmodified
+        // enforce outputs as swap transaction
+        if(tx.outputs[this.activeInputIndex].nftCommitment ==
+           tx.inputs[this.activeInputIndex].nftCommitment){ 
+
+            // Get the total initial supply for this thread
+            int supply = int(tx.inputs[this.activeInputIndex]
+                .nftCommitment
+                .split(4)[0]) * 1e7;
+
+            // Enforce the a constant product swap 
+            require(
+                tx.outputs[this.activeInputIndex].value * 
+                    (supply-tx.outputs[this.activeInputIndex].tokenAmount) 
+                >=
+                tx.inputs[this.activeInputIndex].value * 
+                    (supply-tx.inputs[this.activeInputIndex].tokenAmount)
+            );
+        }
+
+        // Otherwise enforce a mining transaction
+        else{
+            
+             // Check the purported time has passed and that time locks are enabled
+            require(this.age >= age);
+
+            // get the current difficulty
+            bytes significand, bytes exp = 
+                tx.inputs[this.activeInputIndex]
+                .nftCommitment
+                .split(72)[1]
+                .split(4)[0]
+                .split(3);
+
+            // If the exponent bytes denote a number out of range,
+            // force it to be positive 
+            require(within(int(exp),0,32));
+
+            int prevTarget = int(significand)  << (8*((int(exp) - 3)));
+
+            // require the age passed be block based
+            require(age < 65535);
+
+            // Enforce a simple difficulty adjustment algorithim
+            // for 71 threads
+            int nextTarget = prevTarget * ((age/71 + 143) /144);
+
+            // Require the hash of the resulting NFT baton is
+            // less than the nextTarget
+            require(
+                int(hash256(tx.outputs[this.activeInputIndex].nftCommitment)) 
+                < nextTarget
+                );
+
+            int nextExp = bytes(nextTarget).length;
+            bytes nextTargetBytes = bytes(nextTarget)
+            .reverse()
+            .split(3)[0]
+            .reverse()
+            +
+            bytes(nextExp);
+
+            // Allow miner to take 800 token dust,
+            // plus 600 network fee allowance from this thread
+            require(
+                tx.outputs[this.activeInputIndex].value 
+                >= 
+                tx.inputs[this.activeInputIndex].value - 1500);
+            
+            // Ensuring grinder payout contains sufficient sat dust is left 
+            // to consensus as dust thresholds may change.
+
+            // Ensure successful miner to returns 
+            // 1 - 1/420,000 of the token balance
+            require(
+                tx.outputs[this.activeInputIndex]
+                  .tokenAmount 
+                >= 
+                tx.inputs[this.activeInputIndex]
+                  .tokenAmount*419999/420000
+            );
+
+            // Ensure the grinder is paid 1/420kth 
+            // from the running token balance
+            require(
+                tx.outputs[tx.inputs.length+this.activeInputIndex]
+                  .tokenAmount 
+                >=  
+                tx.inputs[this.activeInputIndex]
+                  .tokenAmount/420000
+            );
+
+            // pop the timestamp ffrom the next baton
+            int locktime = int(
+                tx.outputs[this.activeInputIndex]
+                  .nftCommitment
+                  .split(68)[1]
+                  .split(4)[0]
+            );
+
+            // Enforce everything on the outgoing baton except the nonce.
+            require(
+                tx.outputs[this.activeInputIndex]
+                  .nftCommitment
+                  // drop nonce 
+                  .split(72)[0]
+                == 
+                // inital supply
+                tx.inputs[this.activeInputIndex]
+                .nftCommitment
+                .split(4)[0] +
+                // previous baton commitment
+                hash256(
+                    tx.inputs[this.activeInputIndex]
+                      .nftCommitment
+                ) +
+                // grinder's address
+                hash256(
+                    tx.outputs[tx.inputs.length+this.activeInputIndex]
+                      .lockingBytecode
+                ) +
+                bytes(locktime) + 
+                nextTargetBytes
+            );
+            
+            // require the locktime be a unix timestamp
+            require(locktime > 500000000);
+
+            // enforce the BIP65 locktime given on the baton
+            require(tx.locktime >= locktime);
+        }
+
+    }
+}

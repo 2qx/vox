@@ -16,19 +16,37 @@
 		}
 	},
 	"identities": {
-		"7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c": {
+		"ffff": {
 			"2025-08-13T17:00:13.273Z": {
 				"name": "Block Points",
 				"uris": {
 					"web": "https://vox.cash/bpt",
-					"icon": "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='UTF-8' standalone='no'%3F%3E%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height:400px;'%3E%3Cdefs%3E%3ClinearGradient id='grad' gradientTransform='rotate(75)'%3E%3Cstop offset='5%25' stop-color='aqua' /%3E%3Cstop offset='95%25' stop-color='%2300808099' /%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath style='fill:url(%23grad)' d='M 6 1 C 3.23 1 1 3.23 1 6 L 1 10 C 1 12.77 3.23 15 6 15 L 10 15 C 12.77 15 15 12.77 15 10 L 15 6 C 15 3.23 12.77 1 10 1 L 6 1 z M 8 7 A 1 1 0 0 1 9 8 A 1 1 0 0 1 8 9 A 1 1 0 0 1 7 8 A 1 1 0 0 1 8 7 z ' /%3E%3C/svg%3E"
+					"icon": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' style='width:400px; height:400px;'%3E%3Cdefs%3E%3ClinearGradient id='grad' x1='1' x2='14.3' y1='1' y2='14' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='orchid' offset='.454'/%3E%3Cstop stop-color='%23a76fd9' stop-opacity='.6' offset='1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath style='fill:url(%23grad)' d='M 6 1 C 3.23 1 1 3.23 1 6 L 1 10 C 1 12.77 3.23 15 6 15 L 10 15 C 12.77 15 15 12.77 15 10 L 15 6 C 15 3.23 12.77 1 10 1 L 6 1 z M 8 7 A 1 1 0 0 1 9 8 A 1 1 0 0 1 8 9 A 1 1 0 0 1 7 8 A 1 1 0 0 1 8 7 z ' /%3E%3C/svg%3E%0A"
 				},
 				"token": {
 					"symbol": "BPTS",
-					"category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+					"category": "ffff",
 					"decimals": 0
 				},
 				"description": "A reward token for aged unspent outputs.",
+				"extensions": {
+					"exchanges": "catdex"
+				}
+			}
+		},
+		"7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c": {
+			"2026-09-21T17:00:13.273Z": {
+				"name": "Sequin",
+				"uris": {
+					"web": "https://vox.cash/sequin",
+					"icon": "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='UTF-8'%3F%3E%3Csvg style='height:400px;width:400px' version='1.1' viewBox='0 0 16 16' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink'%3E%3Cdefs%3E%3ClinearGradient id='linearGradient1956' x1='4.99' x2='10.6' y1='13.5' y2='7.65' gradientTransform='translate(.0188 .0528)' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%23fff' stop-opacity='.704' offset='0'/%3E%3Cstop stop-color='%23fff' stop-opacity='0' offset='1'/%3E%3C/linearGradient%3E%3ClinearGradient id='linearGradient4302' x1='13.9' x2='-.901' y1='3.12' y2='15.2' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%23ff7676' offset='0'/%3E%3Cstop stop-color='%23800' stop-opacity='.816' offset='1'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='m8 1a7 7 0 00-7 7 7 7 0 007 7 7 7 0 007-7 7 7 0 00-7-7zm0 6a1 1 0 011 1 1 1 0 01-1 1 1 1 0 01-1-1 1 1 0 011-1z' fill='%23d20000' fill-opacity='.791' stroke='url(%23linearGradient4302)' stroke-width='.7' style='paint-order:markers stroke fill'/%3E%3Cpath d='m8.52 1.91-5.92 3.57 4.6 1.93a1 1 0 01.803-.408 1 1 0 01.156.0137l.367-5.11zm.172.0566-.301 5.12a1 1 0 01.574.668l5.06-1.38-5.34-4.4zm-6.24 3.65 1.48 6.76 3.3-3.73a1 1 0 01-.232-.639 1 1 0 01.0977-.43l-4.64-1.96zm4.88 3.14-3.21 3.66 6.88.736-2.48-4.29a1 1 0 01-.52.146 1 1 0 01-.662-.252z' fill='url(%23linearGradient1956)' stroke-width='0' style='paint-order:markers stroke fill'/%3E%3C/svg%3E%0A"
+				},
+				"token": {
+					"symbol": "SEQUIN",
+					"category": "7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c",
+					"decimals": 8
+				},
+				"description": "A reward token based on input sequence.",
 				"extensions": {
 					"exchanges": "catdex"
 				}
@@ -187,9 +205,9 @@
 		},
 		"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff": {
 			"2026-08-01T17:00:01.273Z": {
-				"name": "S.A.F.A.",
+				"name": "S.A.F.A.s",
 				"uris": {
-					"web": "https://vox.cash/energy",
+					"web": "https://vox.cash/safa",
 					"icon": "data:image/svg+xml,%3Csvg width='400' height='400' version='1.1' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cstyle%3E tspan %7B font-family: 'Lucida Console', monospace; font-weight: 900; font-variant-caps: small-caps; fill: white; %7D %3C/style%3E%3Crect x='2' y='2' width='76' height='76' rx='10' ry='10' fill='%23147'/%3E%3Ctext y='25' x='7'%3E%3Ctspan x='10' dy='0em'%3ESAFAs%3C/tspan%3E%3Ctspan x='10' dy='1.2em'%3EAre For%3C/tspan%3E%3Ctspan x='10' dy='1.2em'%3EASICs⛏️%3C/tspan%3E%3C/text%3E%3C/svg%3E"
 				},
 				"token": {

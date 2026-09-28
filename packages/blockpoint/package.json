@@ -1,7 +1,7 @@
 {
   "name": "@unspent/blockpoint",
   "version": "1.0.0",
-  "description": "Block Point: A coin age reward token",
+  "description": "Block Points: A coin age reward token",
   "type": "module",
   "exports": {
     ".": {

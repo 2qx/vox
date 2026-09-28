@@ -79,7 +79,7 @@
 			link: '/timeout',
 			disabled: true
 		},
-		
+
 		{
 			name: 'Trust',
 			description: 'Get one percent of a fund monthly in perpetuity.',
@@ -100,7 +100,7 @@
 			image: '/WBCH.svg',
 			link: '/wrap',
 			disabled: false
-		},
+		}
 	];
 </script>
 
@@ -158,9 +158,10 @@
 		border: none;
 		cursor: pointer;
 		overflow: hidden;
-		outline: none;h1 {
-		width: 100%;
-	}
+		outline: none;
+		h1 {
+			width: 100%;
+		}
 		font-weight: 500;
 		font-size: small;
 		filter: drop-shadow(5px 5px 5px #ffffffc4);

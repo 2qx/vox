@@ -19,6 +19,7 @@ import {
   binToFixedLength,
   bigIntToBinUintLE,
   binToBigIntUintLE,
+  hexToBin,
 } from '@bitauth/libauth';
 
 import {
@@ -32,6 +33,10 @@ export function getScriptHash(lockingBytecode: Uint8Array, reversed = true): str
   return hashHex
 }
 
+export function getHeaderTimestamp(header: Uint8Array | string) {
+  if (typeof header == "string") header = hexToBin(header)
+  return binToBigIntUintLE(header.slice(4 + 64, 4 + 64 + 4))
+}
 
 export function getAddress(lockingBytecode: Uint8Array, prefix = "bitcoincash" as CashAddressNetworkPrefix, tokenSupport = false): string {
   const result = lockingBytecodeToCashAddress({ prefix: prefix, bytecode: lockingBytecode, tokenSupport: tokenSupport })

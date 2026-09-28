@@ -110,8 +110,8 @@
 
 	if (typeof selectedAsset !== 'string') {
 		selectedAsset = isMainnet
-			? '7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c'
-			: '8214f234225e5f555663290e0fb7b7b607bf0778221e6da97248bf020306831b';
+			? '29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef'
+			: '3cfdc81075ec7ea97c8c7438378fbd6a7a4a0bf98bcc2c7031b3581a59d6db5a';
 	}
 
 	const protocol_prefix = cashAssemblyToHex(`OP_RETURN <"${CatDex.PROTOCOL_IDENTIFIER}">`);
@@ -132,11 +132,43 @@
 	const debounceUpdateWallet = () => {
 		clearTimeout(timer);
 		timer = setTimeout(() => {
+			updateMyMarkets();
 			updateWallet();
 			updateOrders();
 		}, 1500);
 	};
 
+	async function updateMyMarkets(){
+		// Get a list of
+		let marketMakers = await electrumClient.request(
+			'blockchain.scripthash.listunspent',
+			SmallIndex.getScriptHash(CatDex.PROTOCOL_IDENTIFIER),
+			'include_tokens'
+		);
+
+		authBatons = marketMakers.map((u: UtxoI) => {
+			return u.token_data?.category;
+		});
+
+		if (myAuthBatons.length > 0) {
+			myMarketRecord = marketMakers
+				.filter((u) => u.token_data?.category == myAuthBatons[0].token_data.category)
+				.pop();
+		}
+
+		if (myMarketRecord) {
+			if (myMarketRecord.height <= 0) {
+				myMembership = 1000;
+			} else if (myMarketRecord.height > 0) {
+				myMembership = myMarketRecord.height + myMarketRecord.value - now;
+			} else {
+				myMembership = 0;
+			}
+		} else {
+			myMembership = 0;
+		}
+	}
+	
 	async function updateOrders() {
 		if (electrumClient && now > 1000) {
 			let marketMakers = await electrumClient.request(
@@ -357,8 +389,6 @@
 			updateOrders();
 			updateWallet();
 		} else if (data.method === 'blockchain.scripthash.subscribe') {
-			// data.params[0]
-			// TODO: only update matching utxos
 			debounceUpdateWallet();
 		} else {
 			console.log(data);
@@ -399,34 +429,7 @@
 
 		await electrumClient.subscribe('blockchain.scripthash.subscribe', walletScriptHash);
 
-		// Get a list of
-		let marketMakers = await electrumClient.request(
-			'blockchain.scripthash.listunspent',
-			SmallIndex.getScriptHash(CatDex.PROTOCOL_IDENTIFIER),
-			'include_tokens'
-		);
-
-		authBatons = marketMakers.map((u: UtxoI) => {
-			return u.token_data?.category;
-		});
-
-		if (myAuthBatons.length > 0) {
-			myMarketRecord = marketMakers
-				.filter((u) => u.token_data?.category == myAuthBatons[0].token_data.category)
-				.pop();
-		}
-
-		if (myMarketRecord) {
-			if (myMarketRecord.height <= 0) {
-				myMembership = 1000;
-			} else if (myMarketRecord.height > 0) {
-				myMembership = myMarketRecord.height + myMarketRecord.value - now;
-			} else {
-				myMembership = 0;
-			}
-		} else {
-			myMembership = 0;
-		}
+		updateMyMarkets();
 
 		let marketScriptHashes = authBatons.map((authCat: string) => {
 			return CatDex.getScriptHash(authCat, selectedAsset);

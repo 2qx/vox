@@ -29,6 +29,7 @@
 	import Transaction from '$lib/Transaction.svelte';
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
+	import ExplorerLinks from '$lib/ExplorerLinks.svelte';
 
 	let now = $state(0);
 	let connectionStatus = $state('');
@@ -200,21 +201,24 @@
 	});
 </script>
 
-
 <svelte:head>
 	<title>🟦 Block Points</title>
 	<meta name="description" content="Claim rewards for coins held." />
 </svelte:head>
 
 <section>
-	<div class="status">
-		<BitauthLink template={BlockPoint.template} />
-		{#if connectionStatus == 'CONNECTED'}
-			<img src={CONNECTED} alt={connectionStatus} />
-		{:else}
-			<img src={DISCONNECTED} alt="Disconnected" />
-		{/if}
+	<div class="status-bar">
+		<ExplorerLinks address={BlockPoint.getAddress(prefix)} {isMainnet}></ExplorerLinks>
+		<div class="status">
+			<BitauthLink template={BlockPoint.template} />
+			{#if connectionStatus == 'CONNECTED'}
+				<img src={CONNECTED} alt={connectionStatus} />
+			{:else}
+				<img src={DISCONNECTED} alt="Disconnected" />
+			{/if}
+		</div>
 	</div>
+
 	<h1>Claim Block Point Rewards</h1>
 
 	{#if connectionStatus == 'CONNECTED'}
@@ -224,6 +228,7 @@
 				<br />
 				{sumWallet.toLocaleString()} sats {baseTicker}
 			</div>
+			<div style="flex-grow:10;"></div>
 			<div>
 				<img width="50" src={icon} alt={ticker} />
 				<br />
@@ -274,7 +279,7 @@
 					{/if}
 				{/each}
 			</div>
-		{:else }
+		{:else}
 			<div class="swap">
 				<p><a href="/wallet">Deposit funds</a> to claim block points.</p>
 			</div>
@@ -288,7 +293,10 @@
 </section>
 
 <style>
-	
+	.status-bar {
+		display: flex;
+		justify-content: space-between;
+	}
 	.status {
 		text-align: end;
 	}

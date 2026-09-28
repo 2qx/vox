@@ -9,6 +9,7 @@ packages:
   - 'packages/future'
   - 'packages/locktime'
   - 'packages/photon'
+#  - 'packages/sequin'
   - 'packages/small'
   - 'packages/subscription'
   - 'packages/timeout'
