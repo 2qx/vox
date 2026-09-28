@@ -4,14 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-patchedDependencies:
-  '@electrum-cash/network':
-    hash: f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08
-    path: patches/@electrum-cash__network.patch
-  mainnet-js:
-    hash: c2a9521a3bb52940c91526fb361ee6ad2703f291e3de46c13063c91e4cae6c19
-    path: patches/mainnet-js.patch
-
 importers:
 
   .:
@@ -39,7 +31,7 @@ importers:
         version: 2.0.10
       mainnet-js:
         specifier: 3.1.7
-        version: 3.1.7(patch_hash=c2a9521a3bb52940c91526fb361ee6ad2703f291e3de46c13063c91e4cae6c19)
+        version: 3.1.7
       typedoc:
         specifier: ^0.28.12
         version: 0.28.14(typescript@5.8.2)
@@ -54,7 +46,7 @@ importers:
         version: 3.1.0-next.8
       '@electrum-cash/network':
         specifier: 4.2.2
-        version: 4.2.2(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)
+        version: 4.2.2
       '@electrum-cash/web-socket':
         specifier: 1.0.3
         version: 1.0.3
@@ -345,7 +337,7 @@ importers:
         version: 3.1.0-next.8
       '@electrum-cash/network':
         specifier: ^4.2.2
-        version: 4.2.2(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)
+        version: 4.2.2
       '@electrum-cash/web-socket':
         specifier: 1.2.3
         version: 1.2.3
@@ -2411,7 +2403,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@electrum-cash/network@4.2.2(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)':
+  '@electrum-cash/network@4.2.2':
     dependencies:
       '@electrum-cash/debug-logs': 1.0.0
       '@electrum-cash/web-socket': 1.2.3
@@ -2656,7 +2648,7 @@ snapshots:
 
   '@mainnet-cash/indexeddb-storage@3.1.7':
     dependencies:
-      mainnet-js: 3.1.7(patch_hash=c2a9521a3bb52940c91526fb361ee6ad2703f291e3de46c13063c91e4cae6c19)
+      mainnet-js: 3.1.7
     transitivePeerDependencies:
       - bufferutil
       - supports-color
@@ -3726,10 +3718,10 @@ snapshots:
     dependencies:
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  mainnet-js@3.1.7(patch_hash=c2a9521a3bb52940c91526fb361ee6ad2703f291e3de46c13063c91e4cae6c19):
+  mainnet-js@3.1.7:
     dependencies:
       '@bitauth/libauth': 3.1.0-next.8
-      '@electrum-cash/network': 4.2.2(patch_hash=f7b2ff0ce9059e21d0dfacaf7f7db0c1c5e4577b1d6e7a96b6203dd195fbbc08)
+      '@electrum-cash/network': 4.2.2
     optionalDependencies:
       dotenv: 10.0.0
     transitivePeerDependencies:
