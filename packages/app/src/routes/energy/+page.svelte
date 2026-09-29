@@ -242,7 +242,7 @@
 							}
 							// wait for the transaction to propogate.
 							baton = Photon.getNextBatonUtxo(result);
-							//mine();
+							mine();
 							break;
 						case 'STATUS_HEARTBEAT':
 							console.log(e.data);
