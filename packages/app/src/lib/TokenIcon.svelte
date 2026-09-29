@@ -10,6 +10,7 @@
 		['242f6ecedb404c743477e35b09733a56cacae34f3109d5cee1cbc1d5630affd7', '/badger.svg'],
 		['7003b9e854d2abc855b2c20c9734c3dfe4ec3a4de573f7ebb9ce1be527a5bb36', '/tBADGER.svg'],
 		['7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c', '/SEQUIN.svg'],
+		['8214f234225e5f555663290e0fb7b7b607bf0778221e6da97248bf020306831b', '/tSEQUIN.svg'],
 		['10608586e070bbea7142435775f79161751972f180f64752bae974dbe023ebc3', '/tBPTS.svg'],
 		['29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef', '/photon.svg'],
 		['3cfdc81075ec7ea97c8c7438378fbd6a7a4a0bf98bcc2c7031b3581a59d6db5a', '/tPHOTON.svg'],
