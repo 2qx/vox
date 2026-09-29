@@ -28,3 +28,13 @@ The Block Point vault can only release tokens based on the age of the vault thre
 
 Any time coins are moved, the age of the coin resets. So don't move coins to claim BlockPoints, wait until you can sign with the wallet you have. 
 
+
+### Funding
+
+The Block Point (BPT1) Vault was funded in this transaction:
+
+    5e9f4a5a95f4e4ef2dd906df30103f71013f15e8e283852cfc5baccb3cf36ae1
+ 
+The vault consists of 337 threads, each with 27369056489183310 BPT1 each. 
+
+The funding transaction left 337 BPT1 change, which were [burned](https://www.tokenburner.cash/burn/1d29e65ab28a575e545848fea056ff39dd4c225b2fd4017d0aaec49aa7ad1a67) using the CashToken burner contract.

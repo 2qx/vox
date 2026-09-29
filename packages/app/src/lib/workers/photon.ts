@@ -4,7 +4,6 @@ const STATUS_ERROR = 'STATUS_ERROR';
 const MESSAGE_START = 'START';
 const MESSAGE_HALT = 'HALT';
 
-import { hexToBin,  binToNumberUintLE } from '@bitauth/libauth';
 import { mine } from '@unspent/photon';
 
 self.onmessage = (e) => {
