@@ -15,8 +15,8 @@ const wallet = await Wallet.fromWIF(wif);
 // do airdrop
 let requestList = Array(127).fill({
   cashaddr: destination,
-  value: 800,
-  tokenId: tokenIdFungible as string,
+  value: 800n,
+  category: tokenIdFungible as string,
   amount: 72624976668144699n
 } as TokenSendRequest) as TokenSendRequest[]
 

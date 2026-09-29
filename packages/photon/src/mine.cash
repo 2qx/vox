@@ -113,7 +113,9 @@
                              tx.outputs[1].lockingBytecode +
                              bytes4(0);
 
-            int nextHash = abs(int(hash256(preimage).split(32)[0]));
+            int nextHash = int(hash256(preimage).split(32)[0]);
+            
+            require(nextHash > 0);
 
             // Target a once per block emission schedule
             // If the age is 0, lower the difficulty threshold ~0.7%

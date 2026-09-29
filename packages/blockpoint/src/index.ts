@@ -1,4 +1,4 @@
-import template from './template.v3.1.json' with { type: "json" };
+import template from './template.v3.2.json' with { type: "json" };
 import packageInfo from '../package.json' with { type: "json" };
 
 import {
@@ -31,7 +31,7 @@ import {
 } from '@unspent/tau';
 
 export const BPTS = hexToBin('7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c')
-export const tBPTS = hexToBin('8214f234225e5f555663290e0fb7b7b607bf0778221e6da97248bf020306831b')
+export const tBPTS = hexToBin('10608586e070bbea7142435775f79161751972f180f64752bae974dbe023ebc3')
 
 
 export default class BlockPoint {

@@ -1,0 +1,140 @@
+pragma cashscript ^0.14.0;
+
+
+contract SAFA() {
+
+    // 
+    function execute(int age) {
+
+        // Force a version two transaction
+        require(tx.version == 2);
+        
+        // Check the purported time has passed and that time locks are enabled
+        require(this.age >= age);
+
+        // Thread lives on
+        require(
+            tx.outputs[this.activeInputIndex].lockingBytecode == 
+            tx.inputs[this.activeInputIndex].lockingBytecode
+        );
+
+        // Token category must not change
+        require(
+            tx.outputs[this.activeInputIndex].tokenCategory == 
+            tx.inputs[this.activeInputIndex].tokenCategory
+        );
+
+        // if the mining baton is returned unmodified
+        // enforce outputs as swap transaction
+        if(tx.outputs[this.activeInputIndex].nftCommitment ==
+           tx.inputs[this.activeInputIndex].nftCommitment){ 
+            // Enforce the a constant product swap 
+            require(
+                tx.outputs[this.activeInputIndex].value * 
+                    (21e14-tx.outputs[this.activeInputIndex].tokenAmount) 
+                >=
+                tx.inputs[this.activeInputIndex].value * 
+                    (21e14-tx.inputs[this.activeInputIndex].tokenAmount)
+            );
+        }
+
+        // Otherwise enforce a mining transaction
+        else{
+
+            // get the current difficulty
+            bytes exp, bytes significand = 
+                tx.inputs[this.activeInputIndex]
+                .nftCommitment
+                .slice(72,76)
+                .split(1);
+
+            // If the exponent bytes denote a number above 
+            if(int(exp) < 0){
+                exp = exp+0x00;
+            }
+            int prevTarget = int(significand)  << (8*(-3+int(exp)));
+
+            // require the age passed be block based
+            require(age < 65535);
+
+            // enforce a simple difficulty adjustment algorithim
+            int nextTarget = prevTarget * ((age + 143) /144);
+
+            // Require the hash of the resulting NFT baton is
+            // less than the nextTarget
+            require(
+                int(hash256(tx.outputs[this.activeInputIndex].nftCommitment)) 
+                < nextTarget
+                );
+
+            int nextExp = bytes(nextTarget).length;
+            bytes nextTargetBytes = bytes(nextExp) + bytes(nextTarget).slice(-3+nextExp, nextExp);
+
+            // Allow miner to take 800 token dust,
+            // plus 600 network fee allowance from this thread
+            require(
+                tx.outputs[this.activeInputIndex].value 
+                >= 
+                tx.inputs[this.activeInputIndex].value - 1500);
+            
+            // Ensuring grinder payout contains sufficent sat dust is left 
+            // to consensus as dust thresholds may change.
+
+            // Ensure sucessful miner to returns 
+            // 1 - 1/420,000 of the token balance
+            require(
+                tx.outputs[this.activeInputIndex]
+                  .tokenAmount 
+                >= 
+                tx.inputs[this.activeInputIndex]
+                  .tokenAmount*419999/420000
+            );
+
+            // Ensure the grinder is paid 1/420kth 
+            // from the running token balance
+            require(
+                tx.outputs[tx.inputs.length+this.activeInputIndex]
+                  .tokenAmount 
+                >=  
+                tx.inputs[this.activeInputIndex]
+                  .tokenAmount/420000
+            );
+
+            // pop the timestamp ffrom the next baton
+            int locktime = int(
+                tx.outputs[this.activeInputIndex]
+                  .nftCommitment
+                  .slice(68,72)
+            );
+
+            // Enforce everything on the outgoing baton except the nonce.
+            require(
+                tx.outputs[this.activeInputIndex]
+                  .nftCommitment
+                  .split(76)[0] 
+                == 
+                0x04000000 + 
+                hash256(
+                    tx.inputs[this.activeInputIndex]
+                      .nftCommitment
+                ) +
+                hash256(
+                    tx.outputs[tx.inputs.length+this.activeInputIndex]
+                      .lockingBytecode
+                ) +
+                bytes(locktime) + 
+                nextTargetBytes
+            );
+            
+            // require the locktime be a unix timestamp
+            require(locktime > 500000000);
+
+            // enforce the BIP65 locktime given on the baton
+            require(tx.locktime >= locktime);
+        }
+
+    }
+}
+
+
+//OP_TXLOCKTIME OP_CHECKLOCKTIMEVERIFY OP_DROP OP_TXVERSION OP_2 OP_NUMEQUALVERIFY OP_DUP OP_CHECKSEQUENCEVERIFY OP_DROP OP_INPUTINDEX OP_OUTPUTBYTECODE OP_INPUTINDEX OP_UTXOBYTECODE OP_EQUALVERIFY OP_INPUTINDEX OP_OUTPUTTOKENCATEGORY OP_INPUTINDEX OP_UTXOTOKENCATEGORY OP_EQUALVERIFY OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_EQUAL OP_IF OP_INPUTINDEX OP_OUTPUTVALUE 0040075af07507 OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_SUB OP_MUL OP_INPUTINDEX OP_UTXOVALUE 0040075af07507 OP_INPUTINDEX OP_UTXOTOKENAMOUNT OP_SUB OP_MUL OP_GREATERTHANOREQUAL OP_VERIFY OP_ELSE OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT 4c OP_SPLIT OP_DROP 48 OP_SPLIT OP_NIP OP_1 OP_SPLIT OP_OVER OP_BIN2NUM OP_0 OP_LESSTHAN OP_IF OP_OVER 00 OP_CAT OP_ROT OP_DROP OP_SWAP OP_ENDIF OP_DUP OP_BIN2NUM OP_8 83 OP_4 OP_PICK OP_BIN2NUM OP_ADD OP_MUL OP_LSHIFTNUM OP_3 OP_PICK ffff00 OP_LESSTHAN OP_VERIFY OP_DUP OP_4 OP_PICK 8f00 OP_ADD 9000 OP_DIV OP_MUL OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT OP_HASH256 OP_BIN2NUM OP_OVER OP_LESSTHAN OP_VERIFY OP_DUP OP_SIZE OP_NIP OP_2DUP OP_SWAP OP_2 OP_PICK OP_SPLIT OP_DROP 83 OP_3 OP_PICK OP_ADD OP_SPLIT OP_NIP OP_CAT OP_INPUTINDEX OP_OUTPUTVALUE OP_INPUTINDEX OP_UTXOVALUE dc05 OP_SUB OP_GREATERTHANOREQUAL OP_VERIFY OP_INPUTINDEX OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT 9f6806 OP_MUL a06806 OP_DIV OP_GREATERTHANOREQUAL OP_VERIFY OP_TXINPUTCOUNT OP_INPUTINDEX OP_ADD OP_OUTPUTTOKENAMOUNT OP_INPUTINDEX OP_UTXOTOKENAMOUNT a06806 OP_DIV OP_GREATERTHANOREQUAL OP_VERIFY OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT 48 OP_SPLIT OP_DROP 44 OP_SPLIT OP_NIP OP_BIN2NUM OP_INPUTINDEX OP_OUTPUTTOKENCOMMITMENT 4c OP_SPLIT OP_DROP 04000000 OP_INPUTINDEX OP_UTXOTOKENCOMMITMENT OP_HASH256 OP_CAT OP_TXINPUTCOUNT OP_INPUTINDEX OP_ADD OP_OUTPUTBYTECODE OP_HASH256 OP_CAT OP_2 OP_PICK OP_CAT OP_3 OP_PICK OP_CAT OP_EQUALVERIFY OP_DUP 0065cd1d OP_GREATERTHAN OP_VERIFY OP_TXLOCKTIME OP_OVER OP_GREATERTHANOREQUAL OP_VERIFY OP_2DROP OP_2DROP OP_2DROP OP_DROP OP_ENDIF OP_DROP OP_1
