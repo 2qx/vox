@@ -1,0 +1,2 @@
+import{f as t,a as r}from"./D_oc-32F.js";import"./DX56-amG.js";import{r as m}from"./nZAOUARx.js";import{e as f,i}from"./DAvOdBlf.js";import{a as l}from"./BBXA1dri.js";var v=t('<span class="svelte-gftfsn">.</span>'),c=t('<span class="svelte-gftfsn"></span>');function x(o){let e=3;var a=c();f(a,5,()=>Array(e),i,(n,_,p)=>{var s=v();l(s,"",{},{"--i":p,"--time":"1.5s","--delay":"0.2s"}),r(n,s)}),m(a),r(o,a)}export{x as L};
+//# sourceMappingURL=CMHTthmw.js.map
