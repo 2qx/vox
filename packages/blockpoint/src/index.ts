@@ -30,7 +30,7 @@ import {
     sumSourceOutputTokenAmounts
 } from '@unspent/tau';
 
-export const BPTS = hexToBin('7fe0cd5197494e47ade81eb164dcdbd51859ffbe581fe4a818085d56b2f3062c')
+export const BPTS = hexToBin('c7ea26912c147b521ad956cf64461d844c3239d382ac6f7072dc43725247dc76')
 export const tBPTS = hexToBin('10608586e070bbea7142435775f79161751972f180f64752bae974dbe023ebc3')
 
 
