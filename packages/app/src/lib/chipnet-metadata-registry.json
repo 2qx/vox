@@ -81,7 +81,7 @@
         }
       }
     },
-    "6f93bcf4b569c36560ad6d0f9f89cab812967be8f17922833172cb715a501e76": {
+    "18ae09cfc783ec83ada4e642c00a22015866609d319e33c73a7c13948bc2832a": {
       "2026-08-01T17:00:01.273Z": {
         "name": "Chipnet Photons",
         "uris": {
@@ -90,7 +90,7 @@
         },
         "token": {
           "symbol": "tPHOTONS",
-          "category": "6f93bcf4b569c36560ad6d0f9f89cab812967be8f17922833172cb715a501e76",
+          "category": "18ae09cfc783ec83ada4e642c00a22015866609d319e33c73a7c13948bc2832a",
           "decimals": 8
         },
         "description": "A CashToken to monetize excess electrons powering a decentralized energy oracle.",
