@@ -111,7 +111,7 @@
 	if (typeof selectedAsset !== 'string') {
 		selectedAsset = isMainnet
 			? '29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef'
-			: '6f93bcf4b569c36560ad6d0f9f89cab812967be8f17922833172cb715a501e76';
+			: '18ae09cfc783ec83ada4e642c00a22015866609d319e33c73a7c13948bc2832a';
 	}
 
 	const protocol_prefix = cashAssemblyToHex(`OP_RETURN <"${CatDex.PROTOCOL_IDENTIFIER}">`);
