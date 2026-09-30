@@ -2,6 +2,7 @@ import test from 'ava';
 import {
   encodeTransactionBch,
   binToHex,
+  cashAddressToLockingBytecode
 } from '@bitauth/libauth';
 import { getHdPrivateKey, getTransactionId, sleep } from "@unspent/tau";
 // @ts-ignore
@@ -52,11 +53,13 @@ test('test mine function', async t => {
 
   let now = await provider.getBlockHeight();
 
+  let bytecodeResponse = cashAddressToLockingBytecode(bob.getTokenDepositAddress())
+      if (typeof bytecodeResponse == "string") throw bytecodeResponse
   let tx = Photon.generateTemplate(
     now,
     contractUtxos[0],
     key,
-    bob.getTokenDepositAddress(),
+    bytecodeResponse.bytecode,
     tokenId
   )
 

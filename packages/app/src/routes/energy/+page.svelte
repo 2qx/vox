@@ -110,12 +110,18 @@
 		await sleep(100)
 	};
 
+	
+
 	const mine = async function () {
+		
+		let lockingBytecodeResponse = cashAddressToLockingBytecode(wallet.getTokenDepositAddress())
+	    if(typeof lockingBytecodeResponse == "string") throw lockingBytecodeResponse
+		
 		let template = Photon.generateTemplate(
 			now,
 			baton,
 			minerThrowawayKey,
-			wallet.getTokenDepositAddress(),
+			lockingBytecodeResponse.bytecode,
 			CATEGORY
 		);
 		if (window.Worker) {

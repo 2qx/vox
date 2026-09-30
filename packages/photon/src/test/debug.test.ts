@@ -5,7 +5,7 @@ import getAnAliceWallet from "../../../../scripts/aliceWallet.js";
 import { RegTestWallet, Wallet } from "mainnet-js";
 
 import Photon from "../index.js";
-import { binToHex, encodeTransactionBch } from '@bitauth/libauth';
+import { binToHex, cashAddressToLockingBytecode, encodeTransactionBch } from '@bitauth/libauth';
 
 
 test.skip('test block top tx', async t => {
@@ -30,11 +30,13 @@ test.skip('test block top tx', async t => {
         }
     }
 
+    let bytecodeResponse = cashAddressToLockingBytecode(alice.getTokenDepositAddress())
+    if (typeof bytecodeResponse == "string") throw bytecodeResponse
     let tx = Photon.generateTemplate(
         0,
         utxo,
         minerKey,
-        alice.getTokenDepositAddress()
+        bytecodeResponse.bytecode
     )
 
     console.log(tx)
