@@ -401,9 +401,9 @@
 		<button class="button" onclick={() => fundVault()}
 			>Mint Chipnet Genesis Tx (0.5 {baseTicker})</button
 		>
-	{:else if Date.now() < 1786180800000}
+	{:else if Date.now() < 1791023920000}
 		<div class="swap">
-			<Countdown end={1786180800000} />
+			<Countdown end={1791023920000} />
 		</div>
 	{:else}
 		<div class="swap">

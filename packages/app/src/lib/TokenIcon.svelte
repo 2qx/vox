@@ -13,7 +13,8 @@
 		['8214f234225e5f555663290e0fb7b7b607bf0778221e6da97248bf020306831b', '/tSEQUIN.svg'],
 		['c7ea26912c147b521ad956cf64461d844c3239d382ac6f7072dc43725247dc76', '/BPTS.svg'],
 		['10608586e070bbea7142435775f79161751972f180f64752bae974dbe023ebc3', '/tBPTS.svg'],
-		['29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef', '/photon.svg'],
+		['ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff', '/PHOTON.svg'],
+		['29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef', '/PHOTON0.svg'],
 		['a852635be88f7291bc42e427b8107546f943e73636945a2f6cc9532af71896c0', '/tPHOTON.svg'],
 		['bb61cd7a6c8a3a3742d965dc7ac73c1117382a5c8930b68338deb881f75c0214', '/tWBCH.svg'],
 		['ff4d6e4b90aa8158d39c5dc874fd9411af1ac3b5ed6f354755e8362a0d02c6b3', '/WBCH.svg']

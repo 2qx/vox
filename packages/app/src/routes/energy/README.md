@@ -58,3 +58,12 @@ bitcoincashautist's research provided valuable guidance on this idea & Adaptive 
 - [An early description](https://bitcoincashresearch.org/t/block-tops-btop-a-minable-cashtoken/) of this project (formerly BlockTops) Nov '25.
 - [MIST: Mineable SLP Token - July 24, 2020 ](https://web.archive.org/web/20210128134553/https://mistcoin.org/)
 - SAFAs [forthcoming], which is a more sha256 ASIC friendly version of this contract.
+
+
+# Alpha
+
+The first version of this project contained a flaw in the oracle spending path. It gave a spending allowance rather than requiring a fee be paid to the baton. The market design is that users of the price oracle subsidize the sat dust paid to miners. 
+
+Without money coming into the contract, miners would have to top the baton prior to obtaining a mining reward, significantly raising a unnecessary technical barrier and hampering the development of mining software long term. 
+
+Support for first version of this token sunset. However, since the V0 mining contract has no off switch, the tokens remain minable and can trade freely on open markets.
