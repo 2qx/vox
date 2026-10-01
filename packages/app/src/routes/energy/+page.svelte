@@ -18,10 +18,12 @@
 
 	import Readme from './README.md';
 	import BitauthLink from '$lib/BitauthLink.svelte';
+	import ExplorerLinks from "$lib/ExplorerLinks.svelte";
 	import CONNECTED from '$lib/images/connected.svg';
 	import DISCONNECTED from '$lib/images/disconnected.svg';
 	import Countdown from '$lib/Countdown.svelte';
 	import Loading from '$lib/Loading.svelte';
+
 	import {
 		binToBigIntUint256LE,
 		getHdPrivateKey,
@@ -108,12 +110,18 @@
 		await sleep(100)
 	};
 
+	
+
 	const mine = async function () {
+		
+		let lockingBytecodeResponse = cashAddressToLockingBytecode(wallet.getTokenDepositAddress())
+	    if(typeof lockingBytecodeResponse == "string") throw lockingBytecodeResponse
+		
 		let template = Photon.generateTemplate(
 			now,
 			baton,
 			minerThrowawayKey,
-			wallet.getTokenDepositAddress(),
+			lockingBytecodeResponse.bytecode,
 			CATEGORY
 		);
 		if (window.Worker) {
@@ -171,6 +179,7 @@
 
 		walletUnspent = walletUnspent.filter((u: UtxoI) => !u.token_data);
 	};
+
 	const updateUnspent = async function () {
 		let response = await electrumClient.request(
 			'blockchain.scripthash.listunspent',
@@ -213,7 +222,7 @@
 			// This is where we load the worker
 			const MineWorker = await import('$workers/photon.js?worker');
 			// And initiate the worker
-			const CONNCURRENCY = navigator.hardwareConcurrency-1
+			const CONNCURRENCY = 1 //navigator.hardwareConcurrency-1
 			for (let i = 0; i < CONNCURRENCY ; i++) {
 				workers[i] = new MineWorker.default();
 				// The following part is called when the worker sends a message
@@ -314,6 +323,9 @@
 </svelte:head>
 
 <section>
+	<div class="status-bar">
+		<ExplorerLinks address={Photon.getAddress(prefix)} {isMainnet}></ExplorerLinks>
+
 	<div class="status">
 		{now.toLocaleString()}<sub>■</sub>
 		<BitauthLink template={Photon.template} />
@@ -322,6 +334,7 @@
 		{:else}
 			<img src={DISCONNECTED} alt="Disconnected" />
 		{/if}
+	</div>
 	</div>
 
 	<h1>Capture Photons</h1>
@@ -388,9 +401,9 @@
 		<button class="button" onclick={() => fundVault()}
 			>Mint Chipnet Genesis Tx (0.5 {baseTicker})</button
 		>
-	{:else if Date.now() < 1786180800000}
+	{:else if Date.now() < 1791023920000}
 		<div class="swap">
-			<Countdown end={1786180800000} />
+			<Countdown end={1791023920000} />
 		</div>
 	{:else}
 		<div class="swap">
@@ -409,6 +422,11 @@
 <style>
 	pre {
 		font-size: x-small;
+	}
+
+	.status-bar {
+		display: flex;
+		justify-content: space-between;
 	}
 
 	.status {

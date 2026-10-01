@@ -81,7 +81,10 @@
             int prevTarget = abs(int(tx.inputs[this.activeInputIndex].nftCommitment.split(4)[1].split(32)[0]));
             
             // The set the next target as a function of the previous target and age.
-            // Equality prevents setting next target to zero.
+            // Target a once per block emission schedule
+            // If the age is 0, lower the difficulty threshold ~0.7%
+            // If the age is 1, keep the present difficulty
+            // else, decrease difficulty in a linear manner
             require(nextTarget == (prevTarget * (age + 143) )/144);
         
             bytes rewardAmount = 0x;
@@ -115,13 +118,10 @@
 
             int nextHash = int(hash256(preimage).split(32)[0]);
             
-            require(nextHash > 0);
+            // Require the next hash is less than the target threshold, 
+            // but greater than zero.
+            require(within(nextHash, 0, nextTarget));
 
-            // Target a once per block emission schedule
-            // If the age is 0, lower the difficulty threshold ~0.7%
-            // If the age is 1, keep the present difficulty
-            // else, decrease difficulty in a linear manner  
-            require(nextHash < nextTarget);
 
             
         }   

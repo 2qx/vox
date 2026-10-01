@@ -1,4 +1,4 @@
-import template from './template.v3.json' with { type: "json" };
+import template from './template.v3.2.json' with { type: "json" };
 import packageInfo from '../package.json' with { type: "json" };
 
 import {
@@ -46,8 +46,10 @@ import {
     UtxoI,
 } from '@unspent/tau';
 
-export const PHOTON_CATEGORY = hexToBin('29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef')
-export const tPHOTON_CATEGORY = hexToBin('3cfdc81075ec7ea97c8c7438378fbd6a7a4a0bf98bcc2c7031b3581a59d6db5a')
+// PHOTON0 29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef
+           
+export const PHOTON_CATEGORY = hexToBin('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
+export const tPHOTON_CATEGORY = hexToBin('a852635be88f7291bc42e427b8107546f943e73636945a2f6cc9532af71896c0')
 
 
 export default class Photon {
@@ -252,13 +254,11 @@ export default class Photon {
 
     }
 
-    static getRewardOutput(amount: number, rewardAddress?: any, category = PHOTON_CATEGORY): OutputTemplate<CompilerBch> {
-
-        let lockingBytecode = cashAddressToLockingBytecode(rewardAddress)
-        if (typeof lockingBytecode == "string") throw lockingBytecode
+    static getRewardOutput(amount: number, lockingBytecode: Uint8Array | string, category = PHOTON_CATEGORY): OutputTemplate<CompilerBch> {
+        if (typeof lockingBytecode == 'string') lockingBytecode = hexToBin(lockingBytecode)
         return {
-            lockingBytecode: lockingBytecode.bytecode,
-            valueSatoshis: 700n,
+            lockingBytecode: lockingBytecode,
+            valueSatoshis: 800n,
             token: {
                 category: category,
                 amount: BigInt(amount)
@@ -361,7 +361,7 @@ export default class Photon {
         now: number,
         contractUtxo: UtxoI,
         minerThrowawayKey: string,
-        rewardAddress: string,
+        rewardBytecode: string | Uint8Array,
         category?: string,
         nonce = 0
     ): string {
@@ -383,7 +383,9 @@ export default class Photon {
         }
         config.inputs.push(this.getInput(contractUtxo, age, minerThrowawayKey));
         config.outputs = [this.getOutput(contractUtxo, rewardAmount, now, minerThrowawayKey, nonce)];
-        config.outputs.push(this.getRewardOutput(rewardAmount, rewardAddress, photonCat));
+
+
+        config.outputs.push(this.getRewardOutput(rewardAmount, rewardBytecode, photonCat));
         let result = generateTransaction(config);
         if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
         let transaction = result.transaction
@@ -427,10 +429,83 @@ export default class Photon {
 
     }
 
+    /**
+     * Get transaction template for mining photons. A template is a mining transaction with a zero nonce. 
+     *
+     * @param now - The current bitcoin block height timestamp (expressed in blocks).
+     * @param contractUtxo - contract outputs to use as input.
+     * @param minerThrowawayKey - A private key used for signing the nonce message.
+     * @param rewardAddress - The P2PKH Cashaddress to receive payouts.
+     * @param category - The token category of the photons being mined.
+     * @param fee - transaction fee to pay (per byte); default 1 sat/byte.
+     *
+     * @throws {Error} if transaction generation fails.
+     * @returns a transaction template.
+     */
+
+    static mineDebug(
+        now: number,
+        contractUtxo: UtxoI,
+        minerThrowawayKey: string,
+        rewardAddress: string,
+        category?: string,
+        nonce = 0
+    ): string | undefined {
+
+        const inputs: InputTemplate<CompilerBch>[] = [];
+        const outputs: OutputTemplate<CompilerBch>[] = [];
+
+        let photonCat = category ? hexToBin(category) : PHOTON_CATEGORY
+
+        let age = contractUtxo.height <= 0 ? 0 : now - contractUtxo.height;
+
+        const rewardAmount = Math.floor(Number(BigInt(contractUtxo.token_data!.amount!) / 420000n)) - 1
+
+        let config = {
+            locktime: 0,
+            version: 2,
+            inputs,
+            outputs
+        }
+        config.inputs.push(this.getInput(contractUtxo, age, minerThrowawayKey));
+
+        const nextTargetTail = binToBigIntUintLE(this.getNextTarget(contractUtxo, now).slice(-16))
+
+        let transaction
+        for (let nonceI = 0; nonceI < 1000; nonceI++) {
+            config.outputs = [this.getOutput(contractUtxo, rewardAmount, now, minerThrowawayKey, nonce)];
+            config.outputs.push(this.getRewardOutput(rewardAmount, rewardAddress, photonCat));
+            let result = generateTransaction(config);
+            if (!result.success) throw new Error('generate transaction failed!, errors: ' + JSON.stringify(result.errors, null, '  '));
+            transaction = result.transaction
+            let templateBin = encodeTransactionBch(transaction)
+            if (binToBigIntUintLE(hash256(templateBin).slice(-16)) < nextTargetTail) {
+                const sourceOutputs = [this.getSourceOutput(contractUtxo)];
+
+                let state = this.vm.debug({
+                    inputIndex: 0,
+                    sourceOutputs,
+                    transaction,
+                })
+
+                let trace = stringifyDebugTraceSummary(
+                    summarizeDebugTrace(state.slice(-9)),
+                )
+                console.log(trace)
+
+                return binToHex(encodeTransactionBch(transaction))
+            }
+
+        }
+        return
+
+
+    }
+
 }
 
 
-function incrementLEsubArray(arr: Uint8Array) :Uint8Array{
+function incrementLEsubArray(arr: Uint8Array): Uint8Array {
     for (let i = 0; i < arr.length; i++) {
         if (arr[i] === 255) {
             arr[i] = 0;
@@ -475,7 +550,7 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
     const HEARTBEAT_FREQ = 10000
     const nextTarget = templateBin.slice(BATON_START + 4, BATON_START + 4 + 32)
     const nextTargetTail = binToBigIntUintLE(nextTarget.slice(-16))
-    const initialJobStartNonce = Math.floor((Math.random() * (2 ** 31)))
+    const initialJobStartNonce = 0//Math.floor((Math.random() * (2 ** 31)))
     let oldNonce = initialJobStartNonce;
     let prevTime = performance.now()
     const nonceBin = numberToBinUint32LE(initialJobStartNonce)
@@ -484,7 +559,7 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
     // calculate an updated transaction
     for (let nonce = initialJobStartNonce; true; nonce++) {
         templateBin.set(
-            incrementLEsubArray(templateBin.slice(BATON_START, BATON_START+4)),
+            incrementLEsubArray(templateBin.slice(BATON_START, BATON_START + 4)),
             BATON_START
         )
         templateBin.set(
@@ -509,7 +584,13 @@ export async function mine(minerThrowawayKey: string, template: string): Promise
             prevTime = performance.now()
         }
         if (binToBigIntUintLE(hash256(templateBin).slice(-16)) < nextTargetTail) {
+
             return (binToHex(templateBin))
         }
     }
+
+
+
 }
+
+
