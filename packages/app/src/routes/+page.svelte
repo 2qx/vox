@@ -54,7 +54,7 @@
 		{
 			name: 'Photons',
 			description: 'Energy Oracle.',
-			image: '/photon.svg',
+			image: '/PHOTON.svg',
 			link: '/energy',
 			disabled: false
 		},
