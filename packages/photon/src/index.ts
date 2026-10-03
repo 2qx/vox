@@ -48,7 +48,7 @@ import {
 
 // PHOTON0 29972959d6f0dc766cdcb81bfaf8171c5605a64dd0a81fa46080f84ac87c9bef
            
-export const PHOTON_CATEGORY = hexToBin('ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff')
+export const PHOTON_CATEGORY = hexToBin('53bd86e3f123918d2d7040449f88f7ed1bbddc309b66f2ac67cd429278f5ea58')
 export const tPHOTON_CATEGORY = hexToBin('a852635be88f7291bc42e427b8107546f943e73636945a2f6cc9532af71896c0')
 
 

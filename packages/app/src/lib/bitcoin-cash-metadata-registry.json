@@ -89,7 +89,7 @@
 				}
 			}
 		},
-		"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff": {
+		"53bd86e3f123918d2d7040449f88f7ed1bbddc309b66f2ac67cd429278f5ea58": {
 			"2026-10-01T00:00:01.273Z": {
 				"name": "Photon",
 				"uris": {
@@ -98,7 +98,7 @@
 				},
 				"token": {
 					"symbol": "PHOTON",
-					"category": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+					"category": "53bd86e3f123918d2d7040449f88f7ed1bbddc309b66f2ac67cd429278f5ea58",
 					"decimals": 8
 				},
 				"description": "A CashToken to monetize excess electrons and maintain a decentralized energy oracle.",
